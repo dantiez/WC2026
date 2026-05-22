@@ -9,11 +9,53 @@ declare global {
   var __dbInitPromise: Promise<void> | undefined;
 }
 
+const PLACEHOLDER_HOSTS = new Set([
+  "base",
+  "host",
+  "hostname",
+  "your-host",
+  "your-db-host",
+  "your-database-host",
+  "example",
+  "your-project-ref",
+]);
+
 function buildPool(): Pool {
   const connectionString = process.env.DATABASE_URL;
   if (!connectionString) {
-    throw new Error("DATABASE_URL is not set");
+    throw new Error(
+      "DATABASE_URL is not set. Add it in Vercel project → Settings → Environment Variables, then redeploy."
+    );
   }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(connectionString);
+  } catch {
+    throw new Error(
+      `DATABASE_URL is not a valid URL. Expected: postgresql://USER:PASSWORD@HOST:PORT/DBNAME?sslmode=require`
+    );
+  }
+
+  const host = parsed.hostname;
+  const looksLikePlaceholder =
+    !host ||
+    PLACEHOLDER_HOSTS.has(host.toLowerCase()) ||
+    host.startsWith("[") ||
+    host.startsWith("<") ||
+    (!host.includes(".") && host !== "localhost" && host !== "127.0.0.1" && host !== "host.docker.internal");
+
+  if (looksLikePlaceholder) {
+    throw new Error(
+      `DATABASE_URL hostname "${host}" is not a real DNS name (looks like a placeholder). ` +
+        `Get a real Postgres connection string from Supabase / Neon / Vercel Postgres dashboard, ` +
+        `then paste the FULL string into Vercel env vars. ` +
+        `Expected format: postgresql://USER:PASSWORD@HOST.region.provider.com:PORT/DBNAME?sslmode=require`
+    );
+  }
+
+  console.log(`[db] connecting to host=${host} ssl=${parsed.searchParams.get("sslmode") ?? "auto"}`);
+
   const needsSsl =
     /sslmode=require/i.test(connectionString) ||
     process.env.PGSSL === "true" ||

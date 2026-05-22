@@ -16,6 +16,7 @@ import orderStatus from "./api/orders/[id]/status.js";
 import customers from "./api/customers.js";
 import stats from "./api/stats.js";
 import paymentsSimulate from "./api/payments/simulate.js";
+import health from "./api/health.js";
 
 type VercelHandler = (req: any, res: any) => unknown | Promise<unknown>;
 
@@ -45,6 +46,7 @@ app.put("/api/orders/:id/status", wrap(orderStatus));
 app.get("/api/customers", wrap(customers));
 app.get("/api/stats", wrap(stats));
 app.post("/api/payments/simulate", wrap(paymentsSimulate));
+app.get("/api/health", wrap(health));
 
 async function startServer() {
   const vite = await createViteServer({
