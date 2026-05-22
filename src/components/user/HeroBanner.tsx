@@ -19,9 +19,18 @@ export default function HeroBanner({ onShopNow, onTrackNow }: HeroBannerProps) {
 
       <div className="relative z-10 max-w-4xl mx-auto text-center flex flex-col items-center">
         {/* FIFA Golden Badge */}
-        <div className="flex items-center gap-1.5 bg-yellow-500/10 text-yellow-400 px-4 py-1.5 rounded-full border border-yellow-500/20 text-xs font-semibold uppercase tracking-wider mb-6 animate-pulse">
+        <div className="flex items-center gap-1.5 bg-yellow-500/10 text-yellow-400 px-4 py-1.5 rounded-full border border-yellow-500/20 text-xs font-semibold uppercase tracking-wider mb-3 animate-pulse">
           <Trophy className="w-4.5 h-4.5 text-yellow-500" />
           FIFA World Cup 2026 Celebration
+        </div>
+
+        <div className="text-center mb-6">
+          <span className="text-yellow-400 text-xs sm:text-sm font-black tracking-widest uppercase block animate-fade-in">
+            From FC TAN MY with love
+          </span>
+          <span className="text-zinc-500 text-[10px] sm:text-xs font-medium tracking-wider uppercase block mt-1">
+            Make by Dan Nguyen
+          </span>
         </div>
 
         <h1 className="text-4xl sm:text-6xl font-black text-[#F8F8FF] tracking-tight leading-none mb-6">

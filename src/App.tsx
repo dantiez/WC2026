@@ -3426,10 +3426,11 @@ export default function App() {
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-zinc-400">
-            <span className="hover:text-yellow-400 cursor-pointer">Zalo OA Support: 0929.266.290</span>
-            <span className="hover:text-yellow-400 cursor-pointer">Hotline Zalo: 0352-789-VNP</span>
-            <span className="text-zinc-600 block sm:inline">|</span>
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-zinc-400 text-sm mt-4 border-t border-zinc-900/40 pt-4">
+            <span className="hover:text-yellow-400 cursor-pointer transition-colors">Zalo: 0907-281-361</span>
+            <span className="text-zinc-700 hidden sm:inline">|</span>
+            <a href="https://www.facebook.com/dannguyentien22/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 cursor-pointer transition-colors text-blue-400 hover:underline">FB: Dan Nguyen Tien</a>
+            <span className="text-zinc-700 hidden sm:inline">|</span>
             <span 
               onClick={() => {
                 if (isAdminLoggedIn) {
@@ -3438,9 +3439,9 @@ export default function App() {
                   setActiveTab("admin-login");
                 }
               }} 
-              className="text-yellow-500 font-bold hover:underline cursor-pointer select-none"
+              className="text-zinc-500 hover:text-yellow-500 font-semibold hover:underline cursor-pointer select-none transition-colors"
             >
-              Hệ thống quản lý Admin
+              Hệ thống quản lý bởi Dan Nguyen Tien
             </span>
           </div>
 
