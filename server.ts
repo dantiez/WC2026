@@ -5,7 +5,7 @@ import { createServer as createViteServer } from "vite";
 import { Product, Order, OrderItem, Payment, OrderStatus, PaymentMethod, PaymentStatus, JerseyType, JerseySize } from "./src/types";
 
 const app = express();
-const PORT = 3000;
+const PORT = Number(process.env.PORT) || 3010;
 const DB_FILE = path.join(process.cwd(), "jersey_customizer_db.json");
 
 // Express Middleware
