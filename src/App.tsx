@@ -4,12 +4,12 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { 
-  Trophy, Flame, Search, ShoppingBag, Landmark, HandCoins, 
-  CreditCard, Wallet, Users, Package, Coins, CheckCircle2, 
-  ArrowRight, ChevronRight, Plus, Trash2, Edit, LogOut, 
-  ExternalLink, FileSpreadsheet, Smartphone, MapPin, 
-  Clipboard, Check, RotateCcw, Sparkles, Menu, X, ShieldAlert, 
+import {
+  Trophy, Flame, Search, ShoppingBag, Landmark, HandCoins,
+  CreditCard, Wallet, Users, Package, Coins, CheckCircle2,
+  ArrowRight, ChevronRight, Plus, Trash2, Edit, LogOut,
+  ExternalLink, FileSpreadsheet, Smartphone, MapPin,
+  Clipboard, Check, RotateCcw, Sparkles, Menu, X, ShieldAlert,
   Clock, Shirt, BadgeDollarSign, HelpCircle, Eye, EyeOff,
   Printer, ArrowUp
 } from "lucide-react";
@@ -20,6 +20,9 @@ import JerseyCard from "./components/user/JerseyCard";
 import PaymentSelector from "./components/user/PaymentSelector";
 import StatsCard from "./components/admin/StatsCard";
 import JerseyViewer from "./components/three/JerseyViewer";
+import LanguageToggle from "./components/user/LanguageToggle";
+import ThemeToggle from "./components/user/ThemeToggle";
+import { useTranslation } from "./i18n/LanguageContext";
 import { Product, Order, OrderItem, Payment, OrderStatus, PaymentMethod, PaymentStatus, JerseyType, JerseySize, TeamPlayer } from "./types";
 
 const PROVINCES_VN = [
@@ -78,6 +81,8 @@ const DISTRICTS_BY_PROVINCE: { [key: string]: string[] } = {
 };
 
 export default function App() {
+  const { t } = useTranslation();
+
   // Navigation Tabs state
   const [activeTab, setActiveTab] = useState<
     "home" | "jerseys" | "customize" | "checkout" | "track" | "team-roster" | "admin-login" | "admin-dashboard" | "admin-orders" | "admin-products" | "admin-customers"
@@ -397,13 +402,13 @@ export default function App() {
             setActivePlayerIndex(newList.length - parsedPlayers.length); // highlight first new player
             return newList;
           });
-          alert(`Đã nhập thành công ${parsedPlayers.length} thành viên vào danh sách từ file Excel!`);
+          alert(t("alerts.excelImportSuccess", { count: parsedPlayers.length }));
         } else {
-          alert("Không tìm thấy hàng thông tin thành viên nào hợp lệ trong file Excel. Vui lòng kiểm tra lại cấu trúc cột: Cột A: Tên in áo, Cột B: Số áo, Cột C: Size.");
+          alert(t("alerts.excelImportEmpty"));
         }
       } catch (ex) {
         console.error(ex);
-        alert("Có lỗi xảy ra khi đọc tệp Excel. Hãy đảm bảo tệp đúng định dạng mẫu.");
+        alert(t("alerts.excelImportError"));
       }
     };
     reader.readAsBinaryString(file);
@@ -428,13 +433,13 @@ export default function App() {
   const handleAddPlayerManually = () => {
     const cleanName = newPlayerName.trim().toUpperCase();
     if (!cleanName) {
-      alert("Vui lòng nhập Tên in áo.");
+      alert(t("alerts.addPlayerNameRequired"));
       return;
     }
 
     const duplicate = teamRoster.some(p => p.name === cleanName && p.number === newPlayerNumber);
     if (duplicate) {
-      const confirmDup = confirm(`Thành viên ${cleanName} số ${newPlayerNumber} đã tồn tại trong danh sách. Bạn vẫn muốn thêm?`);
+      const confirmDup = confirm(t("alerts.addPlayerDuplicate", { name: cleanName, number: newPlayerNumber }));
       if (!confirmDup) return;
     }
 
@@ -468,37 +473,37 @@ export default function App() {
   // Check form inputs before submitting
   const validateOrderForm = () => {
     const errors: { [key: string]: string } = {};
-    if (!fullName.trim()) errors.fullName = "Vui lòng nhập Họ tên.";
-    
+    if (!fullName.trim()) errors.fullName = t("validation.fullName");
+
     // VN phone regex: accepts standard mobile formats starting with 3, 5, 7, 8, 9 (9 digits after +84) or standard local zero (10 digits)
     const phoneClean = phone.trim().replace(/[\s\.\-\(\)]/g, "");
     if (!phoneClean) {
-      errors.phone = "Vui lòng nhập Số điện thoại.";
+      errors.phone = t("validation.phoneRequired");
     } else {
       const is9Digits = /^[35789][0-9]{8}$/.test(phoneClean);
       const is10Digits = /^0[35789][0-9]{8}$/.test(phoneClean);
       if (!is9Digits && !is10Digits) {
-        errors.phone = "Số điện thoại không hợp lệ (9 hoặc 10 chữ số). Chi tiết: 3, 5, 7, 8, 9...";
+        errors.phone = t("validation.phoneInvalid");
       }
     }
 
     if (!addressProvince) {
-      errors.addressProvince = "Vui lòng chọn Tỉnh / Thành phố.";
+      errors.addressProvince = t("validation.province");
     }
     if (!addressDistrict.trim()) {
-      errors.addressDistrict = "Vui lòng nhập/chọn Quận / Huyện.";
+      errors.addressDistrict = t("validation.district");
     }
     if (!addressWard.trim()) {
-      errors.addressWard = "Vui lòng nhập/chọn Phường / Xã.";
+      errors.addressWard = t("validation.ward");
     }
     if (!addressDetail.trim()) {
-      errors.addressDetail = "Vui lòng nhập Số nhà, Tên đường... chi tiết.";
+      errors.addressDetail = t("validation.detail");
     }
 
     if (!addressProvince || !addressDistrict.trim() || !addressWard.trim() || !addressDetail.trim()) {
-      errors.shippingAddress = "Vui lòng cung cấp đầy đủ thông tin Địa chỉ nhận hàng.";
+      errors.shippingAddress = t("validation.shipping");
     }
-    
+
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
   };
@@ -509,11 +514,11 @@ export default function App() {
 
     if (customizeMode === "team") {
       if (teamRoster.length === 0) {
-        alert("Bảng danh sách thành viên đội đang trống. Vui lòng thêm ít nhất 1 thành viên hoặc tải tệp Excel lên.");
+        alert(t("alerts.teamEmpty"));
         return;
       }
       if (teamRoster.length < 20) {
-        const proceed = confirm(`Danh sách của bạn hiện mới có ${teamRoster.length} thành viên. Để đặt hàng sỉ được Cực Kỳ Ưu Đãi Giảm 15% và thiết kế riêng, bạn nên đặt từ 20 người trở lên. Bạn có chắc chắn muốn tiến hành đặt ngay không?`);
+        const proceed = confirm(t("alerts.teamUnder20", { count: teamRoster.length }));
         if (!proceed) return;
       }
     }
@@ -570,11 +575,11 @@ export default function App() {
         window.scrollTo(0,0);
       } else {
         const err = await resp.json();
-        alert(err.error || "Gặp lỗi tạo đơn đặt hàng.");
+        alert(err.error || t("alerts.orderError"));
       }
     } catch (e) {
       console.error(e);
-      alert("Hệ thống gián đoạn dịch vụ, vui lòng thử lại.");
+      alert(t("alerts.systemDown"));
     }
   };
 
@@ -611,14 +616,14 @@ export default function App() {
           setRosterSelectedOrder(data[0]);
           setRosterCheckedItems({});
         } else if (data.length === 0) {
-          alert("Không tìm thấy đơn hàng nào khớp với mã hoặc số điện thoại này.");
+          alert(t("alerts.rosterNotFound"));
         }
       } else {
-        alert("Có lỗi xảy ra khi tra cứu thông tin in ấn.");
+        alert(t("alerts.rosterError"));
       }
     } catch (e) {
       console.error("Error searching roster order:", e);
-      alert("Hệ thống gián đoạn dịch vụ tra cứu.");
+      alert(t("alerts.rosterSystemDown"));
     } finally {
       setRosterSearchLoader(false);
     }
@@ -626,7 +631,7 @@ export default function App() {
 
   const handleExportRosterToExcel = (itemsToExport: any[], orderCodeInfo?: string, customerNameInfo?: string) => {
     if (itemsToExport.length === 0) {
-      alert("Không có cầu thủ nào để xuất Excel.");
+      alert(t("alerts.rosterExportEmpty"));
       return;
     }
     
@@ -675,14 +680,14 @@ export default function App() {
       setActiveTab("admin-dashboard");
       setAdminError("");
     } else {
-      setAdminError("Email không chính xác hoặc không đủ quyền quản trị viên.");
+      setAdminError(t("alerts.adminLoginInvalid"));
     }
   };
 
   // Export orders to Excel
   const handleExportOrders = () => {
     if (orders.length === 0) {
-      alert("Không có đơn hàng nào khớp với bộ lọc bộ lọc để xuất Excel.");
+      alert(t("alerts.ordersExportEmpty"));
       return;
     }
 
@@ -741,7 +746,7 @@ export default function App() {
 
   // Remove products completely or soft delete
   const handleDeleteProduct = async (id: string) => {
-    if (!confirm("Bạn có tin chắc muốn dùng hoạt động của sản phẩm này?")) return;
+    if (!confirm(t("alerts.productDeleteConfirm"))) return;
     try {
       const resp = await fetch(`/api/products/${id}`, {
         method: "DELETE"
@@ -779,7 +784,7 @@ export default function App() {
   const handleSaveProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodFormName || !prodFormTeam || !prodFormPrice) {
-      alert("Vui lòng điền đủ Tên, Đội và Giá bán.");
+      alert(t("alerts.productSaveValidation"));
       return;
     }
 
@@ -812,7 +817,7 @@ export default function App() {
         setIsProductModalOpen(false);
         fetchProducts();
       } else {
-        alert("Lỗi lưu sản phẩm.");
+        alert(t("alerts.productSaveError"));
       }
     } catch (err) {
       console.error(err);
@@ -890,7 +895,7 @@ export default function App() {
         const data = await response.json();
         // Update local checkout layout order state
         setLatestOrder(data.order);
-        alert("Thanh toán thành công! Hệ thống mô phỏng MoMo/VNPay đã nhận được cổng thông tin IPN và cập nhật đơn hàng thành [Đã thanh toán]");
+        alert(t("alerts.paymentSimulated"));
       }
     } catch (e) {
       console.error(e);
@@ -930,9 +935,9 @@ export default function App() {
   );
 
   return (
-    <div className="min-h-screen bg-[#07070b] text-[#F8F8FF] font-sans antialiased flex flex-col justify-between">
+    <div className="min-h-screen bg-surface-base text-text-primary font-sans antialiased flex flex-col justify-between">
       {/* HEADER NAVBAR */}
-      <nav className="sticky top-0 z-50 bg-[#0a0a0f]/90 backdrop-blur-md border-b border-[#1e1e2d] px-6 py-4">
+      <nav className="sticky top-0 z-50 bg-surface-1/90 backdrop-blur-md border-b border-border-default px-6 py-4">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div 
             onClick={() => { setActiveTab("home"); window.scrollTo(0,0); }} 
@@ -942,8 +947,8 @@ export default function App() {
               <Trophy className="w-6 h-6 text-black" />
             </div>
             <div>
-              <span className="text-sm font-black text-yellow-400 tracking-widest block font-display leading-none">WORLD CUP 2026</span>
-              <span className="text-xs uppercase font-extrabold text-[#F8F8FF] block tracking-wide">JERSEY CUSTOMIZER</span>
+              <span className="text-sm font-black text-yellow-400 tracking-widest block font-display leading-none">{t("nav.brandTitle")}</span>
+              <span className="text-xs uppercase font-extrabold text-text-primary block tracking-wide">{t("nav.brandTagline")}</span>
             </div>
           </div>
 
@@ -953,40 +958,43 @@ export default function App() {
               id="nav-tab-home"
               onClick={() => setActiveTab("home")}
               className={`text-sm font-bold tracking-wide uppercase cursor-pointer hover:text-yellow-400 transition-colors ${
-                activeTab === "home" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-gray-400"
+                activeTab === "home" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-text-muted"
               }`}
             >
-              Trang Chủ
+              {t("nav.home")}
             </button>
             <button
               id="nav-tab-jerseys"
               onClick={() => setActiveTab("jerseys")}
               className={`text-sm font-bold tracking-wide uppercase cursor-pointer hover:text-yellow-400 transition-colors ${
-                activeTab === "jerseys" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-gray-400"
+                activeTab === "jerseys" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-text-muted"
               }`}
             >
-              Chọn Áo Đấu
+              {t("nav.jerseys")}
             </button>
             <button
               id="nav-tab-track"
               onClick={() => setActiveTab("track")}
               className={`text-sm font-bold tracking-wide uppercase cursor-pointer hover:text-yellow-400 transition-colors ${
-                activeTab === "track" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-gray-400"
+                activeTab === "track" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-text-muted"
               }`}
             >
-              Tra Cứu Đơn
+              {t("nav.track")}
             </button>
             <button
               id="nav-tab-team-roster"
               onClick={() => setActiveTab("team-roster")}
               className={`text-sm font-bold tracking-wide uppercase cursor-pointer hover:text-yellow-400 transition-colors ${
-                activeTab === "team-roster" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-gray-400"
+                activeTab === "team-roster" ? "text-yellow-400 border-b-2 border-yellow-500 pb-1" : "text-text-muted"
               }`}
             >
-              Danh Sách In Ấn
+              {t("nav.teamRoster")}
             </button>
-            
-            <div className="w-[1px] h-6 bg-[#1e1e2d]" />
+
+            <div className="w-[1px] h-6 bg-surface-4" />
+
+            <LanguageToggle />
+            <ThemeToggle />
 
             {isAdminLoggedIn ? (
               <div className="flex items-center gap-3">
@@ -996,11 +1004,11 @@ export default function App() {
                   className={`text-xs px-3.5 py-1.5 font-black uppercase rounded-lg border flex items-center gap-1.5 transition-all ${
                     activeTab.startsWith("admin-")
                       ? "bg-yellow-500 text-black border-yellow-500"
-                      : "bg-[#111118] text-yellow-400 border-yellow-500/30 hover:bg-black/40"
+                      : "bg-surface-3 text-yellow-400 border-yellow-500/30 hover:bg-surface-4"
                   }`}
                 >
                   <ShieldAlert className="w-3.5 h-3.5" />
-                  Quản Trị Viên
+                  {t("nav.adminPanel")}
                 </button>
                 <button
                   id="btn-admin-logout"
@@ -1009,7 +1017,7 @@ export default function App() {
                     setActiveTab("home");
                   }}
                   className="p-2 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20"
-                  title="Thoát quản trị viên"
+                  title={t("nav.adminLogoutTitle")}
                 >
                   <LogOut className="w-4 h-4" />
                 </button>
@@ -1020,59 +1028,63 @@ export default function App() {
                 onClick={() => setActiveTab("admin-login")}
                 className="text-xs tracking-wider uppercase font-extrabold text-blue-400 hover:text-blue-300 flex items-center gap-1.5 transition-colors"
               >
-                Đăng nhập Admin
+                {t("nav.adminLogin")}
               </button>
             )}
           </div>
 
           {/* Mobile responsive toggle */}
-          <button 
-            id="btn-mobile-menu"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="lg:hidden p-2 text-gray-400 hover:text-white border border-[#1e1e2d] rounded-xl bg-[#111118]"
-          >
-            {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
+          <div className="lg:hidden flex items-center gap-2">
+            <LanguageToggle />
+            <ThemeToggle />
+            <button
+              id="btn-mobile-menu"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-text-muted hover:text-text-primary border border-border-default rounded-xl bg-surface-3"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+          </div>
         </div>
 
         {/* Mobile menu panel */}
         {isMobileMenuOpen && (
-          <div className="lg:hidden mt-4 pt-4 border-t border-[#1e1e2d] flex flex-col gap-3">
+          <div className="lg:hidden mt-4 pt-4 border-t border-border-default flex flex-col gap-3">
             <button
               onClick={() => { setActiveTab("home"); setIsMobileMenuOpen(false); }}
-              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "home" ? "bg-yellow-500/10 text-yellow-400" : "text-gray-400 hover:text-[#F8F8FF]"}`}
+              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "home" ? "bg-yellow-500/10 text-yellow-400" : "text-text-muted hover:text-text-primary"}`}
             >
-              Trang Chủ
+              {t("nav.home")}
             </button>
             <button
               onClick={() => { setActiveTab("jerseys"); setIsMobileMenuOpen(false); }}
-              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "jerseys" ? "bg-yellow-500/10 text-yellow-400" : "text-gray-400 hover:text-[#F8F8FF]"}`}
+              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "jerseys" ? "bg-yellow-500/10 text-yellow-400" : "text-text-muted hover:text-text-primary"}`}
             >
-              Chọn Áo Đấu
+              {t("nav.jerseys")}
             </button>
             <button
               onClick={() => { setActiveTab("track"); setIsMobileMenuOpen(false); }}
-              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "track" ? "bg-yellow-500/10 text-yellow-400" : "text-gray-400 hover:text-[#F8F8FF]"}`}
+              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "track" ? "bg-yellow-500/10 text-yellow-400" : "text-text-muted hover:text-text-primary"}`}
             >
-              Tra Cứu Đơn
+              {t("nav.track")}
             </button>
             <button
               onClick={() => { setActiveTab("team-roster"); setIsMobileMenuOpen(false); }}
-              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "team-roster" ? "bg-yellow-500/10 text-yellow-400" : "text-gray-400 hover:text-[#F8F8FF]"}`}
+              className={`text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl tracking-wide ${activeTab === "team-roster" ? "bg-yellow-500/10 text-yellow-400" : "text-text-muted hover:text-text-primary"}`}
             >
-              Danh Sách In Ấn
+              {t("nav.teamRoster")}
             </button>
-            
-            <div className="w-full h-[1px] bg-[#1e1e2d] my-1" />
+
+            <div className="w-full h-[1px] bg-surface-4 my-1" />
 
             {isAdminLoggedIn ? (
               <>
                 <button
                   onClick={() => { setActiveTab("admin-dashboard"); setIsMobileMenuOpen(false); }}
-                  className={`text-left text-xs font-black uppercase px-3 py-2.5 rounded-xl border flex items-center gap-2 ${activeTab.startsWith("admin-") ? "bg-yellow-500 text-black border-yellow-500" : "bg-[#111118] text-yellow-400 border-yellow-500/30"}`}
+                  className={`text-left text-xs font-black uppercase px-3 py-2.5 rounded-xl border flex items-center gap-2 ${activeTab.startsWith("admin-") ? "bg-yellow-500 text-black border-yellow-500" : "bg-surface-3 text-yellow-400 border-yellow-500/30"}`}
                 >
                   <ShieldAlert className="w-4 h-4" />
-                  Khu Vực Quản Trị
+                  {t("nav.adminPanelMobile")}
                 </button>
                 <button
                   onClick={() => {
@@ -1082,15 +1094,15 @@ export default function App() {
                   }}
                   className="text-left text-xs font-semibold uppercase px-3 py-2 rounded-xl text-red-500 bg-red-500/5 hover:bg-red-500/10 border border-red-500/20"
                 >
-                  Thoát Quản Trị
+                  {t("nav.adminLogout")}
                 </button>
               </>
             ) : (
               <button
                 onClick={() => { setActiveTab("admin-login"); setIsMobileMenuOpen(false); }}
-                className="text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl text-blue-400 hover:text-white"
+                className="text-left text-sm font-semibold uppercase px-3 py-2 rounded-xl text-blue-400 hover:text-text-primary"
               >
-                Đăng nhập Admin
+                {t("nav.adminLogin")}
               </button>
             )}
           </div>
@@ -1112,15 +1124,15 @@ export default function App() {
             <section className="mb-16">
               <div className="flex justify-between items-end mb-8">
                 <div>
-                  <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">Hot Designs</span>
-                  <h2 className="text-2xl sm:text-3.5xl font-black text-[#F8F8FF] tracking-tight mt-1">Các Mẫu Áo Bán Chạy</h2>
+                  <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">{t("home.hotDesignsLabel")}</span>
+                  <h2 className="text-2xl sm:text-3.5xl font-black text-text-primary tracking-tight mt-1">{t("home.hotDesignsTitle")}</h2>
                 </div>
                 <button
                   id="btn-view-all"
                   onClick={() => setActiveTab("jerseys")}
                   className="text-xs sm:text-sm font-bold text-yellow-400 hover:text-yellow-300 flex items-center gap-1.5 select-none transition-colors"
                 >
-                  Xem thêm các đội tuyển
+                  {t("home.viewMore")}
                   <ChevronRight className="w-4 h-4" />
                 </button>
               </div>
@@ -1145,34 +1157,34 @@ export default function App() {
             </section>
 
             {/* How It Works Section */}
-            <section className="mb-16 py-12 px-8 bg-[#111118]/40 border border-[#1e1e2d] rounded-3xl relative">
-              <h3 className="text-xl sm:text-2xl font-black text-[#F8F8FF] tracking-tight mb-8 text-center">
-                Quy Trình Cá Nhân Hóa Đơn Giản
+            <section className="mb-16 py-12 px-8 bg-surface-3/40 border border-border-default rounded-3xl relative">
+              <h3 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight mb-8 text-center">
+                {t("home.howItWorksTitle")}
               </h3>
-              
+
               <div className="grid sm:grid-cols-3 gap-8">
                 {[
                   {
                     step: "01",
-                    title: "Chọn Mẫu Áo Đấu",
-                    desc: "Chọn thiết kế sân nhà hoặc sân khách lấy cảm hứng từ các đội tuyển tham dự World Cup 2026."
+                    title: t("home.step1Title"),
+                    desc: t("home.step1Desc"),
                   },
                   {
                     step: "02",
-                    title: "Tùy Biến 2.5D Chân Thực",
-                    desc: "Nhập Tên và Số áo yêu thích của bạn. Trải nghiệm thay đổi ngay lập tức trên mô hình 2.5D cao cấp."
+                    title: t("home.step2Title"),
+                    desc: t("home.step2Desc"),
                   },
                   {
                     step: "03",
-                    title: "Thanh Toán & Nhận Áo",
-                    desc: "Chọn hình thức thanh toán COD hoặc trực tuyến. Áo đấu của bạn sẽ được in ấn sắc nét và vận chuyển nhanh chóng."
-                  }
+                    title: t("home.step3Title"),
+                    desc: t("home.step3Desc"),
+                  },
                 ].map((s, idx) => (
-                  <div key={idx} className="relative bg-[#0d0d14] p-6 rounded-2xl border border-[#1e1e2d]/60 flex flex-col justify-between">
+                  <div key={idx} className="relative bg-surface-2 p-6 rounded-2xl border border-border-default/60 flex flex-col justify-between">
                     <div>
                       <span className="text-3xl font-mono font-black text-yellow-500/30 tracking-tight block mb-4">{s.step}</span>
-                      <h4 className="text-[#F8F8FF] text-base font-bold mb-3">{s.title}</h4>
-                      <p className="text-gray-400 text-xs leading-relaxed">{s.desc}</p>
+                      <h4 className="text-text-primary text-base font-bold mb-3">{s.title}</h4>
+                      <p className="text-text-muted text-xs leading-relaxed">{s.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -1185,30 +1197,30 @@ export default function App() {
         {activeTab === "jerseys" && (
           <div>
             <div className="mb-8">
-              <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">Danh Mục Áo Đấu</span>
-              <h1 className="text-2xl sm:text-4xl font-black text-[#F8F8FF] tracking-tight mt-1">Chọn Đội Tuyển Yêu Thích</h1>
+              <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">{t("jerseys.categoryLabel")}</span>
+              <h1 className="text-2xl sm:text-4xl font-black text-text-primary tracking-tight mt-1">{t("jerseys.title")}</h1>
             </div>
 
             {/* Filter controls */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-[#111118] border border-[#1e1e2d] p-4 rounded-2xl">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 bg-surface-3 border border-border-default p-4 rounded-2xl">
               {/* Search */}
               <div className="relative flex-1 max-w-md">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                 <input
                   type="text"
-                  placeholder="Tìm kiếm quốc gia / tên áo..."
+                  placeholder={t("jerseys.searchPlaceholder")}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-[#0d0d14] text-[#F8F8FF] placeholder-gray-500 pl-10 pr-4 py-2 rounded-xl text-sm border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 transition-colors"
+                  className="w-full bg-surface-2 text-text-primary placeholder-text-muted pl-10 pr-4 py-2 rounded-xl text-sm border border-border-default focus:outline-none focus:border-yellow-500 transition-colors"
                 />
               </div>
 
               {/* Badges tabs */}
               <div className="flex flex-wrap items-center gap-2">
                 {[
-                  { value: "all", label: "Tất Cả" },
-                  { value: "home", label: "Áo Sân Nhà" },
-                  { value: "away", label: "Áo Sân Khách" },
+                  { value: "all", label: t("jerseys.filterAll") },
+                  { value: "home", label: t("jerseys.filterHome") },
+                  { value: "away", label: t("jerseys.filterAway") },
                 ].map((tab) => (
                   <button
                     key={tab.value}
@@ -1216,7 +1228,7 @@ export default function App() {
                     className={`px-4 py-2 text-xs font-bold uppercase rounded-xl border transition-all cursor-pointer ${
                       jerseyTypeFilter === tab.value
                         ? "bg-yellow-500 text-black border-yellow-500 shadow-md shadow-yellow-500/10"
-                        : "bg-black/40 text-gray-400 border-[#1e1e2d] hover:bg-black/80"
+                        : "bg-surface-base/40 text-text-muted border-border-default hover:bg-surface-base/80"
                     }`}
                   >
                     {tab.label}
@@ -1233,12 +1245,12 @@ export default function App() {
                 ))}
               </div>
             ) : filteredProducts.length === 0 ? (
-              <div className="text-center py-16 px-4 bg-[#111118]/30 rounded-3xl border border-[#1e1e2d] max-w-md mx-auto">
-                <div className="p-4 bg-[#1e1e2d]/60 rounded-full w-fit mx-auto mb-4 border border-zinc-600">
+              <div className="text-center py-16 px-4 bg-surface-3/30 rounded-3xl border border-border-default max-w-md mx-auto">
+                <div className="p-4 bg-surface-4/60 rounded-full w-fit mx-auto mb-4 border border-zinc-600">
                   <Shirt className="w-8 h-8 text-yellow-400" />
                 </div>
-                <h4 className="text-[#F8F8FF] text-base font-bold mb-2">Không tìm thấy sản phẩm phù hợp</h4>
-                <p className="text-gray-400 text-xs">Vui lòng kiểm tra lại bộ lọc hoặc gõ tên nước khác.</p>
+                <h4 className="text-text-primary text-base font-bold mb-2">{t("jerseys.emptyTitle")}</h4>
+                <p className="text-text-muted text-xs">{t("jerseys.emptyDesc")}</p>
               </div>
             ) : (
               <>
@@ -1262,9 +1274,9 @@ export default function App() {
                         setCurrentPage(prev => Math.max(1, prev - 1));
                         window.scrollTo({ top: 300, behavior: "smooth" });
                       }}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold uppercase border border-[#1e1e2d] bg-[#111118] text-zinc-400 hover:text-white hover:border-yellow-500/40 disabled:opacity-40 disabled:hover:text-zinc-400 disabled:hover:border-[#1e1e2d] transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold uppercase border border-border-default bg-surface-3 text-text-muted hover:text-text-primary hover:border-yellow-500/40 disabled:opacity-40 disabled:hover:text-text-muted disabled:hover:border-border-default transition-all cursor-pointer disabled:cursor-not-allowed select-none"
                     >
-                      Trước
+                      {t("jerseys.paginationPrev")}
                     </button>
 
                     {Array.from({ length: totalPages }).map((_, idx) => {
@@ -1280,7 +1292,7 @@ export default function App() {
                           className={`w-9 h-9 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer select-none ${
                             currentPage === pg
                               ? "bg-yellow-500 text-black shadow-md shadow-yellow-500/15 font-black"
-                              : "bg-[#111118] hover:bg-black text-zinc-400 hover:text-white border border-[#1e1e2d] hover:border-yellow-500/20"
+                              : "bg-surface-3 hover:bg-surface-base text-text-muted hover:text-text-primary border border-border-default hover:border-yellow-500/20"
                           }`}
                         >
                           {pg}
@@ -1295,9 +1307,9 @@ export default function App() {
                         setCurrentPage(prev => Math.min(totalPages, prev + 1));
                         window.scrollTo({ top: 300, behavior: "smooth" });
                       }}
-                      className="px-3.5 py-2 rounded-xl text-xs font-bold uppercase border border-[#1e1e2d] bg-[#111118] text-zinc-400 hover:text-white hover:border-yellow-500/40 disabled:opacity-40 disabled:hover:text-zinc-400 disabled:hover:border-[#1e1e2d] transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold uppercase border border-border-default bg-surface-3 text-text-muted hover:text-text-primary hover:border-yellow-500/40 disabled:opacity-40 disabled:hover:text-text-muted disabled:hover:border-border-default transition-all cursor-pointer disabled:cursor-not-allowed select-none"
                     >
-                      Sau
+                      {t("jerseys.paginationNext")}
                     </button>
                   </div>
                 )}
@@ -1312,41 +1324,41 @@ export default function App() {
             {/* Nav back trigger */}
             <button
               onClick={() => setActiveTab("jerseys")}
-              className="text-xs font-bold text-gray-400 hover:text-white flex items-center gap-1.5 select-none mb-6 group cursor-pointer bg-[#111118] py-2 px-4 rounded-xl border border-[#1e1e2d]"
+              className="text-xs font-bold text-text-muted hover:text-text-primary flex items-center gap-1.5 select-none mb-6 group cursor-pointer bg-surface-3 py-2 px-4 rounded-xl border border-border-default"
             >
               <RotateCcw className="w-4 h-4" />
-              Quay lại chọn mẫu
+              {t("customize.backToList")}
             </button>
 
             {selectedProduct ? (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
                 {/* LEFT CONSOLE Custom Form */}
-                <div className="lg:col-span-5 bg-[#111118] border border-[#1e1e2d] p-6 rounded-3xl shadow-xl">
-                  <h2 className="text-xl sm:text-2xl font-black text-[#F8F8FF] tracking-tight mb-4 flex items-center gap-2">
+                <div className="lg:col-span-5 bg-surface-3 border border-border-default p-6 rounded-3xl shadow-xl">
+                  <h2 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight mb-4 flex items-center gap-2">
                     <Sparkles className="w-5 h-5 text-yellow-400" />
-                    Cá Nhân Hóa Áo Đấu
+                    {t("customize.sectionTitle")}
                   </h2>
-                  <p className="text-gray-400 text-xs leading-normal mb-6">
-                    Mẫu áo cao cấp: <span className="text-[#F8F8FF] font-semibold">{selectedProduct.name}</span> <br />
-                    Đơn giá: <span className="text-yellow-400 font-mono font-bold">{selectedProduct.price.toLocaleString("vi-VN")} ₫</span>
+                  <p className="text-text-muted text-xs leading-normal mb-6">
+                    {t("customize.productPrefix")} <span className="text-text-primary font-semibold">{selectedProduct.name}</span> <br />
+                    {t("customize.priceLabel")} <span className="text-yellow-400 font-mono font-bold">{selectedProduct.price.toLocaleString("vi-VN")} ₫</span>
                   </p>
 
                   <div className="flex flex-col gap-5">
                     
                     {/* Toggle Mode */}
-                    <div className="grid grid-cols-2 gap-2 bg-[#0c0c14] p-1 rounded-2xl border border-zinc-800">
+                    <div className="grid grid-cols-2 gap-2 bg-surface-2 p-1 rounded-2xl border border-border-default">
                       <button
                         type="button"
                         onClick={() => setCustomizeMode("individual")}
                         className={`py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           customizeMode === "individual"
                             ? "bg-yellow-500 text-black shadow-md shadow-yellow-500/10"
-                            : "text-gray-400 hover:text-white hover:bg-zinc-900/40"
+                            : "text-text-muted hover:text-text-primary hover:bg-surface-3/60"
                         }`}
                       >
                         <Shirt className="w-3.5 h-3.5 shrink-0" />
-                        Đặt Cá Nhân
+                        {t("customize.modeIndividual")}
                       </button>
                       <button
                         type="button"
@@ -1354,11 +1366,11 @@ export default function App() {
                         className={`py-3 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
                           customizeMode === "team"
                             ? "bg-yellow-500 text-black shadow-md shadow-yellow-500/10"
-                            : "text-gray-400 hover:text-white hover:bg-zinc-900/40"
+                            : "text-text-muted hover:text-text-primary hover:bg-surface-3/60"
                         }`}
                       >
                         <Users className="w-3.5 h-3.5 shrink-0" />
-                        Đặt Cho Đội {teamRoster.length >= 20 ? "🔥" : ">20 Người"}
+                        {t("customize.modeTeam")} {teamRoster.length >= 20 ? t("customize.teamThresholdFire") : t("customize.teamThreshold")}
                       </button>
                     </div>
 
@@ -1371,34 +1383,34 @@ export default function App() {
                             <Shirt className="w-4 h-4" />
                           </div>
                           <div>
-                            <h4 className="text-sm font-bold text-yellow-400">Phiên bản Player chính thức</h4>
-                            <p className="text-xs text-gray-400 mt-1 leading-relaxed">
-                              Áo đấu được sản xuất chuẩn chỉnh theo thiết kế thi đấu chính thức của đội tuyển. Bạn chỉ cần chọn kích thước và điền thông tin in áo (Tên & Số) dưới đây.
+                            <h4 className="text-sm font-bold text-yellow-400">{t("customize.officialBadge")}</h4>
+                            <p className="text-xs text-text-muted mt-1 leading-relaxed">
+                              {t("customize.officialDesc")}
                             </p>
                           </div>
                         </div>
 
-                        <div className="h-[1px] bg-zinc-800/80" />
+                        <div className="h-[1px] bg-border-default/80" />
 
                         {/* NAME IN HẬU & SỐ ÁO */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-1.5">
-                              Tên in áo (Tối đa 12)
+                            <label className="text-text-muted text-xs font-black uppercase tracking-wider block mb-1.5">
+                              {t("customize.nicknameLabel")}
                             </label>
                             <input
                               type="text"
                               maxLength={12}
                               value={nickname}
                               onChange={(e) => setNickname(e.target.value.toUpperCase())}
-                              placeholder="MESSY"
-                              className="w-full bg-black/40 text-[#F8F8FF] font-sans font-black uppercase px-3 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-sm tracking-wide"
+                              placeholder={t("customize.nicknamePlaceholder")}
+                              className="w-full bg-surface-base/40 text-text-primary font-sans font-black uppercase px-3 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-sm tracking-wide"
                             />
                           </div>
 
                           <div>
-                            <label className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-1.5">
-                              Số in sau áo (1–99)
+                            <label className="text-text-muted text-xs font-black uppercase tracking-wider block mb-1.5">
+                              {t("customize.numberLabel")}
                             </label>
                             <input
                               type="number"
@@ -1406,7 +1418,7 @@ export default function App() {
                               max={99}
                               value={jerseyNumber}
                               onChange={(e) => setJerseyNumber(Math.min(99, Math.max(1, Number(e.target.value) || 10)))}
-                              className="w-full bg-black/40 text-[#F8F8FF] font-mono font-black px-3 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-sm"
+                              className="w-full bg-surface-base/40 text-text-primary font-mono font-black px-3 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-sm"
                             />
                           </div>
                         </div>
@@ -1414,13 +1426,13 @@ export default function App() {
                         {/* SIZE & QUANTITY */}
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-1.5">
-                              Kích thước áo Size
+                            <label className="text-text-muted text-xs font-black uppercase tracking-wider block mb-1.5">
+                              {t("customize.sizeLabel")}
                             </label>
                             <select
                               value={selectedSize}
                               onChange={(e) => setSelectedSize(e.target.value as JerseySize)}
-                              className="w-full bg-[#0d0d14] text-[#F8F8FF] font-black px-3 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-sm cursor-pointer"
+                              className="w-full bg-surface-2 text-text-primary font-black px-3 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-sm cursor-pointer"
                             >
                               {["S", "M", "L", "XL", "XXL", "XXXL"].map((sz) => (
                                 <option key={sz} value={sz}>{sz}</option>
@@ -1429,24 +1441,24 @@ export default function App() {
                           </div>
 
                           <div>
-                            <label className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-1.5">
-                              Số lượng đặt
+                            <label className="text-text-muted text-xs font-black uppercase tracking-wider block mb-1.5">
+                              {t("customize.quantityLabel")}
                             </label>
                             <div className="flex items-center">
                               <button
                                 type="button"
                                 onClick={() => setSelectedQuantity(Math.max(1, selectedQuantity - 1))}
-                                className="bg-[#0a0a0f] text-gray-300 hover:text-[#F8F8FF] px-3.5 py-2.5 border border-[#1e1e2d] rounded-l-xl text-sm font-black cursor-pointer select-none"
+                                className="bg-surface-1 text-text-secondary hover:text-text-primary px-3.5 py-2.5 border border-border-default rounded-l-xl text-sm font-black cursor-pointer select-none"
                               >
                                 -
                               </button>
-                              <span className="flex-grow text-center bg-black/40 border-t border-b border-[#1e1e2d] py-2.5 text-sm font-bold font-mono">
+                              <span className="flex-grow text-center bg-surface-base/40 border-t border-b border-border-default py-2.5 text-sm font-bold font-mono">
                                 {selectedQuantity}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => setSelectedQuantity(Math.min(20, selectedQuantity + 1))}
-                                className="bg-[#0a0a0f] text-gray-300 hover:text-[#F8F8FF] px-3.5 py-2.5 border border-[#1e1e2d] rounded-r-xl text-sm font-black cursor-pointer select-none"
+                                className="bg-surface-1 text-text-secondary hover:text-text-primary px-3.5 py-2.5 border border-border-default rounded-r-xl text-sm font-black cursor-pointer select-none"
                               >
                                 +
                               </button>
@@ -1460,23 +1472,23 @@ export default function App() {
                       <>
                         {/* Mass-Discount Explanation */}
                         <div className="p-4 rounded-2xl bg-gradient-to-br from-yellow-500/10 via-amber-600/5 to-amber-500/10 border border-yellow-500/20 flex flex-col gap-2 relative overflow-hidden">
-                          <span className="text-yellow-400 text-[9px] font-black uppercase tracking-wider block">CHƯƠNG TRÌNH IN ÁO ĐỒNG ĐỘI WORLD CUP 2026</span>
-                          <h4 className="text-xs sm:text-sm font-black text-white flex items-center gap-1.5">
+                          <span className="text-yellow-400 text-[9px] font-black uppercase tracking-wider block">{t("customize.bulkProgramLabel")}</span>
+                          <h4 className="text-xs sm:text-sm font-black text-text-primary flex items-center gap-1.5">
                             <Coins className="w-4.5 h-4.5 text-yellow-400 shrink-0" />
-                            Ưu Đãi Đặt Khối Lượng Lớn (-15%)
+                            {t("customize.bulkProgramTitle")}
                           </h4>
-                          <p className="text-[11px] text-zinc-400 leading-relaxed">
-                            Cá nhân hóa độc bản cho từng thành viên của đội (họ tên & số áo in nhiệt sắc nét). Tự động giảm giá <strong>15% trên từng sản phẩm</strong> khi danh sách đạt từ <strong>20 người trở lên</strong>!
+                          <p className="text-[11px] text-text-muted leading-relaxed">
+                            {t("customize.bulkProgramDesc1")} <strong>{t("customize.bulkProgramDesc2")}</strong> {t("customize.bulkProgramDesc3")} <strong>{t("customize.bulkProgramDesc4")}</strong>{t("customize.bulkProgramDesc5")}
                           </p>
-                          
+
                           {/* Progress bar and counter */}
-                          <div className="bg-black/40 p-3 rounded-xl border border-zinc-800/80 mt-1">
+                          <div className="bg-surface-base/40 p-3 rounded-xl border border-border-default/80 mt-1">
                             <div className="flex justify-between items-baseline text-[10.5px] font-bold mb-1.5">
-                              <span className="text-[#F8F8FF]">Tiến độ danh sách đội:</span>
-                              <span className="text-yellow-400 font-mono font-black">{teamRoster.length} / 20 đặt áo</span>
+                              <span className="text-text-primary">{t("customize.teamProgressLabel")}</span>
+                              <span className="text-yellow-400 font-mono font-black">{t("customize.teamProgressUnit", { count: teamRoster.length })}</span>
                             </div>
-                            <div className="w-full bg-[#1e1e2a] h-1.5 rounded-full overflow-hidden">
-                              <div 
+                            <div className="w-full bg-surface-4 h-1.5 rounded-full overflow-hidden">
+                              <div
                                 className={`h-full transition-all duration-300 ${teamRoster.length >= 20 ? "bg-green-500" : "bg-yellow-500"}`}
                                 style={{ width: `${Math.min(100, (teamRoster.length / 20) * 100)}%` }}
                               />
@@ -1484,11 +1496,11 @@ export default function App() {
                             {teamRoster.length >= 20 ? (
                               <div className="mt-2 text-green-400 text-[10.5px] font-black flex items-center gap-1">
                                 <CheckCircle2 className="w-3.5 h-3.5 animate-bounce shrink-0" />
-                                🎉 Đã kích hoạt giá sỉ Đội Đạt Chuẩn Giảm 15%!
+                                {t("customize.teamProgressDoneShort")}
                               </div>
                             ) : (
-                              <div className="mt-2 text-zinc-400 text-[10px]">
-                                * Hãy thêm tiếp <strong>{20 - teamRoster.length} thành viên</strong> để tự động giảm 15% tổng đơn đặt.
+                              <div className="mt-2 text-text-muted text-[10px]">
+                                {t("customize.teamProgressLeftPrefix")} <strong>{t("customize.teamProgressLeftCount", { count: 20 - teamRoster.length })}</strong> {t("customize.teamProgressLeftSuffix")}
                               </div>
                             )}
                           </div>
@@ -1499,15 +1511,15 @@ export default function App() {
                           <button
                             type="button"
                             onClick={downloadExcelTemplate}
-                            className="flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-zinc-800 bg-[#0d0d14]/70 hover:bg-[#11111a] hover:border-zinc-700 text-zinc-300 hover:text-white text-[11px] font-bold transition-all select-none cursor-pointer"
+                            className="flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-border-default bg-surface-2/70 hover:bg-surface-3 hover:border-border-strong text-text-secondary hover:text-text-primary text-[11px] font-bold transition-all select-none cursor-pointer"
                           >
                             <FileSpreadsheet className="w-4 h-4 text-green-400 shrink-0 animate-pulse" />
-                            Tải Bản Excel Mẫu
+                            {t("customize.downloadExcelTemplate")}
                           </button>
 
                           <label className="relative flex items-center justify-center gap-1.5 py-3 px-2 rounded-xl border border-yellow-500/20 bg-yellow-500/5 hover:bg-yellow-500/10 hover:border-yellow-500/40 text-yellow-400 hover:text-yellow-300 text-[11px] font-black tracking-wide transition-all cursor-pointer text-center select-none">
                             <Plus className="w-4 h-4 shrink-0" />
-                            Tải Danh Sách Lên
+                            {t("customize.uploadList")}
                             <input
                               type="file"
                               accept=".xlsx, .xls"
@@ -1518,17 +1530,17 @@ export default function App() {
                         </div>
 
                         {/* Adding manually form header inside */}
-                        <div className="bg-[#0c0c14] border border-[#1e1e2d] p-3.5 rounded-2xl flex flex-col gap-2.5">
-                          <span className="text-zinc-400 text-[10.5px] font-black uppercase tracking-wider block">Thêm thành viên thủ công</span>
+                        <div className="bg-surface-2 border border-border-default p-3.5 rounded-2xl flex flex-col gap-2.5">
+                          <span className="text-text-muted text-[10.5px] font-black uppercase tracking-wider block">{t("customize.addPlayerManual")}</span>
                           <div className="grid grid-cols-12 gap-2">
                             <div className="col-span-12 md:col-span-5">
                               <input
                                 type="text"
-                                placeholder="In Tên (Ví dụ: QUANG HAI)"
+                                placeholder={t("customize.namePlaceholder")}
                                 value={newPlayerName}
                                 maxLength={12}
                                 onChange={(e) => setNewPlayerName(e.target.value.toUpperCase())}
-                                className="w-full bg-black/60 text-[#F8F8FF] font-sans font-extrabold placeholder-zinc-700 px-3 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs uppercase text-left font-display"
+                                className="w-full bg-surface-base/60 text-text-primary font-sans font-extrabold placeholder-text-muted px-3 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs uppercase text-left font-display"
                               />
                             </div>
                             <div className="col-span-6 md:col-span-3">
@@ -1536,17 +1548,17 @@ export default function App() {
                                 type="number"
                                 min={1}
                                 max={99}
-                                placeholder="Số áo"
+                                placeholder={t("customize.numberPlaceholder")}
                                 value={newPlayerName === "" ? "" : newPlayerNumber}
                                 onChange={(e) => setNewPlayerNumber(Math.min(99, Math.max(1, Number(e.target.value) || 10)))}
-                                className="w-full bg-black/60 text-[#F8F8FF] font-mono font-black px-2.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs text-center"
+                                className="w-full bg-surface-base/60 text-text-primary font-mono font-black px-2.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs text-center"
                               />
                             </div>
                             <div className="col-span-6 md:col-span-4 flex gap-1.5">
                               <select
                                 value={newPlayerSize}
                                 onChange={(e) => setNewPlayerSize(e.target.value as JerseySize)}
-                                className="flex-grow bg-black/60 text-[#F8F8FF] font-black px-1.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs cursor-pointer text-center"
+                                className="flex-grow bg-surface-base/60 text-text-primary font-black px-1.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs cursor-pointer text-center"
                               >
                                 {["S", "M", "L", "XL", "XXL", "XXXL"].map((sz) => (
                                   <option key={sz} value={sz}>{sz}</option>
@@ -1556,7 +1568,7 @@ export default function App() {
                                 type="button"
                                 onClick={handleAddPlayerManually}
                                 className="p-2.5 bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold rounded-xl transition-all cursor-pointer flex items-center justify-center shrink-0 select-none shadow shadow-yellow-500/20"
-                                title="Thêm cầu thủ"
+                                title={t("customize.addPlayerTitle")}
                               >
                                 <Plus className="w-4 h-4 text-black" />
                               </button>
@@ -1567,33 +1579,33 @@ export default function App() {
                         {/* List/Table view scrollable of current customized members */}
                         <div className="flex flex-col gap-2">
                           <div className="flex justify-between items-baseline">
-                            <span className="text-zinc-400 text-[10px] font-black uppercase tracking-wider block">
-                              Danh Sách In Ấn ({teamRoster.length} Cầu Thủ)
+                            <span className="text-text-muted text-[10px] font-black uppercase tracking-wider block">
+                              {t("customize.rosterTitle", { count: teamRoster.length })}
                             </span>
                             {teamRoster.length > 0 && (
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (confirm("Xóa sạch toàn bộ danh sách cầu thủ hiện tại?")) {
+                                  if (confirm(t("alerts.rosterClearConfirm"))) {
                                     setTeamRoster([]);
                                     setActivePlayerIndex(0);
                                   }
                                 }}
                                 className="text-red-400 hover:text-red-300 text-[9px] font-bold uppercase cursor-pointer select-none"
                               >
-                                Xóa sạch
+                                {t("customize.clearAll")}
                               </button>
                             )}
                           </div>
 
                           {teamRoster.length === 0 ? (
-                            <div className="bg-[#0c0c14] border border-[#1e1e2d] border-dashed rounded-2xl p-6 text-center text-zinc-500 text-xs leading-normal">
-                              <Users className="w-6 h-6 text-zinc-700 mx-auto mb-2" />
-                              Chưa có thành viên nào được thêm. <br />
-                              Tải danh sách Excel lên hoặc nhập tay ở mục trên.
+                            <div className="bg-surface-2 border border-border-default border-dashed rounded-2xl p-6 text-center text-text-muted text-xs leading-normal">
+                              <Users className="w-6 h-6 text-text-muted mx-auto mb-2" />
+                              {t("customize.rosterEmptyLine1")} <br />
+                              {t("customize.rosterEmptyLine2")}
                             </div>
                           ) : (
-                            <div className="max-h-[220px] overflow-y-auto border border-[#1e1e2d] rounded-2xl bg-[#09090e] text-xs divide-y divide-[#1e1e2d]/50">
+                            <div className="max-h-[220px] overflow-y-auto border border-border-default rounded-2xl bg-surface-1 text-xs divide-y divide-border-default/50">
                               {teamRoster.map((player, idx) => {
                                 const isSelectedPreview = idx === activePlayerIndex;
                                 return (
@@ -1608,30 +1620,30 @@ export default function App() {
                                   >
                                     <div className="flex items-center gap-2.5">
                                       <span className={`w-5 h-5 rounded-full flex items-center justify-center font-mono font-black text-[9px] ${
-                                        isSelectedPreview ? "bg-yellow-500 text-black" : "bg-zinc-800 text-zinc-400"
+                                        isSelectedPreview ? "bg-yellow-500 text-black" : "bg-surface-4 text-text-muted"
                                       }`}>
                                         {idx + 1}
                                       </span>
                                       <div>
-                                        <p className="font-extrabold text-[#F8F8FF] uppercase tracking-wide text-xs">
+                                        <p className="font-extrabold text-text-primary uppercase tracking-wide text-xs">
                                           {player.name}
                                         </p>
-                                        <p className="text-[10px] text-zinc-500 font-mono mt-0.5">
-                                          Số áo: <strong className="text-zinc-300">{player.number}</strong> • Size: <strong className="text-zinc-300 font-mono">{player.size}</strong>
+                                        <p className="text-[10px] text-text-muted font-mono mt-0.5">
+                                          {t("customize.rosterJerseyNumLabel")} <strong className="text-text-secondary">{player.number}</strong> • {t("customize.rosterSizeLabel")} <strong className="text-text-secondary font-mono">{player.size}</strong>
                                         </p>
                                       </div>
                                     </div>
                                     <div className="flex items-center gap-2">
                                       <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded ${
-                                        isSelectedPreview ? "bg-yellow-500/20 text-yellow-500" : "bg-black text-zinc-600"
+                                        isSelectedPreview ? "bg-yellow-500/20 text-yellow-500" : "bg-surface-base text-text-muted"
                                       }`}>
-                                        {isSelectedPreview ? "Đang Xem 3D" : "Xem 3D"}
+                                        {isSelectedPreview ? t("customize.rosterViewing") : t("customize.rosterView")}
                                       </span>
                                       <button
                                         type="button"
                                         onClick={(e) => handleRemovePlayer(player.id, e)}
-                                        className="p-1.5 hover:bg-red-500/10 text-zinc-600 hover:text-red-500 rounded-lg transition-colors cursor-pointer select-none"
-                                        title="Xóa thành viên"
+                                        className="p-1.5 hover:bg-red-500/10 text-text-muted hover:text-red-500 rounded-lg transition-colors cursor-pointer select-none"
+                                        title={t("customize.rosterRemove")}
                                       >
                                         <Trash2 className="w-3.5 h-3.5" />
                                       </button>
@@ -1645,57 +1657,57 @@ export default function App() {
                       </>
                     )}
 
-                    <div className="h-[1px] bg-zinc-800/85" />
+                    <div className="h-[1px] bg-border-default/85" />
 
                     {/* SHIPPINGS DETAIL INFO */}
                     <div className="flex flex-col gap-4">
-                      <span className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-0.5">
-                        Quy trình bàn giao & Địa chỉ nhận hàng
+                      <span className="text-text-muted text-xs font-black uppercase tracking-wider block mb-0.5">
+                        {t("customize.shippingSection")}
                       </span>
 
                       {/* Họ tên */}
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Họ và Tên khách hàng (*)</label>
+                        <label className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{t("customize.fullNameLabel")}</label>
                         <input
                           type="text"
-                          placeholder="Nhập Họ và Tên đầy đủ"
+                          placeholder={t("customize.fullNamePlaceholder")}
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
-                          className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs"
+                          className="w-full bg-surface-base/40 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs"
                         />
                         {formErrors.fullName && <p className="text-red-500 text-[10px] mt-1 font-bold">{formErrors.fullName}</p>}
                       </div>
 
                       {/* Số điện thoại */}
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Số điện thoại di động (*)</label>
+                        <label className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{t("customize.phoneLabel")}</label>
                         <div className="flex items-stretch gap-2">
-                          <div className="flex items-center gap-1.5 bg-zinc-900/90 hover:bg-black px-3.5 rounded-xl border border-[#1e1e2d] text-xs font-mono text-zinc-300 select-none">
+                          <div className="flex items-center gap-1.5 bg-surface-3/90 hover:bg-surface-base px-3.5 rounded-xl border border-border-default text-xs font-mono text-text-secondary select-none">
                             <span className="text-sm">🇻🇳</span>
-                            <span className="font-extrabold text-zinc-400">+84</span>
+                            <span className="font-extrabold text-text-muted">+84</span>
                           </div>
                           <input
                             type="text"
-                            placeholder="Nhập số điện thoại (ví dụ: 0907281361 hoặc 907281361)"
+                            placeholder={t("customize.phonePlaceholder")}
                             value={phone}
                             onChange={(e) => {
                               const cleaned = e.target.value.replace(/[^0-9]/g, "");
                               setPhone(cleaned);
                             }}
-                            className="flex-1 bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs font-mono"
+                            className="flex-1 bg-surface-base/40 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs font-mono"
                           />
                         </div>
                         {formErrors.phone && <p className="text-red-500 text-[10px] mt-1 font-bold">{formErrors.phone}</p>}
                       </div>
 
                       {/* Address Fields */}
-                      <div className="border border-zinc-800/60 bg-black/20 p-3.5 rounded-2xl flex flex-col gap-3">
-                        <span className="text-[10.5px] text-zinc-400 font-bold uppercase tracking-wider block mb-0.5">Địa chỉ giao hàng</span>
-                        
+                      <div className="border border-border-default/60 bg-surface-base/20 p-3.5 rounded-2xl flex flex-col gap-3">
+                        <span className="text-[10.5px] text-text-muted font-bold uppercase tracking-wider block mb-0.5">{t("customize.addressLabel")}</span>
+
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {/* Tỉnh / Thành phố */}
                           <div className="flex flex-col gap-1">
-                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Tỉnh / Thành phố (*)</label>
+                            <label className="text-[9px] text-text-muted font-bold uppercase">{t("customize.provinceLabel")}</label>
                             <select
                               value={addressProvince}
                               onChange={(e) => {
@@ -1703,11 +1715,11 @@ export default function App() {
                                 setAddressDistrict("");
                                 setAddressWard("");
                               }}
-                              className="w-full bg-black text-[#F8F8FF] px-3 py-2 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs cursor-pointer"
+                              className="w-full bg-surface-base text-text-primary px-3 py-2 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs cursor-pointer"
                             >
-                              <option value="" disabled>Chọn Tỉnh / Thành phố</option>
+                              <option value="" disabled>{t("customize.provincePlaceholder")}</option>
                               {PROVINCES_VN.map((p) => (
-                                <option key={p} value={p} className="bg-zinc-950">{p}</option>
+                                <option key={p} value={p} className="bg-surface-1">{p}</option>
                               ))}
                             </select>
                             {formErrors.addressProvince && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressProvince}</p>}
@@ -1715,7 +1727,7 @@ export default function App() {
 
                           {/* Quận / Huyện */}
                           <div className="flex flex-col gap-1">
-                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Quận / Huyện (*)</label>
+                            <label className="text-[9px] text-text-muted font-bold uppercase">{t("customize.districtLabel")}</label>
                             {addressProvince && DISTRICTS_BY_PROVINCE[addressProvince] ? (
                               <select
                                 value={addressDistrict}
@@ -1723,21 +1735,21 @@ export default function App() {
                                   setAddressDistrict(e.target.value);
                                   setAddressWard("");
                                 }}
-                                className="w-full bg-black text-[#F8F8FF] px-3 py-2 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs cursor-pointer"
+                                className="w-full bg-surface-base text-text-primary px-3 py-2 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs cursor-pointer"
                               >
-                                <option value="" disabled>Chọn Quận / Huyện</option>
+                                <option value="" disabled>{t("customize.districtSelectPlaceholder")}</option>
                                 {DISTRICTS_BY_PROVINCE[addressProvince].map((d) => (
-                                  <option key={d} value={d} className="bg-zinc-950">{d}</option>
+                                  <option key={d} value={d} className="bg-surface-1">{d}</option>
                                 ))}
                               </select>
                             ) : (
                               <input
                                 type="text"
-                                placeholder={addressProvince ? "Nhập Quận / Huyện" : "Chọn Tỉnh/TP trước"}
+                                placeholder={addressProvince ? t("customize.districtPlaceholder") : t("customize.districtPlaceholderEmpty")}
                                 disabled={!addressProvince}
                                 value={addressDistrict}
                                 onChange={(e) => setAddressDistrict(e.target.value)}
-                                className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="w-full bg-surface-base/40 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                               />
                             )}
                             {formErrors.addressDistrict && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressDistrict}</p>}
@@ -1747,15 +1759,15 @@ export default function App() {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           {/* Phường / Xã */}
                           <div className="flex flex-col gap-1">
-                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Phường / Xã (*)</label>
+                            <label className="text-[9px] text-text-muted font-bold uppercase">{t("customize.wardLabel")}</label>
                             <input
                               type="text"
-                              placeholder={addressDistrict ? "Nhập Phường/Xã/Thị trấn" : "Chọn Quận/Huyện trước"}
+                              placeholder={addressDistrict ? t("customize.wardPlaceholder") : t("customize.wardPlaceholderEmpty")}
                               disabled={!addressDistrict}
                               value={addressWard}
                               onChange={(e) => setAddressWard(e.target.value)}
                               list={`wards-list-${addressProvince}-${addressDistrict}`}
-                              className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                              className="w-full bg-surface-base/40 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
                             />
                             <datalist id={`wards-list-${addressProvince}-${addressDistrict}`}>
                               {addressDistrict === "Quận 1" && [
@@ -1779,13 +1791,13 @@ export default function App() {
 
                           {/* Địa chỉ chi tiết */}
                           <div className="flex flex-col gap-1">
-                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Địa chỉ chi tiết (*)</label>
+                            <label className="text-[9px] text-text-muted font-bold uppercase">{t("customize.detailLabel")}</label>
                             <input
                               type="text"
-                              placeholder="Số nhà, tên đường, thôn/xóm..."
+                              placeholder={t("customize.detailPlaceholder")}
                               value={addressDetail}
                               onChange={(e) => setAddressDetail(e.target.value)}
-                              className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs"
+                              className="w-full bg-surface-base/40 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs"
                             />
                             {formErrors.addressDetail && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressDetail}</p>}
                           </div>
@@ -1793,9 +1805,9 @@ export default function App() {
 
                         {/* Combined Live Address Preview */}
                         {shippingAddress && (
-                          <div className="bg-[#0e0e16] px-3 py-2 rounded-xl border border-zinc-800/40 text-[10px] text-zinc-400 font-medium flex items-start gap-1.5 leading-relaxed">
+                          <div className="bg-surface-2 px-3 py-2 rounded-xl border border-border-default/40 text-[10px] text-text-muted font-medium flex items-start gap-1.5 leading-relaxed">
                             <span className="text-yellow-500 select-none">📍</span>
-                            <span className="break-all"><strong>Địa chỉ bàn giao:</strong> {shippingAddress}</span>
+                            <span className="break-all"><strong>{t("customize.shippingPreviewLabel")}</strong> {shippingAddress}</span>
                           </div>
                         )}
                         {formErrors.shippingAddress && <p className="text-red-500 text-[10px] mt-1 font-bold">{formErrors.shippingAddress}</p>}
@@ -1803,23 +1815,23 @@ export default function App() {
 
                       {/* Ghi chú */}
                       <div className="flex flex-col gap-1">
-                        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Ghi chú khâu sản xuất (Tùy chọn)</label>
+                        <label className="text-[10px] text-text-muted font-bold uppercase tracking-wider">{t("customize.notesLabel")}</label>
                         <textarea
-                          placeholder="Ghi chú thêm (Có thể mở rộng góc dưới, ví dụ: In logo tay áo, lưu ý đặc biệt, liên hệ giờ hành chính...)"
+                          placeholder={t("customize.notesPlaceholder")}
                           value={notes}
                           onChange={(e) => setNotes(e.target.value)}
                           rows={3}
-                          className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs resize-y min-h-[70px]"
+                          className="w-full bg-surface-base/40 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs resize-y min-h-[70px]"
                         />
                       </div>
                     </div>
 
-                    <div className="h-[1px] bg-zinc-800 my-1" />
+                    <div className="h-[1px] bg-border-default my-1" />
 
                     {/* METHOD SELECT */}
                     <div>
-                      <span className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-3">
-                        Chọn cách thức thanh toán
+                      <span className="text-text-muted text-xs font-black uppercase tracking-wider block mb-3">
+                        {t("customize.paymentSectionLabel")}
                       </span>
                       <PaymentSelector 
                         selectedMethod={paymentMethod} 
@@ -1828,46 +1840,46 @@ export default function App() {
                     </div>
 
                     {/* PRICING SUM */}
-                    <div className="bg-[#0a0a0f] p-4 rounded-2xl border border-zinc-800/80 mt-2 flex flex-col gap-2">
+                    <div className="bg-surface-1 p-4 rounded-2xl border border-border-default/80 mt-2 flex flex-col gap-2">
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-400 font-bold">
-                          {customizeMode === "individual" 
-                            ? `Thành tiền tạm (${selectedQuantity} áo):` 
-                            : `Thành tiền tạm (${teamRoster.length} áo):`}
+                        <span className="text-text-muted font-bold">
+                          {customizeMode === "individual"
+                            ? t("customize.pricingTempIndividual", { qty: selectedQuantity })
+                            : t("customize.pricingTempTeam", { qty: teamRoster.length })}
                         </span>
-                        <span className="text-[#F8F8FF] font-mono">
+                        <span className="text-text-primary font-mono">
                           {customizeMode === "individual"
                             ? (selectedProduct.price * selectedQuantity).toLocaleString("vi-VN")
                             : (selectedProduct.price * teamRoster.length).toLocaleString("vi-VN")
                           } ₫
                         </span>
                       </div>
-                      
+
                       {/* Bulk Roster Discount display */}
                       {customizeMode === "team" && (
                         <div className="flex justify-between items-center text-xs">
-                          <span className="text-gray-400 font-bold">Chiết khấu đồng đội:</span>
-                          <span className={teamRoster.length >= 20 ? "text-green-400 font-bold font-mono" : "text-zinc-500 font-mono"}>
-                            {teamRoster.length >= 20 
-                              ? `-${Math.round(selectedProduct.price * teamRoster.length * 0.15).toLocaleString("vi-VN")} ₫ (-15%)`
-                              : "Chưa áp dụng (Cần ≥ 20 người)"
+                          <span className="text-text-muted font-bold">{t("customize.teamDiscountLabel")}</span>
+                          <span className={teamRoster.length >= 20 ? "text-green-400 font-bold font-mono" : "text-text-muted font-mono"}>
+                            {teamRoster.length >= 20
+                              ? t("customize.teamDiscountValue", { amount: Math.round(selectedProduct.price * teamRoster.length * 0.15).toLocaleString("vi-VN") })
+                              : t("customize.teamDiscountInactive")
                             }
                           </span>
                         </div>
                       )}
-                      
+
                       <div className="flex justify-between items-center text-xs">
-                        <span className="text-gray-400 font-bold">Phí ship vận chuyển:</span>
-                        <span className="text-green-400 font-mono font-bold">Miễn phí ship</span>
+                        <span className="text-text-muted font-bold">{t("customize.shippingFee")}</span>
+                        <span className="text-green-400 font-mono font-bold">{t("customize.freeShipping")}</span>
                       </div>
-                      <div className="h-[1px] bg-zinc-800 my-1" />
+                      <div className="h-[1px] bg-border-default my-1" />
                       <div className="flex justify-between items-baseline">
-                        <span className="text-xs font-black text-white uppercase">Tổng đơn hàng:</span>
+                        <span className="text-xs font-black text-text-primary uppercase">{t("customize.totalLabel")}</span>
                         <span className="text-yellow-400 font-mono font-black text-lg sm:text-xl">
                           {customizeMode === "individual"
                             ? (selectedProduct.price * selectedQuantity).toLocaleString("vi-VN")
                             : (
-                                (selectedProduct.price * teamRoster.length) - 
+                                (selectedProduct.price * teamRoster.length) -
                                 (teamRoster.length >= 20 ? Math.round(selectedProduct.price * teamRoster.length * 0.15) : 0)
                               ).toLocaleString("vi-VN")
                           } ₫
@@ -1881,7 +1893,9 @@ export default function App() {
                       onClick={handlePlaceOrder}
                       className="w-full bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-black font-black py-4.5 rounded-xl transition-all shadow-lg hover:shadow-yellow-500/20 text-sm uppercase cursor-pointer text-center select-none"
                     >
-                      Xác Nhận Đặt Đơn Hàng {customizeMode === "team" ? `(${teamRoster.length} Áo)` : ""}
+                      {customizeMode === "team"
+                        ? t("customize.placeOrderCtaTeam", { qty: teamRoster.length })
+                        : t("customize.placeOrderCta")}
                     </button>
                   </div>
                 </div>
@@ -1889,14 +1903,14 @@ export default function App() {
                 {/* RIGHT VISUAL Interactive ThreeJS JerseyViewer (Sticky on Desktop) */}
                 <div className="lg:col-span-7 lg:sticky lg:top-28">
                   {customizeMode === "team" && teamRoster[activePlayerIndex] && (
-                    <div className="bg-[#0c0c14] border border-[#1e1e2d] px-4 py-3 rounded-2xl mb-3.5 flex items-center justify-between text-xs">
+                    <div className="bg-surface-2 border border-border-default px-4 py-3 rounded-2xl mb-3.5 flex items-center justify-between text-xs">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse shrink-0" />
-                        <span className="text-zinc-400">Xem trước in ấn:</span>
-                        <strong className="text-white uppercase font-bold font-sans tracking-wide">{teamRoster[activePlayerIndex].name}</strong>
+                        <span className="text-text-muted">{t("customize.previewBadge")}</span>
+                        <strong className="text-text-primary uppercase font-bold font-sans tracking-wide">{teamRoster[activePlayerIndex].name}</strong>
                       </div>
                       <span className="text-yellow-400 font-mono font-black text-xs uppercase">
-                        SỐ {teamRoster[activePlayerIndex].number} • SIZE {teamRoster[activePlayerIndex].size}
+                        {t("customize.previewMetaNumber")} {teamRoster[activePlayerIndex].number} • {t("customize.previewMetaSize")} {teamRoster[activePlayerIndex].size}
                       </span>
                     </div>
                   )}
@@ -1911,14 +1925,14 @@ export default function App() {
                     />
                   </div>
 
-                  <div className="mt-4 bg-[#111118]/80 border border-[#1e1e2d] p-4.5 rounded-2xl flex items-center gap-3.5">
+                  <div className="mt-4 bg-surface-3/80 border border-border-default p-4.5 rounded-2xl flex items-center gap-3.5">
                     <div className="bg-yellow-500/15 border border-yellow-500/20 p-2.5 rounded-xl">
                       <Shirt className="w-5 h-5 text-yellow-400" />
                     </div>
                     <div>
-                      <span className="text-[#F8F8FF] text-xs font-extrabold block">Bản in kỹ thuật số 3D</span>
-                      <p className="text-gray-400 text-[11px] mt-0.5 leading-normal">
-                        Công nghệ in chuyển nhiệt trực tiếp đảm bảo KHÔNG bong tróc, nứt nẻ hay phai màu sau hàng vặn lần giặt sấy. Mực in đạt tiêu chuẩn thân thiện làn da của FIFA.
+                      <span className="text-text-primary text-xs font-extrabold block">{t("customize.techPrintTitle")}</span>
+                      <p className="text-text-muted text-[11px] mt-0.5 leading-normal">
+                        {t("customize.techPrintDesc")}
                       </p>
                     </div>
                   </div>
@@ -1926,10 +1940,10 @@ export default function App() {
 
               </div>
             ) : (
-              <div className="text-center py-20 bg-[#111118]/40 rounded-3xl border border-[#1e1e2d] max-w-lg mx-auto">
-                <p className="text-gray-400">Không tìm thấy áo đấu nào được lựa chọn.</p>
+              <div className="text-center py-20 bg-surface-3/40 rounded-3xl border border-border-default max-w-lg mx-auto">
+                <p className="text-text-muted">{t("customize.notSelectedTitle")}</p>
                 <button onClick={() => setActiveTab("jerseys")} className="mt-4 bg-yellow-500 text-black px-6 py-2.5 rounded-xl font-bold">
-                  Quay lại chọn áo
+                  {t("customize.notSelectedCta")}
                 </button>
               </div>
             )}
@@ -1940,7 +1954,7 @@ export default function App() {
         {activeTab === "checkout" && (
           <div className="max-w-2xl mx-auto">
             {latestOrder ? (
-              <div className="bg-[#111118] border border-[#1e1e2d] p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
+              <div className="bg-surface-3 border border-border-default p-6 sm:p-8 rounded-3xl shadow-2xl relative overflow-hidden">
                 {/* Gold success glow ornament */}
                 <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-yellow-500 to-amber-600" />
                 
@@ -1948,66 +1962,66 @@ export default function App() {
                   <div className="bg-green-500/10 border border-green-500/20 p-4 rounded-full w-fit mx-auto mb-4 animate-bounce">
                     <CheckCircle2 className="w-10 h-10 text-green-400" />
                   </div>
-                  <h1 className="text-2xl sm:text-3xl font-black text-[#F8F8FF] tracking-tight">Đặt Đơn Hàng Thành Công!</h1>
-                  <p className="text-zinc-400 text-xs sm:text-sm mt-1 max-w-sm mx-auto">
-                    Đơn hàng áo đấu World Cup của bạn đã được tiếp nhận và chuyển đến bộ phận sản xuất in ấn kỹ thuật.
+                  <h1 className="text-2xl sm:text-3xl font-black text-text-primary tracking-tight">{t("checkout.successTitle")}</h1>
+                  <p className="text-text-muted text-xs sm:text-sm mt-1 max-w-sm mx-auto">
+                    {t("checkout.successSubtitle")}
                   </p>
                 </div>
 
                 {/* Prominent Code copying block */}
-                <div className="bg-black/60 border border-zinc-800 p-5 rounded-2xl flex flex-col items-center justify-center text-center gap-3 mb-8">
-                  <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest block">MÃ TRA CỨU ĐƠN HÀNG</span>
-                  <div className="flex items-center gap-3 bg-[#0c0c14] border border-[#1e1e2d] px-6 py-3.5 rounded-xl shadow-inner w-full sm:w-auto justify-between sm:justify-start">
+                <div className="bg-surface-base/60 border border-border-default p-5 rounded-2xl flex flex-col items-center justify-center text-center gap-3 mb-8">
+                  <span className="text-text-muted text-[10px] font-black uppercase tracking-widest block">{t("checkout.orderCodeLabel")}</span>
+                  <div className="flex items-center gap-3 bg-surface-2 border border-border-default px-6 py-3.5 rounded-xl shadow-inner w-full sm:w-auto justify-between sm:justify-start">
                     <span className="text-yellow-400 font-mono font-black text-xl tracking-wider select-all">
                       {latestOrder.orderCode}
                     </span>
                     <button
                       id="btn-copy-code"
                       onClick={() => handleCopyToClipboard(latestOrder.orderCode)}
-                      className="p-2 border border-zinc-700/60 hover:bg-zinc-800 rounded-lg text-gray-400 hover:text-[#F8F8FF] cursor-pointer transition-colors"
-                      title="Copy mã đơn hàng"
+                      className="p-2 border border-border-default hover:bg-surface-4 rounded-lg text-text-muted hover:text-text-primary cursor-pointer transition-colors"
+                      title={t("checkout.copyOrderTitle")}
                     >
                       {copiedCode ? <Check className="w-4.5 h-4.5 text-green-400" /> : <Clipboard className="w-4.5 h-4.5" />}
                     </button>
                   </div>
-                  <p className="text-zinc-500 text-[10px] sm:text-xs">
-                    * Vui lòng SAO CHÉP MÃ NÀY để tra cứu hành trình giao hàng của bạn bất cứ lúc nào tại mục <strong>Tra Cứu Đơn</strong>.
+                  <p className="text-text-muted text-[10px] sm:text-xs">
+                    {t("checkout.saveCodeHintBefore")} <strong>{t("checkout.saveCodeHintTrackLabel")}</strong>{t("checkout.saveCodeHintAfter")}
                   </p>
                 </div>
 
                 {/* Details layout */}
-                <div className="border-t border-[#1e1e2d] pt-6 flex flex-col gap-4">
-                  <h3 className="text-white text-sm font-bold uppercase tracking-wider">Thông Tin Người Nhận</h3>
+                <div className="border-t border-border-default pt-6 flex flex-col gap-4">
+                  <h3 className="text-text-primary text-sm font-bold uppercase tracking-wider">{t("checkout.receiverInfo")}</h3>
                   <div className="grid grid-cols-2 gap-4 text-xs">
                     <div>
-                      <span className="text-gray-500">Khách hàng:</span>
-                      <p className="text-[#F8F8FF] font-semibold mt-0.5">{latestOrder.customerName}</p>
+                      <span className="text-text-muted">{t("checkout.receiverCustomer")}</span>
+                      <p className="text-text-primary font-semibold mt-0.5">{latestOrder.customerName}</p>
                     </div>
                     <div>
-                      <span className="text-gray-500">Số điện thoại:</span>
-                      <p className="text-[#F8F8FF] mt-0.5 font-mono">{latestOrder.phone}</p>
+                      <span className="text-text-muted">{t("checkout.receiverPhone")}</span>
+                      <p className="text-text-primary mt-0.5 font-mono">{latestOrder.phone}</p>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-gray-500">Địa chỉ giao nhận:</span>
-                      <p className="text-[#F8F8FF] mt-0.5">{latestOrder.address}</p>
+                      <span className="text-text-muted">{t("checkout.receiverAddress")}</span>
+                      <p className="text-text-primary mt-0.5">{latestOrder.address}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Items summarize details */}
-                <div className="border-t border-[#1e1e2d] mt-6 pt-6 flex flex-col gap-4">
-                  <h3 className="text-white text-sm font-bold uppercase tracking-wider">Chi Tiết Sản Phẩm</h3>
+                <div className="border-t border-border-default mt-6 pt-6 flex flex-col gap-4">
+                  <h3 className="text-text-primary text-sm font-bold uppercase tracking-wider">{t("checkout.productDetails")}</h3>
                   {latestOrder.items?.map((item, idx) => (
-                    <div key={idx} className="bg-black/40 p-4 border border-zinc-800 rounded-2xl flex items-center justify-between text-xs sm:text-sm">
+                    <div key={idx} className="bg-surface-base/40 p-4 border border-border-default rounded-2xl flex items-center justify-between text-xs sm:text-sm">
                       <div className="flex items-center gap-3">
-                        <span 
+                        <span
                           className="w-4.5 h-4.5 rounded-full border border-black/40 shadow shadow-inner"
                           style={{ backgroundColor: item.colorHex }}
                         />
                         <div>
-                          <p className="text-[#F8F8FF] font-bold">{item.product?.name}</p>
-                          <p className="text-gray-500 text-xs mt-0.5">
-                            Tên in: <strong className="text-white uppercase font-sans">{item.nickname || "N/A"}</strong> • Số áo: <strong className="text-white font-mono">{item.jerseyNumber}</strong> • Size: <strong className="text-white font-mono">{item.size}</strong>
+                          <p className="text-text-primary font-bold">{item.product?.name}</p>
+                          <p className="text-text-muted text-xs mt-0.5">
+                            {t("checkout.nicknameLabel")} <strong className="text-text-primary uppercase font-sans">{item.nickname || t("checkout.nicknameMissing")}</strong> • {t("checkout.numberLabel")} <strong className="text-text-primary font-mono">{item.jerseyNumber}</strong> • {t("checkout.sizeLabel")} <strong className="text-text-primary font-mono">{item.size}</strong>
                           </p>
                         </div>
                       </div>
@@ -2019,16 +2033,16 @@ export default function App() {
                 </div>
 
                 {/* Payment instructions matching chosen options */}
-                <div className="border-t border-[#1e1e2d] mt-6 pt-6 text-xs text-gray-400">
-                  <h3 className="text-[#F8F8FF] text-sm font-bold uppercase tracking-wider mb-3">Thông Tin Thanh Toán</h3>
-                  
+                <div className="border-t border-border-default mt-6 pt-6 text-xs text-text-muted">
+                  <h3 className="text-text-primary text-sm font-bold uppercase tracking-wider mb-3">{t("checkout.paymentInfo")}</h3>
+
                   {latestOrder.payment?.method === "cod" && (
                     <div className="bg-amber-600/10 border border-amber-500/20 rounded-2xl p-4 flex items-start gap-3">
                       <HandCoins className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
                       <div>
-                        <span className="text-amber-500 font-bold block">Hình thức: Cod nhận hàng thanh toán</span>
-                        <p className="mt-1 leading-relaxed text-zinc-400">
-                          Người giao hàng sẽ thu đúng số tiền tổng cộng <strong className="text-white font-mono">{(latestOrder.totalAmount).toLocaleString("vi-VN")} ₫</strong> khi giao áo đến nơi. Bạn sẽ được mở bao bì đồng kiểm trước.
+                        <span className="text-amber-500 font-bold block">{t("checkout.codTitle")}</span>
+                        <p className="mt-1 leading-relaxed text-text-muted">
+                          {t("checkout.codDescBefore")} <strong className="text-text-primary font-mono">{(latestOrder.totalAmount).toLocaleString("vi-VN")} ₫</strong> {t("checkout.codDescAfter")}
                         </p>
                       </div>
                     </div>
@@ -2039,27 +2053,27 @@ export default function App() {
                       <div className="flex items-start gap-3">
                         <Landmark className="w-5 h-5 text-blue-400 shrink-0 mt-0.5" />
                         <div>
-                          <span className="text-blue-400 font-bold block">Hình thức: Chuyển khoản qua Ngân hàng</span>
-                          <p className="mt-1 leading-relaxed text-zinc-400">
-                            Vui lòng thực hiện chuyển khoản đến số tài khoản bên dưới để xác nhận bắt đầu chế tác in áo:
+                          <span className="text-blue-400 font-bold block">{t("checkout.bankTitle")}</span>
+                          <p className="mt-1 leading-relaxed text-text-muted">
+                            {t("checkout.bankDesc")}
                           </p>
                         </div>
                       </div>
-                      <div className="bg-black/50 p-4.5 rounded-xl border border-zinc-800 grid grid-cols-2 gap-4 text-xs font-sans text-gray-300">
+                      <div className="bg-surface-base/50 p-4.5 rounded-xl border border-border-default grid grid-cols-2 gap-4 text-xs font-sans text-text-secondary">
                         <div>
-                          <span className="text-zinc-500">Ngân hàng thụ hưởng:</span>
-                          <p className="text-white font-bold mt-0.5">Vietcombank (VCB)</p>
+                          <span className="text-text-muted">{t("checkout.bankBeneficiary")}</span>
+                          <p className="text-text-primary font-bold mt-0.5">{t("checkout.bankName")}</p>
                         </div>
                         <div>
-                          <span className="text-zinc-500">Số tài khoản nhận:</span>
-                          <p className="text-yellow-400 font-mono font-bold mt-0.5">1937 EF06 5EF7</p>
+                          <span className="text-text-muted">{t("checkout.bankAccount")}</span>
+                          <p className="text-yellow-400 font-mono font-bold mt-0.5">{t("checkout.bankAccountValue")}</p>
                         </div>
                         <div>
-                          <span className="text-zinc-500">Tên người thụ hưởng:</span>
-                          <p className="text-white font-semibold mt-0.5">JERSEY WORLD CUP LAB</p>
+                          <span className="text-text-muted">{t("checkout.bankHolder")}</span>
+                          <p className="text-text-primary font-semibold mt-0.5">{t("checkout.bankHolderValue")}</p>
                         </div>
                         <div>
-                          <span className="text-zinc-500">Nội dung bắt buộc:</span>
+                          <span className="text-text-muted">{t("checkout.bankNote")}</span>
                           <p className="text-yellow-500 font-mono font-bold mt-0.5">{latestOrder.orderCode}</p>
                         </div>
                       </div>
@@ -2067,19 +2081,19 @@ export default function App() {
                   )}
 
                   {(latestOrder.payment?.method === "momo" || latestOrder.payment?.method === "vnpay") && (
-                    <div className="bg-[#1a0a1a] border border-pink-500/20 rounded-2xl p-4.5 flex flex-col items-center gap-4 text-center">
+                    <div className="bg-surface-3 border border-pink-500/20 rounded-2xl p-4.5 flex flex-col items-center gap-4 text-center">
                       <div className="flex items-center gap-2 text-pink-400">
                         <Wallet className="w-5 h-5" />
-                        <span className="font-bold">Mô Phỏng Thanh Toán Trực Tuyến {latestOrder.payment.method.toUpperCase()}</span>
+                        <span className="font-bold">{t("checkout.onlineGatewayTitle", { gateway: latestOrder.payment.method.toUpperCase() })}</span>
                       </div>
-                      
-                      <p className="text-xs text-zinc-400">
-                        Vui lòng quét QR mô phỏng bên dưới để kích hoạt tín hiệu IPN tự động trả về máy chủ:
+
+                      <p className="text-xs text-text-muted">
+                        {t("checkout.onlineGatewayDesc")}
                       </p>
 
                       {/* Display a beautifully simulated dynamic QR code */}
-                      <div className="p-3 bg-white rounded-xl border border-zinc-200">
-                        <img 
+                      <div className="p-3 bg-white rounded-xl border border-border-default">
+                        <img
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${latestOrder.orderCode}`}
                           alt="Simulated Payment QR"
                           className="w-40 h-40 object-contain block"
@@ -2087,11 +2101,11 @@ export default function App() {
                       </div>
 
                       <div className="flex flex-col gap-2 w-full">
-                        <span className="text-[10px] text-zinc-500 font-mono block">Số tiền: {latestOrder.totalAmount.toLocaleString("vi-VN")} ₫ • Nội dung: {latestOrder.orderCode}</span>
+                        <span className="text-[10px] text-text-muted font-mono block">{t("checkout.onlineGatewayAmount", { amount: latestOrder.totalAmount.toLocaleString("vi-VN"), orderCode: latestOrder.orderCode })}</span>
                         {latestOrder.payment.status === "paid" ? (
                           <div className="p-2.5 bg-green-500/10 border border-green-500/20 rounded-xl text-green-400 font-bold flex items-center justify-center gap-1.5 text-xs">
                             <CheckCircle2 className="w-4 h-4" />
-                            Đã nhận thanh toán từ cổng {latestOrder.payment.method.toUpperCase()}!
+                            {t("checkout.onlineGatewayPaid", { gateway: latestOrder.payment.method.toUpperCase() })}
                           </div>
                         ) : (
                           <button
@@ -2099,7 +2113,7 @@ export default function App() {
                             onClick={() => simulatePaymentSuccess(latestOrder.id)}
                             className="bg-pink-600 hover:bg-pink-500 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-colors cursor-pointer"
                           >
-                            Xác Nhận Tôi Đã Quét Trả Tiền (Mô phỏng VNPay/MoMo)
+                            {t("checkout.onlineGatewayConfirmCta")}
                           </button>
                         )}
                       </div>
@@ -2108,16 +2122,16 @@ export default function App() {
 
                 </div>
 
-                <div className="border-t border-[#1e1e2d] mt-6 pt-6 flex sm:flex-row flex-col justify-end gap-3.5">
+                <div className="border-t border-border-default mt-6 pt-6 flex sm:flex-row flex-col justify-end gap-3.5">
                   <button
                     onClick={() => {
                       setTrackingQuery(latestOrder.orderCode);
                       executeTrackingQuery();
                       setActiveTab("track");
                     }}
-                    className="bg-[#1e1e2d] hover:bg-[#2c2c3d] text-yellow-400 font-bold px-6 py-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
+                    className="bg-surface-4 hover:bg-border-strong text-yellow-400 font-bold px-6 py-3 rounded-xl text-xs transition-colors cursor-pointer text-center"
                   >
-                    Mở Trang Theo Dõi Trực Tuyến
+                    {t("checkout.trackCta")}
                   </button>
                   <button
                     onClick={() => {
@@ -2126,16 +2140,16 @@ export default function App() {
                     }}
                     className="bg-yellow-500 text-black font-extrabold px-6 py-3 rounded-xl text-xs hover:bg-yellow-400 transition-all cursor-pointer text-center"
                   >
-                    Trở về Trang Chủ
+                    {t("checkout.backHomeCta")}
                   </button>
                 </div>
 
               </div>
             ) : (
-              <div className="text-center py-20 bg-[#111118]/40 border border-[#1e1e2d] rounded-3xl">
-                <p className="text-gray-400">Không tìm thấy phiên thanh toán nào đang hoạt động.</p>
+              <div className="text-center py-20 bg-surface-3/40 border border-border-default rounded-3xl">
+                <p className="text-text-muted">{t("checkout.noSessionTitle")}</p>
                 <button onClick={() => setActiveTab("home")} className="mt-4 bg-yellow-500 text-black px-6 py-2.5 rounded-xl font-bold">
-                  Trở về trang chủ
+                  {t("checkout.noSessionCta")}
                 </button>
               </div>
             )}
@@ -2146,51 +2160,51 @@ export default function App() {
         {activeTab === "track" && (
           <div className="max-w-3xl mx-auto">
             <div className="mb-8 text-center sm:text-left">
-              <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">REALTIME TRACKING</span>
-              <h1 className="text-2xl sm:text-4xl font-black text-[#F8F8FF] tracking-tight mt-1">Tra Cứu Đơn Hàng Áo Đấu</h1>
-              <p className="text-zinc-500 text-xs sm:text-sm mt-1">
-                Nhập số điện thoại đặt áo HOẶC mã đơn hàng dạng <code className="font-mono text-yellow-500 bg-[#111118] px-1 py-0.5 rounded">ORD-...</code> để tra cứu lộ trình in ấn trực tiếp.
+              <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">{t("track.label")}</span>
+              <h1 className="text-2xl sm:text-4xl font-black text-text-primary tracking-tight mt-1">{t("track.title")}</h1>
+              <p className="text-text-muted text-xs sm:text-sm mt-1">
+                {t("track.descBefore")} <code className="font-mono text-yellow-500 bg-surface-3 px-1 py-0.5 rounded">ORD-...</code> {t("track.descAfter")}
               </p>
             </div>
 
             {/* Input bar */}
-            <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl flex flex-col sm:flex-row gap-4 mb-8">
+            <div className="bg-surface-3 border border-border-default p-5 rounded-2xl flex flex-col sm:flex-row gap-4 mb-8">
               <div className="relative flex-grow">
-                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-zinc-500" />
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-text-muted" />
                 <input
                   type="text"
-                  placeholder="Nhập Số điện thoại hoặc Mã ORD-..."
+                  placeholder={t("track.searchPlaceholder")}
                   value={trackingQuery}
                   onChange={(e) => setTrackingQuery(e.target.value)}
                   onKeyDown={(e) => {
                     if (e.key === "Enter") executeTrackingQuery();
                   }}
-                  className="w-full bg-[#0d0d14] text-[#F8F8FF] font-sans font-semibold placeholder-gray-500 pl-11 pr-4 py-3.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-sm"
+                  className="w-full bg-surface-2 text-text-primary font-sans font-semibold placeholder-text-muted pl-11 pr-4 py-3.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-sm"
                 />
               </div>
               <button
                 id="btn-execute-tracking"
                 onClick={() => executeTrackingQuery()}
                 disabled={trackingLoader || !trackingQuery.trim()}
-                className="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider select-none shrink-0 cursor-pointer disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed"
+                className="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold px-8 py-3.5 rounded-xl text-xs uppercase tracking-wider select-none shrink-0 cursor-pointer disabled:bg-surface-4 disabled:text-text-muted disabled:cursor-not-allowed"
               >
-                {trackingLoader ? "Đang Tra Cứu..." : "Tra Cứu"}
+                {trackingLoader ? t("track.searchCtaLoading") : t("track.searchCta")}
               </button>
             </div>
 
             {/* Tracking Results block */}
             {trackingLoader ? (
-              <div className="h-40 bg-zinc-900 border border-zinc-800 rounded-2xl animate-pulse flex items-center justify-center text-zinc-500">
-                Đang nạp trạng thái từ vệ tinh...
+              <div className="h-40 bg-surface-2 border border-border-default rounded-2xl animate-pulse flex items-center justify-center text-text-muted">
+                {t("track.loaderText")}
               </div>
             ) : searchedTrack && trackingResults.length === 0 ? (
-              <div className="bg-[#111118]/80 border border-[#1e1e2d] p-10 rounded-2xl text-center max-w-sm mx-auto">
+              <div className="bg-surface-3/80 border border-border-default p-10 rounded-2xl text-center max-w-sm mx-auto">
                 <div className="p-4 bg-red-500/10 border border-red-500/20 text-red-500 rounded-full w-fit mx-auto mb-4">
                   <ShieldAlert className="w-7 h-7" />
                 </div>
-                <h3 className="text-white text-base font-extrabold mb-1">Không Tìm Thấy Đơn Hàng</h3>
-                <p className="text-zinc-400 text-xs leading-normal">
-                  Vui lòng kiểm tra lại chính xác Mã đơn hàng (dạng ORD-...) hoặc số điện thoại bạn nhập lúc đặt.
+                <h3 className="text-text-primary text-base font-extrabold mb-1">{t("track.notFoundTitle")}</h3>
+                <p className="text-text-muted text-xs leading-normal">
+                  {t("track.notFoundDesc")}
                 </p>
               </div>
             ) : (
@@ -2202,11 +2216,11 @@ export default function App() {
 
                   // Status timeline stepper calculator helper
                   const steps: { key: OrderStatus; label: string; desc: string }[] = [
-                    { key: "pending", label: "Tiếp Nhận", desc: "Đơn hàng mới tạo" },
-                    { key: "processing", label: "Chuẩn Bị", desc: "Xếp phôi chuẩn bị in" },
-                    { key: "printing", label: "Đang In 3D", desc: "In kỹ thuật nhiệt" },
-                    { key: "shipping", label: "Đang Giao", desc: "Vận chuyển COD nhãn" },
-                    { key: "completed", label: "Hoàn Tất", desc: "Đã nhận áo thành công" }
+                    { key: "pending", label: t("track.stepPending"), desc: t("track.stepPendingDesc") },
+                    { key: "processing", label: t("track.stepProcessing"), desc: t("track.stepProcessingDesc") },
+                    { key: "printing", label: t("track.stepPrinting"), desc: t("track.stepPrintingDesc") },
+                    { key: "shipping", label: t("track.stepShipping"), desc: t("track.stepShippingDesc") },
+                    { key: "completed", label: t("track.stepCompleted"), desc: t("track.stepCompletedDesc") }
                   ];
 
                   const getStepIndex = (status: OrderStatus) => {
@@ -2224,27 +2238,27 @@ export default function App() {
                   const currentStepIdx = getStepIndex(order.status);
 
                   return (
-                    <div key={order.id} className="bg-[#111118] border border-[#1e1e2d] hover:border-zinc-800 p-6 rounded-2xl shadow-xl transition-all">
+                    <div key={order.id} className="bg-surface-3 border border-border-default hover:border-zinc-800 p-6 rounded-2xl shadow-xl transition-all">
                       
                       {/* Top bar info */}
-                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-[#1e1e2d] pb-4 gap-2 mb-6">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-border-default pb-4 gap-2 mb-6">
                         <div>
                           <div className="flex items-center gap-2">
-                            <span className="text-xs text-zinc-500">Mã đơn:</span>
-                            <span className="text-[#F8F8FF] font-mono font-black text-sm tracking-wide bg-black/40 px-2 py-0.5 rounded border border-zinc-800">{order.orderCode}</span>
+                            <span className="text-xs text-text-muted">{t("track.orderCodeLabel")}</span>
+                            <span className="text-text-primary font-mono font-black text-sm tracking-wide bg-surface-base/40 px-2 py-0.5 rounded border border-border-default">{order.orderCode}</span>
                           </div>
-                          <span className="text-[10px] text-zinc-500 block mt-1">Đã đặt ngày: {new Date(order.createdAt).toLocaleString("vi-VN")}</span>
+                          <span className="text-[10px] text-text-muted block mt-1">{t("track.orderDatePrefix")} {new Date(order.createdAt).toLocaleString("vi-VN")}</span>
                         </div>
 
                         <div className="flex items-center gap-2.5">
                           {order.status === "cancelled" ? (
                             <span className="bg-red-500/10 border border-red-500/20 text-red-500 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider">
-                              ĐÃ HỦY ĐƠN
+                              {t("track.statusCancelled")}
                             </span>
                           ) : (
                             <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-wider flex items-center gap-1">
                               <span className="w-1.5 h-1.5 rounded-full bg-yellow-400 animate-pulse"></span>
-                              HÀNH TRÌNH: QUY TRÌNH {steps[currentStepIdx]?.label.toUpperCase()}
+                              {t("track.statusJourneyPrefix")} {steps[currentStepIdx]?.label.toUpperCase()}
                             </span>
                           )}
 
@@ -2253,17 +2267,17 @@ export default function App() {
                               ? "bg-green-500/10 border border-green-500/20 text-green-400"
                               : "bg-amber-500/10 border border-amber-500/20 text-amber-500"
                           }`}>
-                            {isPaid ? "Đã trả tiền" : "Chưa thanh toán"}
+                            {isPaid ? t("track.paymentPaid") : t("track.paymentUnpaid")}
                           </span>
                         </div>
                       </div>
 
                       {/* CLIENT TIMELINE STEPPER HIGHLIGHTED IN GOLD */}
                       {order.status !== "cancelled" && (
-                        <div className="mb-8 py-4.5 bg-black/40 rounded-2xl border border-zinc-800/60 px-4">
+                        <div className="mb-8 py-4.5 bg-surface-base/40 rounded-2xl border border-border-default/60 px-4">
                           <div className="relative flex flex-col sm:flex-row justify-between gap-6 sm:gap-0">
                             {/* Horizontal Line connector (for table size) */}
-                            <div className="absolute top-4 left-6 right-6 h-0.5 bg-zinc-800 hidden sm:block z-0" />
+                            <div className="absolute top-4 left-6 right-6 h-0.5 bg-border-default hidden sm:block z-0" />
 
                             {steps.map((st, sidx) => {
                               const isCompletedStep = sidx <= currentStepIdx;
@@ -2273,23 +2287,23 @@ export default function App() {
                                 <div key={st.key} className="flex sm:flex-col items-center gap-3 sm:gap-0 sm:text-center relative z-10 flex-1">
                                   {/* Stepper Dot */}
                                   <div className={`w-8.5 h-8.5 rounded-full border-2 flex items-center justify-center font-bold text-xs sm:mb-2 transition-all shrink-0 ${
-                                    isActiveStep 
-                                      ? "bg-yellow-500 border-yellow-500 text-black shadow shadow-yellow-500/50 scale-110" 
+                                    isActiveStep
+                                      ? "bg-yellow-500 border-yellow-500 text-black shadow shadow-yellow-500/50 scale-110"
                                       : isCompletedStep
-                                        ? "bg-[#0d0d14] border-yellow-500 text-yellow-400"
-                                        : "bg-[#0d0d14] border-zinc-800 text-zinc-500"
+                                        ? "bg-surface-2 border-yellow-500 text-yellow-400"
+                                        : "bg-surface-2 border-border-default text-text-muted"
                                   }`}>
                                     {sidx + 1}
                                   </div>
-                                  
+
                                   {/* Text */}
                                   <div>
                                     <span className={`text-xs block font-bold ${
-                                      isCompletedStep ? "text-[#F8F8FF]" : "text-zinc-500"
+                                      isCompletedStep ? "text-text-primary" : "text-text-muted"
                                     }`}>
                                       {st.label}
                                     </span>
-                                    <span className="text-[9px] text-zinc-500 leading-none">{st.desc}</span>
+                                    <span className="text-[9px] text-text-muted leading-none">{st.desc}</span>
                                   </div>
                                 </div>
                               );
@@ -2300,21 +2314,21 @@ export default function App() {
 
                       {/* Items Details */}
                       <div>
-                        <span className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-3">Sản phẩm đặt chế tác:</span>
+                        <span className="text-text-muted text-xs font-black uppercase tracking-wider block mb-3">{t("track.productsLabel")}</span>
                         {items.map((it: any, iIdx: number) => (
-                          <div key={iIdx} className="bg-black/30 border border-zinc-800/80 p-4 rounded-xl flex flex-col sm:flex-row justify-between shrink-0 gap-4 mb-3">
+                          <div key={iIdx} className="bg-surface-base/30 border border-border-default/80 p-4 rounded-xl flex flex-col sm:flex-row justify-between shrink-0 gap-4 mb-3">
                             <div className="flex items-start gap-4">
-                              <span 
+                              <span
                                 className="w-5 h-5 rounded-full border border-black/40 shadow shadow-inner shrink-0 mt-0.5"
                                 style={{ backgroundColor: it.colorHex }}
                               />
                               <div>
-                                <span className="text-[#F8F8FF] text-sm font-extrabold">{it.product?.name}</span>
-                                <div className="text-xs text-zinc-500 mt-1 flex flex-wrap gap-x-3 gap-y-1">
-                                  <span>In Tên: <strong className="text-indigo-400 uppercase font-sans">{it.nickname || "N/A"}</strong></span>
-                                  <span>Số Áo: <strong className="text-indigo-400 font-mono">{it.jerseyNumber}</strong></span>
-                                  <span>Cỡ: <strong className="text-[#F8F8FF] font-mono">{it.size}</strong></span>
-                                  <span>S.Lượng: <strong className="text-[#F8F8FF] font-mono">{it.quantity}</strong></span>
+                                <span className="text-text-primary text-sm font-extrabold">{it.product?.name}</span>
+                                <div className="text-xs text-text-muted mt-1 flex flex-wrap gap-x-3 gap-y-1">
+                                  <span>{t("track.rowPrintName")} <strong className="text-indigo-400 uppercase font-sans">{it.nickname || t("checkout.nicknameMissing")}</strong></span>
+                                  <span>{t("track.rowJerseyNum")} <strong className="text-indigo-400 font-mono">{it.jerseyNumber}</strong></span>
+                                  <span>{t("track.rowSize")} <strong className="text-text-primary font-mono">{it.size}</strong></span>
+                                  <span>{t("track.rowQty")} <strong className="text-text-primary font-mono">{it.quantity}</strong></span>
                                 </div>
                               </div>
                             </div>
@@ -2327,13 +2341,13 @@ export default function App() {
                       </div>
 
                       {/* Summary Pricing info */}
-                      <div className="border-t border-[#1e1e2d] mt-4 pt-4 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-3">
-                        <div className="text-zinc-500">
-                          Người nhận: <span className="text-[#F8F8FF] font-bold">{order.customerName}</span> • Số ĐT: <span className="text-[#F8F8FF] font-semibold">{order.phone}</span> <br />
-                          Nơi giao: <span className="text-zinc-300">{order.address}</span>
+                      <div className="border-t border-border-default mt-4 pt-4 flex flex-col sm:flex-row sm:items-center justify-between text-xs gap-3">
+                        <div className="text-text-muted">
+                          {t("track.receiverPrefix")} <span className="text-text-primary font-bold">{order.customerName}</span> • {t("track.phonePrefix")} <span className="text-text-primary font-semibold">{order.phone}</span> <br />
+                          {t("track.addressPrefix")} <span className="text-text-secondary">{order.address}</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-zinc-500 uppercase block-[10px]">Thực chi tổng cộng:</span>
+                          <span className="text-text-muted uppercase block-[10px]">{t("track.totalPrefix")}</span>
                           <span className="text-yellow-400 font-mono font-black text-base">{order.totalAmount.toLocaleString("vi-VN")} ₫</span>
                         </div>
                       </div>
@@ -2341,12 +2355,12 @@ export default function App() {
                     </div>
                   );
                 })}
-                
+
                 {/* Simulated Polling notification badge */}
                 <div className="text-center">
-                  <div className="inline-flex items-center gap-1.5 bg-[#111118] border border-zinc-800 rounded-full px-4 py-1.5 text-[10px] text-zinc-500 select-none">
+                  <div className="inline-flex items-center gap-1.5 bg-surface-3 border border-border-default rounded-full px-4 py-1.5 text-[10px] text-text-muted select-none">
                     <Clock className="w-3 h-3 text-yellow-500 animate-spin" />
-                    Đang thiết lập kết nối thời gian thực tự động quét trạng thái in áo mỗi 5s...
+                    {t("track.pollingNotice")}
                   </div>
                 </div>
               </div>
@@ -2405,15 +2419,15 @@ export default function App() {
             `}} />
 
             <div className="mb-8 text-center sm:text-left no-print">
-              <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">PRODUCTION MANIFEST</span>
-              <h1 className="text-2xl sm:text-4xl font-black text-[#F8F8FF] tracking-tight mt-1 animate-fade-in">Danh Sách In Ấn Đồng Đội</h1>
-              <p className="text-zinc-500 text-xs sm:text-sm mt-1">
-                Công cụ hỗ trợ rà soát, xuất Excel, sao chép nhanh hoặc in danh sách thông số áo đấu (Tên in, Số áo, Cỡ size) trực tiếp dành cho xưởng in ấn sản xuất của Shop.
+              <span className="text-yellow-400 text-xs font-black uppercase tracking-widest">{t("roster.label")}</span>
+              <h1 className="text-2xl sm:text-4xl font-black text-text-primary tracking-tight mt-1 animate-fade-in">{t("roster.title")}</h1>
+              <p className="text-text-muted text-xs sm:text-sm mt-1">
+                {t("roster.desc")}
               </p>
             </div>
 
             {/* Sub-tabs header */}
-            <div className="flex border-b border-[#1e1e2d] gap-4 mb-8 no-print flex-row-tabs">
+            <div className="flex border-b border-border-default gap-4 mb-8 no-print flex-row-tabs">
               <button
                 id="roster-tab-order"
                 onClick={() => {
@@ -2423,19 +2437,19 @@ export default function App() {
                   setRosterSearchQuery("");
                 }}
                 className={`pb-3.5 text-sm font-bold tracking-wider uppercase border-b-2 cursor-pointer transition-all ${
-                  rosterSubTab === "order" ? "text-yellow-400 border-yellow-500" : "text-gray-500 border-transparent hover:text-gray-300"
+                  rosterSubTab === "order" ? "text-yellow-400 border-yellow-500" : "text-text-muted border-transparent hover:text-text-primary"
                 }`}
               >
-                Trích Xuất Đơn Hàng Đã Đặt
+                {t("roster.tabOrder")}
               </button>
               <button
                 id="roster-tab-draft"
                 onClick={() => setRosterSubTab("draft")}
                 className={`pb-3.5 text-sm font-bold tracking-wider uppercase border-b-2 cursor-pointer transition-all ${
-                  rosterSubTab === "draft" ? "text-yellow-400 border-yellow-500" : "text-gray-500 border-transparent hover:text-gray-300"
+                  rosterSubTab === "draft" ? "text-yellow-400 border-yellow-500" : "text-text-muted border-transparent hover:text-text-primary"
                 }`}
               >
-                Chỉnh Sửa Bản Nháp Đang Thiết Kế
+                {t("roster.tabDraft")}
               </button>
             </div>
 
@@ -2444,42 +2458,42 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
                 
                 {/* Left Side: Search Panel */}
-                <div className="lg:col-span-4 bg-[#111118] border border-[#1e1e2d] p-6 rounded-3xl no-print">
-                  <h3 className="text-sm font-bold text-[#F8F8FF] uppercase tracking-wider mb-3">Tra cứu Đơn hàng / Đấu đội</h3>
-                  <p className="text-zinc-500 text-xs mb-5 leading-relaxed">
-                    Nhập mã đơn hàng hoặc số điện thoại của trưởng đội để nạp thông số in ấn chi tiết cho từng cầu thủ từ hệ thống.
+                <div className="lg:col-span-4 bg-surface-3 border border-border-default p-6 rounded-3xl no-print">
+                  <h3 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-3">{t("roster.searchTitle")}</h3>
+                  <p className="text-text-muted text-xs mb-5 leading-relaxed">
+                    {t("roster.searchDesc")}
                   </p>
-                  
+
                   <div className="space-y-4">
                     <div className="relative">
-                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                       <input
                         type="text"
-                        placeholder="Nhập Số ĐT hoặc Mã ORD-..."
+                        placeholder={t("roster.searchPlaceholder")}
                         value={rosterSearchQuery}
                         onChange={(e) => setRosterSearchQuery(e.target.value)}
                         onKeyDown={(e) => {
                           if (e.key === "Enter") handleRosterSearch();
                         }}
-                        className="w-full bg-[#0d0d14] text-[#F8F8FF] font-sans placeholder-gray-500 pl-11 pr-4 py-3.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs font-semibold"
+                        className="w-full bg-surface-2 text-text-primary font-sans placeholder-text-muted pl-11 pr-4 py-3.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500 text-xs font-semibold"
                       />
                     </div>
-                    
+
                     <button
                       id="btn-roster-search"
                       onClick={handleRosterSearch}
                       disabled={rosterSearchLoader || !rosterSearchQuery.trim()}
-                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-zinc-805 disabled:text-zinc-650 text-black font-extrabold text-xs uppercase py-3 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2"
+                      className="w-full bg-yellow-500 hover:bg-yellow-400 disabled:bg-surface-4 disabled:text-text-muted text-black font-extrabold text-xs uppercase py-3 rounded-xl cursor-pointer transition-all flex items-center justify-center gap-2"
                     >
                       {rosterSearchLoader ? (
                         <>
                           <Clock className="w-4 h-4 animate-spin" />
-                          Đang Truy Vấn...
+                          {t("roster.searchCtaLoading")}
                         </>
                       ) : (
                         <>
                           <Search className="w-4 h-4" />
-                          Trích Xuất Thông Tin
+                          {t("roster.searchCta")}
                         </>
                       )}
                     </button>
@@ -2487,23 +2501,23 @@ export default function App() {
 
                   {/* Multiple results matching selection */}
                   {rosterSearchResults.length > 1 && !rosterSelectedOrder && (
-                    <div className="mt-6 border-t border-[#1e1e2d] pt-5">
-                      <span className="text-zinc-400 text-xs font-bold block mb-3">Tìm thấy {rosterSearchResults.length} đơn hàng. Chọn đơn cần in:</span>
+                    <div className="mt-6 border-t border-border-default pt-5">
+                      <span className="text-text-muted text-xs font-bold block mb-3">{t("roster.multipleFound", { count: rosterSearchResults.length })}</span>
                       <div className="space-y-2.5 max-h-60 overflow-y-auto pr-1">
                         {rosterSearchResults.map(order => (
-                          <div 
+                          <div
                             key={order.id}
                             onClick={() => {
                               setRosterSelectedOrder(order);
                               setRosterCheckedItems({});
                             }}
-                            className="bg-[#0d0d14] border border-[#1e1e2d] hover:border-yellow-500/50 p-3 rounded-xl cursor-pointer transition-all text-xs"
+                            className="bg-surface-2 border border-border-default hover:border-yellow-500/50 p-3 rounded-xl cursor-pointer transition-all text-xs"
                           >
-                            <div className="flex justify-between font-mono font-bold text-[#F8F8FF] mb-1">
+                            <div className="flex justify-between font-mono font-bold text-text-primary mb-1">
                               <span>{order.orderCode}</span>
-                              <span className="text-yellow-400">{order.items?.length || 0} áo</span>
+                              <span className="text-yellow-400">{t("roster.multipleJerseyCount", { count: order.items?.length || 0 })}</span>
                             </div>
-                            <div className="text-zinc-500">Khách: {order.customerName} - {order.phone}</div>
+                            <div className="text-text-muted">{t("roster.multipleCustomer", { name: order.customerName, phone: order.phone })}</div>
                           </div>
                         ))}
                       </div>
@@ -2514,9 +2528,9 @@ export default function App() {
                   {rosterSelectedOrder && rosterSearchResults.length > 1 && (
                     <button
                       onClick={() => setRosterSelectedOrder(null)}
-                      className="mt-5 w-full bg-transparent hover:bg-[#1e1e2d] text-zinc-400 border border-zinc-800 font-bold text-[11px] uppercase py-2.5 rounded-lg cursor-pointer transition-all"
+                      className="mt-5 w-full bg-transparent hover:bg-surface-4 text-text-muted border border-border-default font-bold text-[11px] uppercase py-2.5 rounded-lg cursor-pointer transition-all"
                     >
-                      Quay lại Danh Sách Kết Quả
+                      {t("roster.backToResults")}
                     </button>
                   )}
                 </div>
@@ -2526,47 +2540,47 @@ export default function App() {
                   {rosterSelectedOrder ? (
                     <div>
                       {/* Printing Roster Card */}
-                      <div id="print-sheet-card" className="print-roster-target bg-[#111118] border border-[#1e1e2d] p-6 sm:p-8 rounded-3xl shadow-xl transition-all">
+                      <div id="print-sheet-card" className="print-roster-target bg-surface-3 border border-border-default p-6 sm:p-8 rounded-3xl shadow-xl transition-all">
                         
                         {/* Header for print / screen */}
-                        <div className="border-b-2 border-dashed border-[#1e1e2d] pb-6 mb-6">
+                        <div className="border-b-2 border-dashed border-border-default pb-6 mb-6">
                           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
                             <div>
-                              <h2 className="print-title text-xl sm:text-2xl font-black text-[#F8F8FF] uppercase tracking-tight flex items-center gap-2">
+                              <h2 className="print-title text-xl sm:text-2xl font-black text-text-primary uppercase tracking-tight flex items-center gap-2">
                                 <Shirt className="w-6 h-6 text-yellow-500 no-print" />
-                                Bảng Kê Sản Xuất In Ấn
+                                {t("roster.sheetTitle")}
                               </h2>
-                              <span className="text-zinc-500 text-[10px] sm:text-xs">
-                                Tiêu chuẩn chất lượng World Cup Studio • Xuất ngày: {new Date(rosterSelectedOrder.createdAt).toLocaleDateString("vi-VN")}
+                              <span className="text-text-muted text-[10px] sm:text-xs">
+                                {t("roster.sheetMeta", { date: new Date(rosterSelectedOrder.createdAt).toLocaleDateString("vi-VN") })}
                               </span>
                             </div>
                             <div className="text-left sm:text-right">
-                              <span className="bg-[#1e1e2d] border border-zinc-800 text-yellow-400 font-mono font-bold text-sm px-4 py-1.5 rounded-xl block">
+                              <span className="bg-surface-4 border border-border-default text-yellow-400 font-mono font-bold text-sm px-4 py-1.5 rounded-xl block">
                                 {rosterSelectedOrder.orderCode}
                               </span>
-                              <span className="text-zinc-500 text-[10px] mt-1.5 block uppercase font-bold tracking-wider">
-                                Trạng thái đơn: <span className="text-green-400 font-black">{rosterSelectedOrder.status.toUpperCase()}</span>
+                              <span className="text-text-muted text-[10px] mt-1.5 block uppercase font-bold tracking-wider">
+                                {t("roster.statusPrefix")} <span className="text-green-400 font-black">{rosterSelectedOrder.status.toUpperCase()}</span>
                               </span>
                             </div>
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6 text-xs text-zinc-400 bg-[#0d0d14]/60 p-4 border border-[#1e1e2d] rounded-2xl">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-6 text-xs text-text-muted bg-surface-2/60 p-4 border border-border-default rounded-2xl">
                             <div>
-                              <span className="text-zinc-600 block text-[9px] uppercase font-bold text-yellow-500/80">Người đặt hàng</span>
-                              <strong className="text-[#F8F8FF] font-sans">{rosterSelectedOrder.customerName}</strong>
+                              <span className="text-text-muted block text-[9px] uppercase font-bold text-yellow-500/80">{t("roster.customerLabel")}</span>
+                              <strong className="text-text-primary font-sans">{rosterSelectedOrder.customerName}</strong>
                             </div>
                             <div>
-                              <span className="text-zinc-600 block text-[9px] uppercase font-bold text-yellow-500/80">Điện thoại di động</span>
-                              <strong className="text-[#F8F8FF] font-mono">{rosterSelectedOrder.phone}</strong>
+                              <span className="text-text-muted block text-[9px] uppercase font-bold text-yellow-500/80">{t("roster.phoneLabel")}</span>
+                              <strong className="text-text-primary font-mono">{rosterSelectedOrder.phone}</strong>
                             </div>
                             <div className="sm:col-span-2 md:col-span-1">
-                              <span className="text-zinc-600 block text-[9px] uppercase font-bold text-yellow-500/80">Địa chỉ bàn giao</span>
-                              <span className="text-zinc-300 font-sans truncate block" title={rosterSelectedOrder.address}>{rosterSelectedOrder.address}</span>
+                              <span className="text-text-muted block text-[9px] uppercase font-bold text-yellow-500/80">{t("roster.deliveryAddress")}</span>
+                              <span className="text-text-secondary font-sans truncate block" title={rosterSelectedOrder.address}>{rosterSelectedOrder.address}</span>
                             </div>
                             {rosterSelectedOrder.notes && (
-                              <div className="sm:col-span-2 md:col-span-3 border-t border-[#1e1e2d]/60 pt-2 mt-2">
-                                <span className="text-zinc-600 block text-[9px] uppercase font-bold text-yellow-500/60">Ghi chú khâu sản xuất</span>
-                                <span className="text-zinc-300 font-sans italic">{rosterSelectedOrder.notes}</span>
+                              <div className="sm:col-span-2 md:col-span-3 border-t border-border-default/60 pt-2 mt-2">
+                                <span className="text-text-muted block text-[9px] uppercase font-bold text-yellow-500/60">{t("roster.notesLabel")}</span>
+                                <span className="text-text-secondary font-sans italic">{rosterSelectedOrder.notes}</span>
                               </div>
                             )}
                           </div>
@@ -2574,73 +2588,73 @@ export default function App() {
 
                         {/* Roster print items count stats */}
                         <div className="mb-6">
-                          <span className="text-[#F8F8FF] text-xs font-extrabold uppercase tracking-widest block mb-3">Tóm tắt khổ vải & Size tuyển</span>
+                          <span className="text-text-primary text-xs font-extrabold uppercase tracking-widest block mb-3">{t("roster.summaryLabel")}</span>
                           <div className="flex flex-wrap gap-2">
-                            <div className="print-stat-item bg-[#0d0d14] border border-[#1e1e2d] px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
-                              <span className="text-zinc-500 uppercase font-semibold">Tổng Số Lượng:</span>
+                            <div className="print-stat-item bg-surface-2 border border-border-default px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                              <span className="text-text-muted uppercase font-semibold">{t("roster.totalLabel")}</span>
                               <strong className="text-yellow-400 font-mono text-sm">
-                                {rosterSelectedOrder.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} áo
+                                {t("roster.totalUnit", { count: rosterSelectedOrder.items?.reduce((sum, item) => sum + item.quantity, 0) || 0 })}
                               </strong>
                             </div>
-                            
+
                             {/* Compute sizes dynamic breakdown */}
                             {Object.entries((rosterSelectedOrder.items || []).reduce((acc, it) => {
                               const sz = it.size || "M";
                               acc[sz] = (acc[sz] || 0) + (it.quantity || 1);
                               return acc;
                             }, {} as { [key: string]: number })).map(([sz, count]) => (
-                              <div key={sz} className="print-stat-item bg-[#0d0d14] border border-[#1e1e2d] px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
-                                <span className="text-zinc-500 uppercase">Size {sz}:</span>
-                                <strong className="text-[#F8F8FF] font-mono text-sm">{count}</strong>
+                              <div key={sz} className="print-stat-item bg-surface-2 border border-border-default px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                                <span className="text-text-muted uppercase">{t("roster.sizeLabel", { size: sz })}</span>
+                                <strong className="text-text-primary font-mono text-sm">{count}</strong>
                               </div>
                             ))}
                           </div>
                         </div>
 
                         {/* Main Print Manifest Table */}
-                        <div className="overflow-x-auto border border-[#1e1e2d] rounded-2xl bg-[#0d0d14]/40">
+                        <div className="overflow-x-auto border border-border-default rounded-2xl bg-surface-2/40">
                           <table className="print-table w-full text-left border-collapse">
                             <thead>
-                              <tr className="bg-[#111118] border-b border-[#1e1e2d] text-zinc-400 text-[10px] font-black uppercase tracking-wider">
-                                <th className="p-3 w-12 text-center">STT</th>
-                                <th className="p-3">Tên In Mặt Áo (Mặt Sau)</th>
-                                <th className="p-3 w-20 text-center">Số Áo</th>
-                                <th className="p-3 w-16 text-center">Size</th>
-                                <th className="p-3">Mẫu Áo Tuyển</th>
-                                <th className="p-3 w-20 text-center">Màu In</th>
-                                <th className="p-3 w-24 text-center no-print">Đã In Xong</th>
+                              <tr className="bg-surface-3 border-b border-border-default text-text-muted text-[10px] font-black uppercase tracking-wider">
+                                <th className="p-3 w-12 text-center">{t("roster.tableSTT")}</th>
+                                <th className="p-3">{t("roster.tablePrintName")}</th>
+                                <th className="p-3 w-20 text-center">{t("roster.tableNumber")}</th>
+                                <th className="p-3 w-16 text-center">{t("roster.tableSize")}</th>
+                                <th className="p-3">{t("roster.tableTeam")}</th>
+                                <th className="p-3 w-20 text-center">{t("roster.tableColor")}</th>
+                                <th className="p-3 w-24 text-center no-print">{t("roster.tableDone")}</th>
                               </tr>
                             </thead>
-                            <tbody className="divide-y divide-[#1e1e2d] text-xs text-[#F8F8FF]">
+                            <tbody className="divide-y divide-border-default text-xs text-text-primary">
                               {(rosterSelectedOrder.items || []).map((it, idx) => {
                                 let labelNickname = (it.nickname || "PLAYER").trim().toUpperCase();
                                 return (
-                                  <tr 
-                                    key={it.id} 
-                                    className={`hover:bg-[#111118]/50 transition-colors ${rosterCheckedItems[it.id] ? "opacity-30 line-through bg-zinc-900/10" : ""}`}
+                                  <tr
+                                    key={it.id}
+                                    className={`hover:bg-surface-3/50 transition-colors ${rosterCheckedItems[it.id] ? "opacity-30 line-through bg-surface-2/10" : ""}`}
                                   >
-                                    <td className="p-3 font-mono text-center text-zinc-500">{idx + 1}</td>
+                                    <td className="p-3 font-mono text-center text-text-muted">{idx + 1}</td>
                                     <td className="p-3 font-extrabold uppercase font-sans tracking-wide text-yellow-400 text-sm">
                                       {labelNickname}
                                     </td>
-                                    <td className="p-3 font-mono font-black text-center text-[#F8F8FF] text-base">
+                                    <td className="p-3 font-mono font-black text-center text-text-primary text-base">
                                       {it.jerseyNumber ?? 10}
                                     </td>
                                     <td className="p-3 text-center">
-                                      <span className="inline-block bg-zinc-800 border border-zinc-700 text-[#F8F8FF] px-2 py-0.5 rounded text-[11px] font-mono font-black">
+                                      <span className="inline-block bg-surface-4 border border-border-default text-text-primary px-2 py-0.5 rounded text-[11px] font-mono font-black">
                                         {it.size}
                                       </span>
                                     </td>
-                                    <td className="p-3 font-medium text-zinc-300">
-                                      {it.product?.name || "Premium Custom Jersey"}
+                                    <td className="p-3 font-medium text-text-secondary">
+                                      {it.product?.name || t("roster.defaultProductName")}
                                     </td>
                                     <td className="p-3">
                                       <div className="flex items-center gap-1.5 justify-center">
-                                        <div 
-                                          className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner" 
+                                        <div
+                                          className="w-3.5 h-3.5 rounded-full border border-white/20 shadow-inner"
                                           style={{ backgroundColor: it.colorHex || "#ffffff" }}
                                         />
-                                        <span className="font-mono text-[9px] text-zinc-500">{it.colorHex}</span>
+                                        <span className="font-mono text-[9px] text-text-muted">{it.colorHex}</span>
                                       </div>
                                     </td>
                                     <td className="p-3 text-center no-print">
@@ -2653,7 +2667,7 @@ export default function App() {
                                             [it.id]: e.target.checked
                                           });
                                         }}
-                                        className="w-4.5 h-4.5 rounded border-zinc-800 bg-zinc-950 text-yellow-500 focus:ring-yellow-500 cursor-pointer accent-yellow-400"
+                                        className="w-4.5 h-4.5 rounded border-border-default bg-surface-base text-yellow-500 focus:ring-yellow-500 cursor-pointer accent-yellow-400"
                                       />
                                     </td>
                                   </tr>
@@ -2664,8 +2678,8 @@ export default function App() {
                         </div>
 
                         {/* Printable production disclaimer */}
-                        <div className="mt-6 border-t border-[#1e1e2d] pt-4 text-center text-[10px] text-zinc-650 italic">
-                          Mọi sai lệch kích thước vải hoặc bong tróc decal in ấn trong 7 ngày đầu sản xuất được bảo hành 100% không thu thêm phụ phí.
+                        <div className="mt-6 border-t border-border-default pt-4 text-center text-[10px] text-text-muted italic">
+                          {t("roster.disclaimer")}
                         </div>
 
                       </div>
@@ -2679,27 +2693,27 @@ export default function App() {
                               rawItems.map((it, idx) => `${idx + 1}. TÊN: ${(it.nickname || "PLAYER").toUpperCase()} - SỐ: ${it.jerseyNumber} - SIZE: ${it.size} - MÀU IN: ${it.colorHex}`).join("\n");
                             handleCopyRosterToClipboard(tString);
                           }}
-                          className="bg-[#111118] hover:bg-[#1e1e2d] text-zinc-300 border border-[#1e1e2d] px-5 py-3 rounded-xl font-bold text-xs uppercase cursor-pointer transition-all flex items-center gap-2"
+                          className="bg-surface-3 hover:bg-surface-4 text-text-secondary border border-border-default px-5 py-3 rounded-xl font-bold text-xs uppercase cursor-pointer transition-all flex items-center gap-2"
                         >
                           {copiedRosterText ? (
                             <>
                               <Check className="w-4 h-4 text-green-400" />
-                              Đã Sao Chép Zalo!
+                              {t("roster.copyZaloDone")}
                             </>
                           ) : (
                             <>
                               <Clipboard className="w-4 h-4 text-blue-400" />
-                              Sao Chép Nhanh Gửi Zalo
+                              {t("roster.copyZalo")}
                             </>
                           )}
                         </button>
 
                         <button
                           onClick={() => handleExportRosterToExcel(rosterSelectedOrder.items || [], rosterSelectedOrder.orderCode, rosterSelectedOrder.customerName)}
-                          className="bg-[#111118] hover:bg-[#1e1e2d] text-[#F8F8FF] border border-[#1e1e2d] px-5 py-3 rounded-xl font-bold text-xs uppercase cursor-pointer transition-all flex items-center gap-2"
+                          className="bg-surface-3 hover:bg-surface-4 text-text-primary border border-border-default px-5 py-3 rounded-xl font-bold text-xs uppercase cursor-pointer transition-all flex items-center gap-2"
                         >
                           <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                          Xuất Excel In (.xlsx)
+                          {t("roster.exportExcel")}
                         </button>
 
                         <button
@@ -2707,18 +2721,18 @@ export default function App() {
                           className="bg-yellow-500 hover:bg-yellow-400 text-black px-6 py-3 rounded-xl font-black text-xs uppercase cursor-pointer transition-all flex items-center gap-2 shadow-lg"
                         >
                           <Printer className="w-4 h-4 text-black" />
-                          In Phiếu Chi Tiết
+                          {t("roster.printSheet")}
                         </button>
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-[#111118] border border-[#1e1e2d] rounded-3xl p-12 text-center animate-fade-in">
-                      <div className="bg-[#1e1e2d]/60 p-4 rounded-full w-fit mx-auto mb-4">
-                        <FileSpreadsheet className="w-8 h-8 text-zinc-500 animate-pulse" />
+                    <div className="bg-surface-3 border border-border-default rounded-3xl p-12 text-center animate-fade-in">
+                      <div className="bg-surface-4/60 p-4 rounded-full w-fit mx-auto mb-4">
+                        <FileSpreadsheet className="w-8 h-8 text-text-muted animate-pulse" />
                       </div>
-                      <h3 className="text-base font-bold text-zinc-300 mb-1">Chưa Có Dữ Liệu Roster</h3>
-                      <p className="text-zinc-500 text-xs max-w-sm mx-auto leading-relaxed">
-                        Hãy nhập SĐT hoặc Mã ORD-... ở thanh tìm kiếm bên trái để bắt đầu lập danh sách và in ấn đồng loạt.
+                      <h3 className="text-base font-bold text-text-primary mb-1">{t("roster.emptyTitle")}</h3>
+                      <p className="text-text-muted text-xs max-w-sm mx-auto leading-relaxed">
+                        {t("roster.emptyDesc")}
                       </p>
                     </div>
                   )}
@@ -2729,30 +2743,30 @@ export default function App() {
 
             {/* TAB CONTENT: ACTIVE DRAFT CUSTOMIZER ROSTER */}
             {rosterSubTab === "draft" && (
-              <div className="bg-[#111118] border border-[#1e1e2d] p-6 sm:p-8 rounded-3xl shadow-xl transition-all">
-                <div className="border-b border-[#1e1e2d] pb-5 mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
+              <div className="bg-surface-3 border border-border-default p-6 sm:p-8 rounded-3xl shadow-xl transition-all">
+                <div className="border-b border-border-default pb-5 mb-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4">
                   <div>
-                    <h2 className="text-lg sm:text-xl font-black text-[#F8F8FF] uppercase flex items-center gap-2">
+                    <h2 className="text-lg sm:text-xl font-black text-text-primary uppercase flex items-center gap-2">
                       <Users className="w-5 h-5 text-yellow-500" />
-                      Cầu Thủ/Đội Bóng Bản Nháp
+                      {t("roster.draftTitle")}
                     </h2>
-                    <p className="text-zinc-500 text-xs mt-1">
-                      Danh sách này đồng nhất trực tiếp với mục **"Tùy Biến Đặt Đội"** ở Tab Thiết Kế Sáng Tạo.
+                    <p className="text-text-muted text-xs mt-1">
+                      {t("roster.draftDesc")}
                     </p>
                   </div>
-                  
+
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleExportRosterToExcel(teamRoster)}
                       disabled={teamRoster.length === 0}
-                      className="bg-transparent hover:bg-[#1e1e2d] disabled:opacity-40 disabled:hover:bg-transparent text-xs text-zinc-300 border border-[#1e1e2d] px-3.5 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
+                      className="bg-transparent hover:bg-surface-4 disabled:opacity-40 disabled:hover:bg-transparent text-xs text-text-secondary border border-border-default px-3.5 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
                     >
                       <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-500" />
-                      Tải File Excel (.xlsx)
+                      {t("roster.draftExportExcel")}
                     </button>
                     <button
                       onClick={() => {
-                        if (confirm("Bạn có chắc chắn muốn xóa toàn bộ cầu thủ bản nháp này không?")) {
+                        if (confirm(t("alerts.draftClearConfirm"))) {
                           setTeamRoster([]);
                         }
                       }}
@@ -2760,28 +2774,28 @@ export default function App() {
                       className="bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40 text-xs text-red-400 border border-red-500/20 px-3.5 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
-                      Xóa Sạch Đội Nháp
+                      {t("roster.draftClear")}
                     </button>
                   </div>
                 </div>
 
                 {teamRoster.length === 0 ? (
                   <div className="text-center py-12">
-                    <div className="bg-[#1e1e2d]/60 p-4.5 rounded-full w-fit mx-auto mb-4">
+                    <div className="bg-surface-4/60 p-4.5 rounded-full w-fit mx-auto mb-4">
                       <Shirt className="w-7 h-7 text-yellow-500" />
                     </div>
-                    <h3 className="text-sm font-bold text-zinc-300">Nhóm Nháp Đội Bóng Đang Trống</h3>
-                    <p className="text-zinc-500 text-xs max-w-md mx-auto mt-2 leading-relaxed">
-                      Bạn chưa thêm cầu thủ nào vào bản nháp. Bạn có thể tải mẫu Excel chuẩn phía dưới để điền danh sách, hoặc chuyển sang Customizer của chúng tôi để thêm trực tiếp.
+                    <h3 className="text-sm font-bold text-text-primary">{t("roster.draftEmptyTitle")}</h3>
+                    <p className="text-text-muted text-xs max-w-md mx-auto mt-2 leading-relaxed">
+                      {t("roster.draftEmptyDesc")}
                     </p>
-                    
+
                     <div className="mt-6 flex flex-wrap gap-4 justify-center">
                       <button
                         onClick={downloadExcelTemplate}
-                        className="bg-zinc-900 hover:bg-zinc-800 text-[#F8F8FF] border border-zinc-800 px-4 py-2.5 rounded-xl font-bold text-xs uppercase cursor-pointer transition-all flex items-center gap-1.5"
+                        className="bg-surface-2 hover:bg-surface-4 text-text-primary border border-border-default px-4 py-2.5 rounded-xl font-bold text-xs uppercase cursor-pointer transition-all flex items-center gap-1.5"
                       >
                         <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-                        Tải Excel Mẫu Chuẩn
+                        {t("roster.draftDownloadTemplate")}
                       </button>
                       <button
                         onClick={() => {
@@ -2790,7 +2804,7 @@ export default function App() {
                         }}
                         className="bg-yellow-500 hover:bg-yellow-400 text-black px-5 py-2.5 rounded-xl font-extrabold text-xs uppercase cursor-pointer transition-all flex items-center gap-1.5"
                       >
-                        Thêm Cầu Thủ Tại Studio
+                        {t("roster.draftAddAtStudio")}
                         <ArrowRight className="w-3.5 h-3.5" />
                       </button>
                     </div>
@@ -2799,40 +2813,40 @@ export default function App() {
                   <div>
                     {/* Draft Roster Stats */}
                     <div className="mb-6 flex flex-wrap gap-2.5">
-                      <div className="bg-[#0d0d14] border border-[#1e1e2d] px-3.5 py-2' rounded-xl text-xs flex items-center gap-1.5">
-                        <span className="text-zinc-500 uppercase font-semibold">Thành viên:</span>
-                        <strong className="text-yellow-400 font-mono text-sm">{teamRoster.length} cầu thủ</strong>
+                      <div className="bg-surface-2 border border-border-default px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                        <span className="text-text-muted uppercase font-semibold">{t("roster.draftMemberLabel")}</span>
+                        <strong className="text-yellow-400 font-mono text-sm">{t("roster.draftMemberUnit", { count: teamRoster.length })}</strong>
                       </div>
-                      
+
                       {/* Compute sizing counts on matching draft */}
                       {Object.entries(teamRoster.reduce((acc, p) => {
                         const sz = p.size || "M";
                         acc[sz] = (acc[sz] || 0) + 1;
                         return acc;
                       }, {} as { [key: string]: number })).map(([sz, count]) => (
-                        <div key={sz} className="bg-[#0d0d14] border border-[#1e1e2d] px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
-                          <span className="text-zinc-500 uppercase">Size {sz}:</span>
-                          <strong className="text-[#F8F8FF] font-mono text-sm">{count}</strong>
+                        <div key={sz} className="bg-surface-2 border border-border-default px-3.5 py-2 rounded-xl text-xs flex items-center gap-1.5">
+                          <span className="text-text-muted uppercase">{t("roster.sizeLabel", { size: sz })}</span>
+                          <strong className="text-text-primary font-mono text-sm">{count}</strong>
                         </div>
                       ))}
                     </div>
 
                     {/* Table of draft players */}
-                    <div className="overflow-x-auto border border-[#1e1e2d] rounded-2xl bg-[#0d0d14]/40 mb-6">
+                    <div className="overflow-x-auto border border-border-default rounded-2xl bg-surface-2/40 mb-6">
                       <table className="w-full text-left border-collapse font-sans">
                         <thead>
-                          <tr className="bg-[#111118] border-b border-[#1e1e2d] text-zinc-400 text-[10px] font-black uppercase tracking-wider">
-                            <th className="p-3 w-12 text-center">STT</th>
-                            <th className="p-3">Họ Tên trên áo</th>
-                            <th className="p-3 w-28 text-center">Số Áo</th>
-                            <th className="p-3 w-28 text-center">Kích Cỡ Size</th>
-                            <th className="p-3 w-16 text-center">Xóa</th>
+                          <tr className="bg-surface-3 border-b border-border-default text-text-muted text-[10px] font-black uppercase tracking-wider">
+                            <th className="p-3 w-12 text-center">{t("roster.tableSTT")}</th>
+                            <th className="p-3">{t("roster.draftTablePlayerName")}</th>
+                            <th className="p-3 w-28 text-center">{t("roster.draftTableNumber")}</th>
+                            <th className="p-3 w-28 text-center">{t("roster.draftTableSize")}</th>
+                            <th className="p-3 w-16 text-center">{t("roster.draftTableDelete")}</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#1e1e2d] text-xs text-[#F8F8FF]">
+                        <tbody className="divide-y divide-border-default text-xs text-text-primary">
                           {teamRoster.map((player, idx) => (
-                            <tr key={player.id} className="hover:bg-[#111118]/40 transition-colors">
-                              <td className="p-3 font-mono text-center text-zinc-500">{idx + 1}</td>
+                            <tr key={player.id} className="hover:bg-surface-3/40 transition-colors">
+                              <td className="p-3 font-mono text-center text-text-muted">{idx + 1}</td>
                               <td className="p-3 font-bold uppercase text-yellow-500 text-sm">
                                 {player.name}
                               </td>
@@ -2844,7 +2858,7 @@ export default function App() {
                                     const parsed = parseInt(e.target.value) || 0;
                                     setTeamRoster(teamRoster.map(p => p.id === player.id ? { ...p, number: parsed } : p));
                                   }}
-                                  className="w-16 bg-[#07070b] border border-[#1e1e2d] text-center font-mono py-1 rounded text-xs focus:ring-1 focus:ring-yellow-500 focus:outline-none"
+                                  className="w-16 bg-surface-base border border-border-default text-center font-mono py-1 rounded text-xs focus:ring-1 focus:ring-yellow-500 focus:outline-none"
                                 />
                               </td>
                               <td className="p-3 text-center">
@@ -2853,7 +2867,7 @@ export default function App() {
                                   onChange={(e) => {
                                     setTeamRoster(teamRoster.map(p => p.id === player.id ? { ...p, size: e.target.value as JerseySize } : p));
                                   }}
-                                  className="bg-[#07070b] border border-[#1e1e2d] text-center py-1 rounded w-16 text-xs text-zinc-300 focus:outline-none cursor-pointer"
+                                  className="bg-surface-base border border-border-default text-center py-1 rounded w-16 text-xs text-text-secondary focus:outline-none cursor-pointer"
                                 >
                                   {["S","M","L","XL","XXL","XXXL"].map(sz => (
                                     <option key={sz} value={sz}>{sz}</option>
@@ -2874,12 +2888,12 @@ export default function App() {
                       </table>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row justify-between items-center bg-[#0d0d14]/75 p-5 rounded-2xl border border-[#1e1e2d] mt-6 gap-4">
-                      <div className="text-zinc-500 text-xs text-center sm:text-left">
-                        <strong className="text-zinc-300 mr-1 block sm:inline">Cách nhanh tiếp theo:</strong> 
-                        Chuyển nhanh danh sách này sang mục Customizer để xem lại toàn bộ Mockup 2.5D của các tuyển thủ và thanh toán nhanh.
+                    <div className="flex flex-col sm:flex-row justify-between items-center bg-surface-2/75 p-5 rounded-2xl border border-border-default mt-6 gap-4">
+                      <div className="text-text-muted text-xs text-center sm:text-left">
+                        <strong className="text-text-secondary mr-1 block sm:inline">{t("roster.draftNextLabel")}</strong>
+                        {t("roster.draftNextDesc")}
                       </div>
-                      
+
                       <button
                         onClick={() => {
                           setCustomizeMode("team");
@@ -2887,7 +2901,7 @@ export default function App() {
                         }}
                         className="bg-yellow-500 hover:bg-yellow-400 text-black px-6 py-3 rounded-xl font-black text-xs uppercase cursor-pointer transition-all flex items-center gap-1.5 shadow-lg w-full sm:w-auto justify-center"
                       >
-                        Nạp Đội Vào Customizer
+                        {t("roster.draftLoadIntoStudio")}
                         <ArrowRight className="w-4 h-4" />
                       </button>
                     </div>
@@ -2903,14 +2917,14 @@ export default function App() {
         {/* VIEW 6: ADMIN LOGINS AND REDIRECTS */}
         {activeTab === "admin-login" && (
           <div className="max-w-md mx-auto">
-            <div className="bg-[#111118] border border-[#1e1e2d] p-8 rounded-3xl shadow-2xl">
+            <div className="bg-surface-3 border border-border-default p-8 rounded-3xl shadow-2xl">
               <div className="text-center mb-6">
                 <div className="bg-blue-500/10 border border-blue-500/20 p-3.5 rounded-2xl w-fit mx-auto mb-3">
                   <ShieldAlert className="w-8 h-8 text-blue-400" />
                 </div>
-                <h1 className="text-xl sm:text-2xl font-black text-[#F8F8FF] tracking-tight">Khu Vực Quản Trị Viên</h1>
-                <p className="text-zinc-400 text-xs mt-1 leading-normal">
-                  Vui lòng đăng nhập bằng Tài khoản quản lý để thực hiện rà soát đơn hàng, cập nhật kho và truy xuất báo cáo.
+                <h1 className="text-xl sm:text-2xl font-black text-text-primary tracking-tight">{t("adminLogin.title")}</h1>
+                <p className="text-text-muted text-xs mt-1 leading-normal">
+                  {t("adminLogin.subtitle")}
                 </p>
               </div>
 
@@ -2923,27 +2937,27 @@ export default function App() {
 
               <form onSubmit={handleAdminLogin} className="flex flex-col gap-4.5">
                 <div>
-                  <label className="text-zinc-400 text-[10px] font-black uppercase tracking-widest block mb-1.5">Email quản lý</label>
+                  <label className="text-text-muted text-[10px] font-black uppercase tracking-widest block mb-1.5">{t("adminLogin.emailLabel")}</label>
                   <input
                     type="email"
                     required
                     value={adminEmail}
                     onChange={(e) => setAdminEmail(e.target.value)}
                     placeholder="admin@yourshop.com"
-                    className="w-full bg-[#0d0d14] text-[#F8F8FF] px-4 py-3 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-blue-500 text-sm"
+                    className="w-full bg-surface-2 text-text-primary px-4 py-3 rounded-xl border border-border-default focus:outline-none focus:border-blue-500 text-sm"
                   />
-                  <p className="text-[10px] text-zinc-500 mt-1">Sử dụng Email khuyên dùng: <strong className="text-zinc-300">admin@yourshop.com</strong></p>
+                  <p className="text-[10px] text-text-muted mt-1">{t("adminLogin.emailHintPrefix")} <strong className="text-text-secondary">admin@yourshop.com</strong></p>
                 </div>
 
                 <div>
-                  <label className="text-zinc-400 text-[10px] font-black uppercase tracking-widest block mb-1.5">Mật khẩu PIN code (Mô phỏng bất kỳ)</label>
+                  <label className="text-text-muted text-[10px] font-black uppercase tracking-widest block mb-1.5">{t("adminLogin.passwordLabel")}</label>
                   <input
                     type="password"
                     required
                     value={adminPassword}
                     onChange={(e) => setAdminPassword(e.target.value)}
                     placeholder="••••••••"
-                    className="w-full bg-[#0d0d14] text-[#F8F8FF] px-4 py-3 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-blue-500 text-sm text-indigo-300"
+                    className="w-full bg-surface-2 text-text-primary px-4 py-3 rounded-xl border border-border-default focus:outline-none focus:border-blue-500 text-sm text-indigo-300"
                   />
                 </div>
 
@@ -2952,7 +2966,7 @@ export default function App() {
                   id="btn-admin-submit"
                   className="w-full bg-blue-500 hover:bg-blue-400 text-white font-extrabold py-3 rounded-xl text-xs uppercase tracking-wider transition-colors cursor-pointer text-center mt-2.5"
                 >
-                  Xác Thực Đăng Nhập
+                  {t("adminLogin.submit")}
                 </button>
               </form>
             </div>
@@ -2964,12 +2978,12 @@ export default function App() {
           <div>
             
             {/* ADMIN SUB NAV LINKS BAR */}
-            <div className="flex flex-wrap items-center gap-1.5 mb-8 border-b border-[#1e1e2d] pb-4">
+            <div className="flex flex-wrap items-center gap-1.5 mb-8 border-b border-border-default pb-4">
               {[
-                { tab: "admin-dashboard", label: "Bảng Điều Khiển" },
-                { tab: "admin-orders", label: "Quản Lý Đơn Hàng" },
-                { tab: "admin-products", label: "Đội Tuyển & Giá Cả" },
-                { tab: "admin-customers", label: "Danh Sách Khách Hàng" }
+                { tab: "admin-dashboard", label: t("admin.subNavDashboard") },
+                { tab: "admin-orders", label: t("admin.subNavOrders") },
+                { tab: "admin-products", label: t("admin.subNavProducts") },
+                { tab: "admin-customers", label: t("admin.subNavCustomers") }
               ].map((sub) => (
                 <button
                   key={sub.tab}
@@ -2977,7 +2991,7 @@ export default function App() {
                   className={`px-4 py-2.5 rounded-xl text-xs font-black uppercase transition-all cursor-pointer ${
                     activeTab === sub.tab
                       ? "bg-yellow-500 text-black border-2 border-yellow-500 shadow-md shadow-yellow-500/10"
-                      : "bg-[#111118]/60 text-zinc-400 border border-[#1e1e2d] hover:bg-[#1e1e2d]"
+                      : "bg-surface-3/60 text-text-muted border border-border-default hover:bg-surface-4"
                   }`}
                 >
                   {sub.label}
@@ -2991,32 +3005,32 @@ export default function App() {
                 
                 {/* 4 Stats Cards */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatsCard 
-                    title="Tổng số Đơn" 
+                  <StatsCard
+                    title={t("admin.statTotalOrders")}
                     value={adminStats?.totalOrders ?? 0}
                     icon={<ShoppingBag className="w-5 h-5" />}
-                    subtitle="Lượng order tích lũy"
+                    subtitle={t("admin.statTotalOrdersSub")}
                     colorClass="text-blue-400"
                   />
-                  <StatsCard 
-                    title="Doanh thu thực" 
+                  <StatsCard
+                    title={t("admin.statRevenue")}
                     value={`${(adminStats?.revenue ?? 0).toLocaleString("vi-VN")} ₫`}
                     icon={<BadgeDollarSign className="w-5 h-5" />}
-                    subtitle="Tỉ lệ thanh toán hoàn tất"
+                    subtitle={t("admin.statRevenueSub")}
                     colorClass="text-green-400"
                   />
-                  <StatsCard 
-                    title="Đơn đang chờ" 
+                  <StatsCard
+                    title={t("admin.statPending")}
                     value={adminStats?.pendingOrders ?? 0}
                     icon={<Clock className="w-5 h-5" />}
-                    subtitle="Cần rà soát chuẩn bị in"
+                    subtitle={t("admin.statPendingSub")}
                     colorClass="text-amber-500"
                   />
-                  <StatsCard 
-                    title="Hoàn tất hôm nay" 
+                  <StatsCard
+                    title={t("admin.statCompletedToday")}
                     value={adminStats?.completedToday ?? 0}
                     icon={<CheckCircle2 className="w-5 h-5" />}
-                    subtitle="Đã bàn giao vận chuyển"
+                    subtitle={t("admin.statCompletedTodaySub")}
                     colorClass="text-pink-400"
                   />
                 </div>
@@ -3025,19 +3039,19 @@ export default function App() {
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
                   {/* Chart 1: Trend Sales Last 7 Days (Line graph styled in customized SVGs with points and grid lines) */}
-                  <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl flex flex-col gap-4">
+                  <div className="bg-surface-3 border border-border-default p-5 rounded-2xl flex flex-col gap-4">
                     <div>
-                      <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest block">TRENDS LINE CHART</span>
-                      <h3 className="text-white text-base font-bold mt-0.5">Biểu Đồ Xu Hướng Doanh Thu (7 Ngày)</h3>
+                      <span className="text-text-muted text-[10px] font-black uppercase tracking-widest block">{t("admin.chartRevenueLabel")}</span>
+                      <h3 className="text-text-primary text-base font-bold mt-0.5">{t("admin.chartRevenueTitle")}</h3>
                     </div>
 
-                    <div className="h-60 w-full relative flex items-end justify-between px-2 pt-6 pb-2 bg-black/30 border border-zinc-800 rounded-xl">
+                    <div className="h-60 w-full relative flex items-end justify-between px-2 pt-6 pb-2 bg-surface-base/30 border border-border-default rounded-xl">
                       {/* Grid background markers */}
                       <div className="absolute inset-0 flex flex-col justify-between p-3 select-none pointer-events-none opacity-10">
-                        <div className="w-full h-[1px] bg-white text-[8px]"></div>
-                        <div className="w-full h-[1px] bg-white"></div>
-                        <div className="w-full h-[1px] bg-white"></div>
-                        <div className="w-full h-[1px] bg-white"></div>
+                        <div className="w-full h-[1px] bg-text-primary text-[8px]"></div>
+                        <div className="w-full h-[1px] bg-text-primary"></div>
+                        <div className="w-full h-[1px] bg-text-primary"></div>
+                        <div className="w-full h-[1px] bg-text-primary"></div>
                       </div>
 
                       {/* Display daily nodes */}
@@ -3048,8 +3062,8 @@ export default function App() {
                         return (
                           <div key={itemIdx} className="flex-1 flex flex-col items-center justify-end h-full gap-2 relative group">
                             {/* Hover data card */}
-                            <div className="absolute bottom-full mb-1 bg-zinc-900 border border-yellow-500/40 text-yellow-400 px-2 py-0.5 rounded text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none">
-                              {v.amount.toLocaleString("vi-VN")} ₫ ({v.count} đơn)
+                            <div className="absolute bottom-full mb-1 bg-surface-3 border border-yellow-500/40 text-yellow-400 px-2 py-0.5 rounded text-[9px] font-mono opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-30 pointer-events-none">
+                              {t("admin.chartRevenueTooltip", { amount: v.amount.toLocaleString("vi-VN"), count: v.count })}
                             </div>
 
                             {/* Solid visual connector column bar (using custom responsive layouts) */}
@@ -3058,7 +3072,7 @@ export default function App() {
                               style={{ height: `${barRatioPercentage}%` }}
                             />
 
-                            <span className="text-[10px] text-zinc-400 font-bold font-mono">
+                            <span className="text-[10px] text-text-muted font-bold font-mono">
                               {v.date}
                             </span>
                           </div>
@@ -3068,28 +3082,28 @@ export default function App() {
                   </div>
 
                   {/* Chart 2: Popular Squad teams ordered hierarchy (horizontal status bar graphs) */}
-                  <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl flex flex-col gap-4">
+                  <div className="bg-surface-3 border border-border-default p-5 rounded-2xl flex flex-col gap-4">
                     <div>
-                      <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest block">MARKETS METRICS</span>
-                      <h3 className="text-white text-base font-bold mt-0.5">Top 5 Đội Tuyển Được Ưa Chuộng Nhất</h3>
+                      <span className="text-text-muted text-[10px] font-black uppercase tracking-widest block">{t("admin.chartTeamsLabel")}</span>
+                      <h3 className="text-text-primary text-base font-bold mt-0.5">{t("admin.chartTeamsTitle")}</h3>
                     </div>
 
-                    <div className="bg-black/30 border border-zinc-800 rounded-xl p-5 flex flex-col gap-4 h-60 justify-center">
-                      {adminStats?.topTeams?.map((t: any, tidx: number) => {
+                    <div className="bg-surface-base/30 border border-border-default rounded-xl p-5 flex flex-col gap-4 h-60 justify-center">
+                      {adminStats?.topTeams?.map((team: any, tidx: number) => {
                         const maxCount = Math.max(...adminStats.topTeams.map((x: any) => x.count)) || 1;
-                        const computedRatio = (t.count / maxCount) * 100;
+                        const computedRatio = (team.count / maxCount) * 100;
 
                         return (
                           <div key={tidx} className="flex flex-col gap-1.5 group">
                             <div className="flex justify-between items-center text-xs">
-                              <span className="text-[#F8F8FF] font-black block group-hover:text-yellow-400 transition-colors">
-                                {tidx + 1}. {t.team}
+                              <span className="text-text-primary font-black block group-hover:text-yellow-400 transition-colors">
+                                {tidx + 1}. {team.team}
                               </span>
-                              <span className="font-mono text-zinc-400 text-xs font-bold">{t.count} áo</span>
+                              <span className="font-mono text-text-muted text-xs font-bold">{t("admin.chartTeamsUnit", { count: team.count })}</span>
                             </div>
                             {/* Horizontal load progress bars */}
-                            <div className="w-full bg-[#1e1e2d] h-[6.5px] rounded-full overflow-hidden">
-                              <div 
+                            <div className="w-full bg-surface-4 h-[6.5px] rounded-full overflow-hidden">
+                              <div
                                 className="bg-gradient-to-r from-blue-500 to-yellow-400 h-full rounded-full transition-all duration-1000"
                                 style={{ width: `${computedRatio}%` }}
                               />
@@ -3103,33 +3117,33 @@ export default function App() {
                 </div>
 
                 {/* Sub row: Recent Placed orders (limits last 5 items) */}
-                <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl">
-                  <h3 className="text-white text-[#F8F8FF] text-sm font-extrabold uppercase tracking-widest mb-4">Danh Sách 5 Đơn Gần Nhất</h3>
+                <div className="bg-surface-3 border border-border-default p-5 rounded-2xl">
+                  <h3 className="text-text-primary text-sm font-extrabold uppercase tracking-widest mb-4">{t("admin.recentOrdersTitle")}</h3>
                   <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left text-zinc-400">
-                      <thead className="bg-[#0c0c14] border-b border-[#1e1e2d] text-zinc-500 uppercase tracking-wider text-[10px]">
+                    <table className="w-full text-xs text-left text-text-muted">
+                      <thead className="bg-surface-2 border-b border-border-default text-text-muted uppercase tracking-wider text-[10px]">
                         <tr>
-                          <th className="px-4 py-3">Mã đơn</th>
-                          <th className="px-4 py-3">Khách hàng</th>
-                          <th className="px-4 py-3">Tổng Tiền</th>
-                          <th className="px-4 py-3">Ngày đặt</th>
-                          <th className="px-4 py-3">Trạng thái</th>
-                          <th className="px-4 py-3 text-right">Hành động nhanh</th>
+                          <th className="px-4 py-3">{t("admin.tableOrderCode")}</th>
+                          <th className="px-4 py-3">{t("admin.tableCustomer")}</th>
+                          <th className="px-4 py-3">{t("admin.tableTotal")}</th>
+                          <th className="px-4 py-3">{t("admin.tableDate")}</th>
+                          <th className="px-4 py-3">{t("admin.tableStatus")}</th>
+                          <th className="px-4 py-3 text-right">{t("admin.tableActionsHead")}</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-[#1e1e2d]">
+                      <tbody className="divide-y divide-border-default">
                         {orders.slice(0, 5).map((ord) => (
-                          <tr key={ord.id} className="hover:bg-[#151522] transition-colors font-medium">
+                          <tr key={ord.id} className="hover:bg-surface-4 transition-colors font-medium">
                             <td className="px-4 py-3 font-mono font-bold text-yellow-400">{ord.orderCode}</td>
-                            <td className="px-4 py-3 text-[#F8F8FF]">
+                            <td className="px-4 py-3 text-text-primary">
                               <div>{ord.customerName}</div>
-                              <div className="text-[10px] text-zinc-500">{ord.phone}</div>
+                              <div className="text-[10px] text-text-muted">{ord.phone}</div>
                             </td>
-                            <td className="px-4 py-3 font-mono text-zinc-300 font-bold">{ord.totalAmount.toLocaleString("vi-VN")} ₫</td>
-                            <td className="px-4 py-3 text-zinc-500">{new Date(ord.createdAt).toLocaleDateString("vi-VN")}</td>
+                            <td className="px-4 py-3 font-mono text-text-secondary font-bold">{ord.totalAmount.toLocaleString("vi-VN")} ₫</td>
+                            <td className="px-4 py-3 text-text-muted">{new Date(ord.createdAt).toLocaleDateString("vi-VN")}</td>
                             <td className="px-4 py-3">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-black uppercase inline-block ${
-                                ord.status === "completed" 
+                                ord.status === "completed"
                                   ? "bg-green-500/10 border border-green-500/20 text-green-400"
                                   : ord.status === "shipping"
                                     ? "bg-orange-500/10 border border-orange-500/20 text-orange-400"
@@ -3146,9 +3160,9 @@ export default function App() {
                                   setActiveTab("admin-orders");
                                   setAdminOrderSearch(ord.orderCode);
                                 }}
-                                className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-[#F8F8FF] py-1 px-3.5 border border-zinc-700 rounded-lg cursor-pointer transition-colors"
+                                className="text-[10px] bg-surface-4 hover:bg-border-strong text-text-primary py-1 px-3.5 border border-border-default rounded-lg cursor-pointer transition-colors"
                               >
-                                Xem Chi Tiết
+                                {t("admin.viewDetails")}
                               </button>
                             </td>
                           </tr>
@@ -3163,107 +3177,107 @@ export default function App() {
 
             {/* SUB-TAB 2: ORDER MANAGER MANAGEMENT TABLE */}
             {activeTab === "admin-orders" && (
-              <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl flex flex-col gap-6">
+              <div className="bg-surface-3 border border-border-default p-5 rounded-2xl flex flex-col gap-6">
                 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1e1e2d] pb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-default pb-5">
                   <div>
-                    <h2 className="text-white text-base font-black uppercase tracking-widest">Rà soát chi tiết Đơn Hàng</h2>
-                    <p className="text-zinc-500 text-xs mt-0.5">Thực hiện cập nhật in ấn hoặc xuất hóa đơn, xuất excel nhanh chóng.</p>
+                    <h2 className="text-text-primary text-base font-black uppercase tracking-widest">{t("admin.ordersTitle")}</h2>
+                    <p className="text-text-muted text-xs mt-0.5">{t("admin.ordersDesc")}</p>
                   </div>
-                  
+
                   <button
                     id="btn-excel-export"
                     onClick={handleExportOrders}
                     className="bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold px-5 py-3 rounded-xl text-xs uppercase tracking-wider flex items-center justify-center gap-2 cursor-pointer transition-colors"
                   >
                     <FileSpreadsheet className="w-4.5 h-4.5" />
-                    Báo Cáo File Excel (.XLSX)
+                    {t("admin.exportExcel")}
                   </button>
                 </div>
 
                 {/* Filters Row */}
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-black/30 p-4 border border-zinc-800/80 rounded-2xl">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 bg-surface-base/30 p-4 border border-border-default/80 rounded-2xl">
                   {/* Search inputs */}
                   <div>
-                    <label className="text-zinc-500 text-[9px] font-black uppercase block mb-1.5">Bộ lọc từ khóa</label>
+                    <label className="text-text-muted text-[9px] font-black uppercase block mb-1.5">{t("admin.filterKeyword")}</label>
                     <div className="relative">
-                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                       <input
                         type="text"
-                        placeholder="Tìm mã ORD, tên khách, sđt..."
+                        placeholder={t("admin.filterKeywordPlaceholder")}
                         value={adminOrderSearch}
                         onChange={(e) => setAdminOrderSearch(e.target.value)}
-                        className="w-full bg-[#0d0d14] text-[#F8F8FF] placeholder-gray-500 pl-9 pr-4 py-2 rounded-xl text-xs border border-[#1e1e2d] focus:outline-none focus:border-yellow-500"
+                        className="w-full bg-surface-2 text-text-primary placeholder-text-muted pl-9 pr-4 py-2 rounded-xl text-xs border border-border-default focus:outline-none focus:border-yellow-500"
                       />
                     </div>
                   </div>
 
                   {/* Status Dropdowns */}
                   <div>
-                    <label className="text-zinc-500 text-[9px] font-black uppercase block mb-1.5">Lọc Trạng Thái Đơn</label>
+                    <label className="text-text-muted text-[9px] font-black uppercase block mb-1.5">{t("admin.filterStatus")}</label>
                     <select
                       value={adminOrderFilterStatus}
                       onChange={(e) => setAdminOrderFilterStatus(e.target.value)}
-                      className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3 py-2 rounded-xl text-xs border border-[#1e1e2d] cursor-pointer focus:outline-none focus:border-yellow-500"
+                      className="w-full bg-surface-2 text-text-primary px-3 py-2 rounded-xl text-xs border border-border-default cursor-pointer focus:outline-none focus:border-yellow-500"
                     >
-                      <option value="all">Tất Cả Trạng Thái</option>
-                      <option value="pending">Pending (Chờ duyệt)</option>
-                      <option value="processing">Processing (Chuẩn bị)</option>
-                      <option value="printing">Printing (Đang in)</option>
-                      <option value="shipping">Shipping (Đang giao)</option>
-                      <option value="completed">Completed (Xong)</option>
-                      <option value="cancelled">Cancelled (Đã hủy)</option>
+                      <option value="all">{t("admin.filterStatusAll")}</option>
+                      <option value="pending">{t("admin.statusOptPending")}</option>
+                      <option value="processing">{t("admin.statusOptProcessing")}</option>
+                      <option value="printing">{t("admin.statusOptPrinting")}</option>
+                      <option value="shipping">{t("admin.statusOptShipping")}</option>
+                      <option value="completed">{t("admin.statusOptCompleted")}</option>
+                      <option value="cancelled">{t("admin.statusOptCancelled")}</option>
                     </select>
                   </div>
 
                   {/* Payment Filters */}
                   <div>
-                    <label className="text-zinc-500 text-[9px] font-black uppercase block mb-1.5">Lọc Thanh Toán</label>
+                    <label className="text-text-muted text-[9px] font-black uppercase block mb-1.5">{t("admin.filterPayment")}</label>
                     <select
                       value={adminOrderFilterPayment}
                       onChange={(e) => setAdminOrderFilterPayment(e.target.value)}
-                      className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3 py-2 rounded-xl text-xs border border-[#1e1e2d] cursor-pointer focus:outline-none focus:border-yellow-500"
+                      className="w-full bg-surface-2 text-text-primary px-3 py-2 rounded-xl text-xs border border-border-default cursor-pointer focus:outline-none focus:border-yellow-500"
                     >
-                      <option value="all">Tất Cả Phương Thức</option>
-                      <option value="cod">COD (Giao thu tiền)</option>
-                      <option value="bank_transfer">Chuyển khoản VCB</option>
-                      <option value="momo">Ví điện tử MoMo</option>
-                      <option value="vnpay">Cổng VNPay</option>
+                      <option value="all">{t("admin.filterPaymentAll")}</option>
+                      <option value="cod">{t("admin.paymentOptCod")}</option>
+                      <option value="bank_transfer">{t("admin.paymentOptBank")}</option>
+                      <option value="momo">{t("admin.paymentOptMomo")}</option>
+                      <option value="vnpay">{t("admin.paymentOptVnpay")}</option>
                     </select>
                   </div>
 
                   {/* Bulk Actions Console */}
                   <div>
-                    <label className="text-zinc-500 text-[9px] font-black uppercase block mb-1.5">Tác Vụ Hàng Loạt ({selectedOrderIds.length} chọn)</label>
+                    <label className="text-text-muted text-[9px] font-black uppercase block mb-1.5">{t("admin.bulkActionsLabel", { count: selectedOrderIds.length })}</label>
                     <div className="flex gap-2">
                       <select
                         value={bulkStatusValue}
                         onChange={(e) => setBulkStatusValue(e.target.value)}
-                        className="flex-grow bg-[#0d0d14] text-[#F8F8FF] px-3 py-2 rounded-xl text-[11px] border border-[#1e1e2d] cursor-pointer"
+                        className="flex-grow bg-surface-2 text-text-primary px-3 py-2 rounded-xl text-[11px] border border-border-default cursor-pointer"
                         disabled={selectedOrderIds.length === 0}
                       >
-                        <option value="">Đặt Trạng Thái...</option>
-                        <option value="processing">Processing (Duyệt)</option>
-                        <option value="printing">Printing (Dầu in)</option>
-                        <option value="shipping">Shipping (Bàn giao ship)</option>
-                        <option value="completed">Completed (Xong)</option>
-                        <option value="cancelled">Cancelled (Hủy)</option>
+                        <option value="">{t("admin.bulkActionsPlaceholder")}</option>
+                        <option value="processing">{t("admin.bulkStatusProcessing")}</option>
+                        <option value="printing">{t("admin.bulkStatusPrinting")}</option>
+                        <option value="shipping">{t("admin.bulkStatusShipping")}</option>
+                        <option value="completed">{t("admin.statusOptCompleted")}</option>
+                        <option value="cancelled">{t("admin.statusOptCancelled")}</option>
                       </select>
                       <button
                         onClick={handleBulkStatusUpdate}
                         disabled={selectedOrderIds.length === 0 || !bulkStatusValue}
-                        className="bg-yellow-500 hover:bg-yellow-400 text-black px-4.5 py-2 rounded-xl text-xs font-black disabled:bg-zinc-800 disabled:text-zinc-500 disabled:cursor-not-allowed cursor-pointer"
+                        className="bg-yellow-500 hover:bg-yellow-400 text-black px-4.5 py-2 rounded-xl text-xs font-black disabled:bg-surface-4 disabled:text-text-muted disabled:cursor-not-allowed cursor-pointer"
                       >
-                        Cập nhật
+                        {t("admin.bulkUpdate")}
                       </button>
                     </div>
                   </div>
                 </div>
 
                 {/* Orders spreadsheet grid */}
-                <div className="overflow-x-auto border border-zinc-800 rounded-xl">
-                  <table className="w-full text-xs text-left text-zinc-400 min-w-[900px]">
-                    <thead className="bg-[#0c0c14] border-b border-[#1e1e2d] text-zinc-500 uppercase tracking-wider text-[9px]">
+                <div className="overflow-x-auto border border-border-default rounded-xl">
+                  <table className="w-full text-xs text-left text-text-muted min-w-[900px]">
+                    <thead className="bg-surface-2 border-b border-border-default text-text-muted uppercase tracking-wider text-[9px]">
                       <tr>
                         <th className="px-4 py-3.5 text-center">
                           <input
@@ -3273,23 +3287,23 @@ export default function App() {
                             className="w-3.5 h-3.5 accent-yellow-500 cursor-pointer"
                           />
                         </th>
-                        <th className="px-4 py-3.5">Mã đơn</th>
-                        <th className="px-4 py-3.5">Khách hàng / SĐT</th>
-                        <th className="px-4 py-3.5">In Áo Tên / Số</th>
-                        <th className="px-4 py-3.5">Đội tuyển</th>
-                        <th className="px-4 py-3.5">Cỡ / SL</th>
-                        <th className="px-4 py-3.5">Tổng Tiền</th>
-                        <th className="px-4 py-3.5">Thanh Toán</th>
-                        <th className="px-4 py-3.5">Trạng Thái Đơn</th>
+                        <th className="px-4 py-3.5">{t("admin.tableOrderCode")}</th>
+                        <th className="px-4 py-3.5">{t("admin.ordersTableCustomer")}</th>
+                        <th className="px-4 py-3.5">{t("admin.ordersTablePrintName")}</th>
+                        <th className="px-4 py-3.5">{t("admin.ordersTableTeam")}</th>
+                        <th className="px-4 py-3.5">{t("admin.ordersTableSize")}</th>
+                        <th className="px-4 py-3.5">{t("admin.tableTotal")}</th>
+                        <th className="px-4 py-3.5">{t("admin.ordersTablePayment")}</th>
+                        <th className="px-4 py-3.5">{t("admin.ordersTableStatus")}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#1e1e2d]">
+                    <tbody className="divide-y divide-border-default">
                       {orders.map((ord) => {
                         const isSelected = selectedOrderIds.includes(ord.id);
                         const item = ord.items?.[0]; // single item schema
                         
                         return (
-                          <tr key={ord.id} className={`hover:bg-[#151522] transition-colors ${isSelected ? "bg-yellow-500/5" : ""}`}>
+                          <tr key={ord.id} className={`hover:bg-surface-4 transition-colors ${isSelected ? "bg-yellow-500/5" : ""}`}>
                             <td className="px-4 py-3 text-center">
                               <input
                                 type="checkbox"
@@ -3300,47 +3314,47 @@ export default function App() {
                             </td>
                             <td className="px-4 py-3">
                               <span className="font-mono font-black text-yellow-400 tracking-wider block">{ord.orderCode}</span>
-                              <span className="text-[10px] text-zinc-500 block">{new Date(ord.createdAt).toLocaleDateString("vi-VN")}</span>
+                              <span className="text-[10px] text-text-muted block">{new Date(ord.createdAt).toLocaleDateString("vi-VN")}</span>
                             </td>
-                            <td className="px-4 py-3 text-[#F8F8FF]">
+                            <td className="px-4 py-3 text-text-primary">
                               <p className="font-bold">{ord.customerName}</p>
-                              <p className="font-mono text-zinc-500 text-[10px]">{ord.phone}</p>
-                              <p className="text-[9px] text-zinc-600 line-clamp-1 max-w-[150px]" title={ord.address}>{ord.address}</p>
+                              <p className="font-mono text-text-muted text-[10px]">{ord.phone}</p>
+                              <p className="text-[9px] text-text-muted line-clamp-1 max-w-[150px]" title={ord.address}>{ord.address}</p>
                             </td>
-                            <td className="px-4 py-3 text-white uppercase font-sans font-bold">
+                            <td className="px-4 py-3 text-text-primary uppercase font-sans font-bold">
                               {item ? (
                                 <div>
                                   <span className="text-indigo-400 text-xs tracking-wider block">{item.nickname || "DRAFT"}</span>
-                                  <span className="text-zinc-400 text-[10px] font-mono block">Số in: {item.jerseyNumber}</span>
+                                  <span className="text-text-muted text-[10px] font-mono block">{t("admin.ordersTablePrintNum")} {item.jerseyNumber}</span>
                                 </div>
                               ) : "—"}
                             </td>
-                            <td className="px-4 py-3 font-semibold text-zinc-300">
+                            <td className="px-4 py-3 font-semibold text-text-secondary">
                               {item?.product?.teamCountry || "N/A"}
                             </td>
                             <td className="px-4 py-3 font-semibold">
-                              <span className="font-mono text-yellow-500 font-extrabold text-xs block">{item?.size || "M"}</span>
-                              <span className="text-zinc-500 text-[10px] block font-medium">SL: {item?.quantity || 1} cái</span>
+                              <span className="font-mono text-yellow-500 font-extrabold text-xs block">{item?.size || t("admin.dashboardSize")}</span>
+                              <span className="text-text-muted text-[10px] block font-medium">{t("admin.ordersTableSizeQty")} {item?.quantity || 1}</span>
                             </td>
-                            <td className="px-4 py-3 font-mono text-zinc-300 font-extrabold font-bold">
+                            <td className="px-4 py-3 font-mono text-text-secondary font-extrabold font-bold">
                               {ord.totalAmount.toLocaleString("vi-VN")} ₫
                             </td>
                             <td className="px-4 py-3">
                               <div className="flex flex-col gap-1.5">
-                                <span className="text-[10px] uppercase font-bold text-gray-500 tracking-wider">{ord.payment?.method}</span>
+                                <span className="text-[10px] uppercase font-bold text-text-muted tracking-wider">{ord.payment?.method}</span>
                                 <select
                                   value={ord.payment?.status || "pending"}
                                   onChange={(e) => handleUpdateOrderPaymentStatus(ord.id, e.target.value as PaymentStatus)}
-                                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg outline-none cursor-pointer bg-black/40 border border-[#1e1e2d] ${
-                                    ord.payment?.status === "paid" 
-                                      ? "text-green-400 border-green-500/20 bg-green-500/5" 
+                                  className={`text-[10px] font-bold px-2.5 py-1 rounded-lg outline-none cursor-pointer bg-surface-base/40 border border-border-default ${
+                                    ord.payment?.status === "paid"
+                                      ? "text-green-400 border-green-500/20 bg-green-500/5"
                                       : "text-amber-500 border-amber-500/20 bg-amber-500/5"
                                   }`}
                                 >
-                                  <option value="pending">Mới tạo (Pending)</option>
-                                  <option value="paid">Đã Thu Tiền (Paid)</option>
-                                  <option value="failed">Lỗi Giao Dịch (Failed)</option>
-                                  <option value="refunded">Đã Hoàn Lại (Refunded)</option>
+                                  <option value="pending">{t("admin.paymentStatusPending")}</option>
+                                  <option value="paid">{t("admin.paymentStatusPaid")}</option>
+                                  <option value="failed">{t("admin.paymentStatusFailed")}</option>
+                                  <option value="refunded">{t("admin.paymentStatusRefunded")}</option>
                                 </select>
                               </div>
                             </td>
@@ -3348,7 +3362,7 @@ export default function App() {
                               <select
                                 value={ord.status}
                                 onChange={(e) => handleUpdateOrderStatus(ord.id, e.target.value as OrderStatus)}
-                                className={`text-[10px] uppercase font-black px-2.5 py-1.5 rounded-lg border bg-black/40 outline-none cursor-pointer ${
+                                className={`text-[10px] uppercase font-black px-2.5 py-1.5 rounded-lg border bg-surface-base/40 outline-none cursor-pointer ${
                                   ord.status === "completed"
                                     ? "text-green-400 border-green-500/20 bg-green-500/5"
                                     : ord.status === "shipping"
@@ -3358,12 +3372,12 @@ export default function App() {
                                         : "text-blue-400 border-blue-500/20 bg-blue-500/5"
                                 }`}
                               >
-                                <option value="pending">PENDING</option>
-                                <option value="processing">PROCESSING</option>
-                                <option value="printing">PRINTING (ĐANG IN)</option>
-                                <option value="shipping">SHIPPING</option>
-                                <option value="completed">COMPLETED</option>
-                                <option value="cancelled">CANCELLED</option>
+                                <option value="pending">{t("admin.statusPENDING")}</option>
+                                <option value="processing">{t("admin.statusPROCESSING")}</option>
+                                <option value="printing">{t("admin.statusPRINTING")}</option>
+                                <option value="shipping">{t("admin.statusSHIPPING")}</option>
+                                <option value="completed">{t("admin.statusCOMPLETED")}</option>
+                                <option value="cancelled">{t("admin.statusCANCELLED")}</option>
                               </select>
                             </td>
                           </tr>
@@ -3374,8 +3388,8 @@ export default function App() {
                 </div>
 
                 {orders.length === 0 && (
-                  <div className="text-center py-12 text-zinc-500 font-bold border border-zinc-800 rounded-xl">
-                    Không tìm thấy đơn đặt áo nào khớp với thông tin rà soát lọc.
+                  <div className="text-center py-12 text-text-muted font-bold border border-border-default rounded-xl">
+                    {t("admin.ordersEmpty")}
                   </div>
                 )}
               </div>
@@ -3385,110 +3399,110 @@ export default function App() {
             {activeTab === "admin-products" && (
               <div className="flex flex-col gap-6">
                 
-                <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl flex items-center justify-between">
+                <div className="bg-surface-3 border border-border-default p-5 rounded-2xl flex items-center justify-between">
                   <div>
-                    <h2 className="text-[#F8F8FF] text-base font-black uppercase tracking-widest">Danh sách Sản phẩm áo thi đấu</h2>
-                    <p className="text-zinc-500 text-xs mt-0.5">Sửa đổi giá niêm yết, số lượng kho phôi hoặc vô hiệu hóa áo nhanh chóng.</p>
+                    <h2 className="text-text-primary text-base font-black uppercase tracking-widest">{t("admin.productsTitle")}</h2>
+                    <p className="text-text-muted text-xs mt-0.5">{t("admin.productsDesc")}</p>
                   </div>
-                  
+
                   <button
                     onClick={() => handleOpenProductForm(null)}
                     className="bg-yellow-500 hover:bg-yellow-400 text-black font-extrabold px-5 py-3 rounded-xl text-xs uppercase tracking-wider flex items-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4.5 h-4.5" />
-                    Thêm Phôi Áo Mới
+                    {t("admin.addProduct")}
                   </button>
                 </div>
 
                 {/* MODAL SHEET INLINE (Simple Form Overlay for compatibility) */}
                 {isProductModalOpen && (
                   <div className="fixed inset-0 z-55 bg-black/80 flex items-center justify-center p-6 backdrop-blur-sm animate-fade-in animate-duration-150">
-                    <div className="bg-[#111118] border border-[#1e1e2d] rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
-                      <button 
+                    <div className="bg-surface-3 border border-border-default rounded-3xl max-w-md w-full p-6 shadow-2xl relative">
+                      <button
                         onClick={() => setIsProductModalOpen(false)}
-                        className="absolute top-4 right-4 text-gray-500 hover:text-white p-2 border border-zinc-800 rounded-lg bg-black/40 cursor-pointer"
+                        className="absolute top-4 right-4 text-text-muted hover:text-text-primary p-2 border border-border-default rounded-lg bg-surface-base/40 cursor-pointer"
                       >
                         <X className="w-4 h-4" />
                       </button>
 
-                      <h3 className="text-[#F8F8FF] text-lg font-black uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <h3 className="text-text-primary text-lg font-black uppercase tracking-wider mb-4 flex items-center gap-2">
                         <Shirt className="w-5 h-5 text-yellow-500" />
-                        {editingProduct ? "Cập Nhật Áo Đấu" : "Thêm Áo Đấu World Cup Mới"}
+                        {editingProduct ? t("admin.productModalEdit") : t("admin.productModalAdd")}
                       </h3>
 
                       <form onSubmit={handleSaveProduct} className="flex flex-col gap-4 text-xs">
                         <div>
-                          <label className="text-zinc-400 font-extrabold uppercase.tracking-widest block mb-1">Tên sản phẩm (*)</label>
+                          <label className="text-text-muted font-extrabold uppercase tracking-widest block mb-1">{t("admin.productFormName")}</label>
                           <input
                             type="text"
                             required
                             value={prodFormName}
                             onChange={(e) => setProdFormName(e.target.value)}
                             placeholder="Argentina Home 2026 Special Edition"
-                            className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500"
+                            className="w-full bg-surface-2 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none focus:border-yellow-500"
                           />
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-zinc-400 font-extrabold uppercase.tracking-widest block mb-1">Đội/Quốc gia (*)</label>
+                            <label className="text-text-muted font-extrabold uppercase tracking-widest block mb-1">{t("admin.productFormTeam")}</label>
                             <input
                               type="text"
                               required
                               value={prodFormTeam}
                               onChange={(e) => setProdFormTeam(e.target.value)}
                               placeholder="Vietnam 🇻🇳"
-                              className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none"
+                              className="w-full bg-surface-2 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default focus:outline-none"
                             />
                           </div>
 
                           <div>
-                            <label className="text-zinc-400 font-extrabold uppercase.tracking-widest block mb-1">Phân hạng áo</label>
+                            <label className="text-text-muted font-extrabold uppercase tracking-widest block mb-1">{t("admin.productFormType")}</label>
                             <select
                               value={prodFormType}
                               onChange={(e) => setProdFormType(e.target.value as JerseyType)}
-                              className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d]"
+                              className="w-full bg-surface-2 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default"
                             >
-                              <option value="home">Sân Nhà (Home)</option>
-                              <option value="away">Sân Khách (Away)</option>
-                              <option value="third">Phụ (Third)</option>
+                              <option value="home">{t("admin.productTypeHome")}</option>
+                              <option value="away">{t("admin.productTypeAway")}</option>
+                              <option value="third">{t("admin.productTypeThird")}</option>
                             </select>
                           </div>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div>
-                            <label className="text-zinc-400 font-extrabold uppercase.tracking-widest block mb-1">Đơn Giá (đ) (*)</label>
+                            <label className="text-text-muted font-extrabold uppercase tracking-widest block mb-1">{t("admin.productFormPrice")}</label>
                             <input
                               type="number"
                               required
                               value={prodFormPrice}
                               onChange={(e) => setProdFormPrice(e.target.value)}
                               placeholder="390000"
-                              className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d]"
+                              className="w-full bg-surface-2 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default"
                             />
                           </div>
 
                           <div>
-                            <label className="text-zinc-400 font-extrabold uppercase.tracking-widest block mb-1">Số lượng tồn kho phôi</label>
+                            <label className="text-text-muted font-extrabold uppercase tracking-widest block mb-1">{t("admin.productFormStock")}</label>
                             <input
                               type="number"
                               required
                               value={prodFormStock}
                               onChange={(e) => setProdFormStock(e.target.value)}
-                              className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d]"
+                              className="w-full bg-surface-2 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default"
                             />
                           </div>
                         </div>
 
                         <div>
-                          <label className="text-zinc-400 font-extrabold uppercase.tracking-widest block mb-1">Ảnh đại diện URL (Trực tiếp từ unsplash)</label>
+                          <label className="text-text-muted font-extrabold uppercase tracking-widest block mb-1">{t("admin.productFormImage")}</label>
                           <input
                             type="text"
                             value={prodFormImage}
                             onChange={(e) => setProdFormImage(e.target.value)}
                             placeholder="https://images.unsplash.com/..."
-                            className="w-full bg-[#0d0d14] text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d]"
+                            className="w-full bg-surface-2 text-text-primary px-3.5 py-2.5 rounded-xl border border-border-default"
                           />
                         </div>
 
@@ -3496,15 +3510,15 @@ export default function App() {
                           <button
                             type="button"
                             onClick={() => setIsProductModalOpen(false)}
-                            className="bg-zinc-800 text-gray-300 px-4 py-2.5 rounded-xl hover:bg-zinc-700 font-bold cursor-pointer"
+                            className="bg-surface-4 text-text-secondary px-4 py-2.5 rounded-xl hover:bg-border-strong font-bold cursor-pointer"
                           >
-                            Đóng Hủy
+                            {t("admin.productFormCancel")}
                           </button>
                           <button
                             type="submit"
                             className="bg-yellow-500 text-black px-6 py-2.5 rounded-xl hover:bg-yellow-400 font-extrabold cursor-pointer"
                           >
-                            Lưu cấu hình
+                            {t("admin.productFormSubmit")}
                           </button>
                         </div>
                       </form>
@@ -3515,16 +3529,16 @@ export default function App() {
                 {/* Grid Lists products */}
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
                   {products.map((p) => (
-                    <div key={p.id} className={`bg-[#111118] border rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between ${p.isActive ? "border-[#1e1e2d]" : "border-red-500/20 opacity-40 bg-zinc-950"}`}>
-                      
+                    <div key={p.id} className={`bg-surface-3 border rounded-2xl overflow-hidden shadow-xl flex flex-col justify-between ${p.isActive ? "border-border-default" : "border-red-500/20 opacity-40 bg-surface-base"}`}>
+
                       <div className="relative aspect-square">
-                        <img 
-                          src={p.imageUrl} 
-                          alt={p.name} 
+                        <img
+                          src={p.imageUrl}
+                          alt={p.name}
                           className="w-full h-full object-cover"
                         />
                         <div className="absolute top-2.5 left-2.5 z-10">
-                          <span className="bg-black/80 border border-zinc-800 text-yellow-400 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full uppercase">
+                          <span className="bg-black/80 border border-border-default text-yellow-400 font-mono font-bold text-[10px] px-2 py-0.5 rounded-full uppercase">
                             {p.jerseyType.toUpperCase()}
                           </span>
                         </div>
@@ -3532,34 +3546,34 @@ export default function App() {
 
                       <div className="p-4 flex-grow flex flex-col justify-between">
                         <div>
-                          <span className="text-[10px] font-black text-gray-500 block uppercase mb-1">{p.teamCountry}</span>
-                          <span className="text-white text-xs sm:text-sm font-bold block leading-snug line-clamp-2">{p.name}</span>
+                          <span className="text-[10px] font-black text-text-muted block uppercase mb-1">{p.teamCountry}</span>
+                          <span className="text-text-primary text-xs sm:text-sm font-bold block leading-snug line-clamp-2">{p.name}</span>
                         </div>
 
                         <div className="mt-4">
                           <div className="flex justify-between items-center text-xs font-mono mb-3 leading-none">
                             <span className="text-yellow-400 font-bold">{p.price.toLocaleString("vi-VN")} ₫</span>
-                            <span className="text-zinc-500 text-[10px]">Tồn: {p.stock}</span>
+                            <span className="text-text-muted text-[10px]">{t("admin.productStock")} {p.stock}</span>
                           </div>
 
                           {/* Quick modifier controls button bars */}
-                          <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-zinc-800">
+                          <div className="grid grid-cols-3 gap-1.5 pt-2 border-t border-border-default">
                             <button
                               onClick={() => handleOpenProductForm(p)}
                               className="bg-blue-500/10 hover:bg-blue-500 text-blue-400 hover:text-white p-2 border border-blue-500/15 rounded-lg flex items-center justify-center transition-colors"
-                              title="Sửa"
+                              title={t("admin.productEdit")}
                             >
                               <Edit className="w-3.5 h-3.5" />
                             </button>
-                            
+
                             <button
                               onClick={() => handleToggleProductActive(p.id, p.isActive)}
                               className={`p-2 border rounded-lg flex items-center justify-center transition-colors ${
-                                p.isActive 
+                                p.isActive
                                   ? "bg-amber-500/10 hover:bg-amber-500 text-amber-500 hover:text-white border-amber-500/15"
                                   : "bg-green-500/10 hover:bg-green-500 text-green-500 hover:text-white border-green-500/15"
                               }`}
-                              title={p.isActive ? "Dừng bán tạm thời" : "Bán lại"}
+                              title={p.isActive ? t("admin.productSuspend") : t("admin.productActivate")}
                             >
                               {p.isActive ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                             </button>
@@ -3567,7 +3581,7 @@ export default function App() {
                             <button
                               onClick={() => handleDeleteProduct(p.id)}
                               className="bg-red-500/10 hover:bg-red-500 text-red-400 hover:text-white p-2 border border-red-500/15 rounded-lg flex items-center justify-center transition-colors"
-                              title="Hủy hoạt động áo"
+                              title={t("admin.productDelete")}
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
@@ -3584,61 +3598,61 @@ export default function App() {
 
             {/* SUB-TAB 4: CUSTOMERS STATS EXPANDER DIRECTORY */}
             {activeTab === "admin-customers" && (
-              <div className="bg-[#111118] border border-[#1e1e2d] p-5 rounded-2xl flex flex-col gap-6">
+              <div className="bg-surface-3 border border-border-default p-5 rounded-2xl flex flex-col gap-6">
                 
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-[#1e1e2d] pb-5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-border-default pb-5">
                   <div>
-                    <h2 className="text-[#F8F8FF] text-base font-black uppercase tracking-widest">Danh Mục Khách Hàng đặt áo</h2>
-                    <p className="text-zinc-500 text-xs mt-0.5">Quản lý các số điện thoại đặt in, lọc danh sách thành viên tích cực.</p>
+                    <h2 className="text-text-primary text-base font-black uppercase tracking-widest">{t("admin.customersTitle")}</h2>
+                    <p className="text-text-muted text-xs mt-0.5">{t("admin.customersDesc")}</p>
                   </div>
 
                   <div className="relative max-w-sm w-full">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
                     <input
                       type="text"
-                      placeholder="Tìm tên hoặc số điện thoại..."
+                      placeholder={t("admin.customersSearchPlaceholder")}
                       value={customerSearch}
                       onChange={(e) => setCustomerSearch(e.target.value)}
-                      className="w-full bg-[#0d0d14] text-[#F8F8FF] placeholder-gray-500 pl-10 pr-4 py-2 rounded-xl text-xs border border-[#1e1e2d] focus:outline-none focus:border-yellow-500"
+                      className="w-full bg-surface-2 text-text-primary placeholder-text-muted pl-10 pr-4 py-2 rounded-xl text-xs border border-border-default focus:outline-none focus:border-yellow-500"
                     />
                   </div>
                 </div>
 
                 {/* Customers database expanders table representation */}
-                <div className="overflow-x-auto border border-zinc-800 rounded-xl">
-                  <table className="w-full text-xs text-left text-zinc-400">
-                    <thead className="bg-[#0c0c14] border-b border-[#1e1e2d] text-zinc-500 uppercase tracking-wider text-[10px]">
+                <div className="overflow-x-auto border border-border-default rounded-xl">
+                  <table className="w-full text-xs text-left text-text-muted">
+                    <thead className="bg-surface-2 border-b border-border-default text-text-muted uppercase tracking-wider text-[10px]">
                       <tr>
-                        <th className="px-5 py-3.5">Họ Tên Khách Hàng</th>
-                        <th className="px-5 py-3.5">Số Điện Thoại</th>
-                        <th className="px-5 py-3.5 text-center">Tổng Số Đơn</th>
-                        <th className="px-5 py-3.5">Tích lũy chi tiêu</th>
-                        <th className="px-5 py-3.5">Đặt Gần Nhất</th>
-                        <th className="px-5 py-3.5 text-center">Thao tác tra cứu</th>
+                        <th className="px-5 py-3.5">{t("admin.customersColName")}</th>
+                        <th className="px-5 py-3.5">{t("admin.customersColPhone")}</th>
+                        <th className="px-5 py-3.5 text-center">{t("admin.customersColTotal")}</th>
+                        <th className="px-5 py-3.5">{t("admin.customersColSpent")}</th>
+                        <th className="px-5 py-3.5">{t("admin.customersColLast")}</th>
+                        <th className="px-5 py-3.5 text-center">{t("admin.customersColActions")}</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#1e1e2d]">
+                    <tbody className="divide-y divide-border-default">
                       {adminCustomers.map((cust) => {
                         const isExpanded = expandedCustomerPhone === cust.phone;
                         const hasRepeatOrder = cust.totalOrders > 1;
 
                         return (
                           <>
-                            <tr key={cust.phone} className={`hover:bg-[#151522] transition-colors leading-normal ${isExpanded ? "bg-zinc-900/60" : ""}`}>
-                              <td className="px-5 py-3.5 text-white font-bold flex items-center gap-2">
+                            <tr key={cust.phone} className={`hover:bg-surface-4 transition-colors leading-normal ${isExpanded ? "bg-surface-4/60" : ""}`}>
+                              <td className="px-5 py-3.5 text-text-primary font-bold flex items-center gap-2">
                                 {cust.name}
                                 {hasRepeatOrder && (
                                   <span className="bg-yellow-500/10 border border-yellow-500/20 text-yellow-400 text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-0.5">
-                                    Thân Thiết
+                                    {t("admin.customersBadgeLoyal")}
                                   </span>
                                 )}
                               </td>
-                              <td className="px-5 py-3.5 font-mono text-zinc-300 font-bold">{cust.phone}</td>
-                              <td className="px-5 py-3.5 text-center font-bold font-mono">{cust.totalOrders} đơn</td>
+                              <td className="px-5 py-3.5 font-mono text-text-secondary font-bold">{cust.phone}</td>
+                              <td className="px-5 py-3.5 text-center font-bold font-mono">{t("admin.customersOrdersUnit", { count: cust.totalOrders })}</td>
                               <td className="px-5 py-3.5 font-mono text-yellow-400 font-bold text-sm">
                                 {cust.totalSpent.toLocaleString("vi-VN")} ₫
                               </td>
-                              <td className="px-5 py-3.5 text-zinc-500 text-[10px]">
+                              <td className="px-5 py-3.5 text-text-muted text-[10px]">
                                 {new Date(cust.lastOrderDate).toLocaleDateString("vi-VN")}
                               </td>
                               <td className="px-5 py-3.5 text-center">
@@ -3646,9 +3660,9 @@ export default function App() {
                                   onClick={() => {
                                     setExpandedCustomerPhone(isExpanded ? null : cust.phone);
                                   }}
-                                  className="text-[10px] bg-zinc-800 hover:bg-zinc-700 text-[#F8F8FF] py-1 px-3 border border-zinc-700 rounded-lg cursor-pointer transition-colors"
+                                  className="text-[10px] bg-surface-4 hover:bg-border-strong text-text-primary py-1 px-3 border border-border-default rounded-lg cursor-pointer transition-colors"
                                 >
-                                  {isExpanded ? "Thu nhỏ đơn" : "Xem tất cả đơn"}
+                                  {isExpanded ? t("admin.customersCollapse") : t("admin.customersExpand")}
                                 </button>
                               </td>
                             </tr>
@@ -3656,28 +3670,28 @@ export default function App() {
                             {/* EXPANDE REPRESENTS:past buy listing for this person's number */}
                             {isExpanded && (
                               <tr>
-                                <td colSpan={6} className="bg-black/60 px-6 py-4 border-l-4 border-yellow-500">
+                                <td colSpan={6} className="bg-surface-base/60 px-6 py-4 border-l-4 border-yellow-500">
                                   <div className="flex flex-col gap-3">
-                                    <span className="text-zinc-500 text-[10px] font-black uppercase tracking-widest block">Lịch sử đặt in cho khách hàng này:</span>
+                                    <span className="text-text-muted text-[10px] font-black uppercase tracking-widest block">{t("admin.customersHistoryLabel")}</span>
                                     
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                       {orders
                                         .filter(o => o.phone.trim() === cust.phone.trim())
                                         .map((orderItem) => (
-                                          <div key={orderItem.id} className="bg-[#111118]/80 border border-zinc-800 rounded-xl p-4 flex items-center justify-between text-xs">
+                                          <div key={orderItem.id} className="bg-surface-3/80 border border-border-default rounded-xl p-4 flex items-center justify-between text-xs">
                                             <div>
                                               <div className="flex items-center gap-2">
                                                 <span className="font-mono font-black text-yellow-500">{orderItem.orderCode}</span>
-                                                <span className="text-zinc-500 text-[10px]">{new Date(orderItem.createdAt).toLocaleDateString("vi-VN")}</span>
+                                                <span className="text-text-muted text-[10px]">{new Date(orderItem.createdAt).toLocaleDateString("vi-VN")}</span>
                                               </div>
-                                              <p className="text-[#F8F8FF] font-medium mt-1">
-                                                In: <strong className="text-indigo-400 capitalize">{orderItem.items?.[0]?.nickname || "Không in"}</strong> (Số: {orderItem.items?.[0]?.jerseyNumber || 10})
+                                              <p className="text-text-primary font-medium mt-1">
+                                                {t("admin.customersHistoryPrintLabel")} <strong className="text-indigo-400 capitalize">{orderItem.items?.[0]?.nickname || t("admin.customersHistoryEmpty")}</strong> {t("admin.customersHistoryNumber")} {orderItem.items?.[0]?.jerseyNumber || 10})
                                               </p>
-                                              <span className="text-[10px] uppercase text-zinc-500 block mt-1">Trạng thái: {orderItem.status} ({orderItem.payment?.status})</span>
+                                              <span className="text-[10px] uppercase text-text-muted block mt-1">{t("admin.customersHistoryStatusPrefix")} {orderItem.status} ({orderItem.payment?.status})</span>
                                             </div>
 
                                             <div className="text-right">
-                                              <span className="text-white font-mono font-bold block">{orderItem.totalAmount.toLocaleString("vi-VN")} ₫</span>
+                                              <span className="text-text-primary font-mono font-bold block">{orderItem.totalAmount.toLocaleString("vi-VN")} ₫</span>
                                               <button
                                                 onClick={() => {
                                                   setAdminOrderSearch(orderItem.orderCode);
@@ -3685,7 +3699,7 @@ export default function App() {
                                                 }}
                                                 className="text-[9px] text-blue-400 hover:underline mt-1 block"
                                               >
-                                                Xem đơn chi tiết
+                                                {t("admin.customersHistoryViewOrder")}
                                               </button>
                                             </div>
                                           </div>
@@ -3704,8 +3718,8 @@ export default function App() {
                 </div>
 
                 {adminCustomers.length === 0 && (
-                  <div className="text-center py-12 text-zinc-500 font-bold border border-zinc-800 rounded-xl">
-                    Không tìm thấy thành viên khách hàng nào.
+                  <div className="text-center py-12 text-text-muted font-bold border border-border-default rounded-xl">
+                    {t("admin.customersEmpty")}
                   </div>
                 )}
               </div>
@@ -3717,40 +3731,40 @@ export default function App() {
       </main>
 
       {/* FOOTER */}
-      <footer className="bg-[#0a0a0f] border-t border-[#1e1e2d] py-12 px-6 sm:px-8 text-xs sm:text-sm text-gray-500">
+      <footer className="bg-surface-1 border-t border-border-default py-12 px-6 sm:px-8 text-xs sm:text-sm text-text-muted">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center sm:text-left">
-          
+
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-2 justify-center sm:justify-start">
               <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
-              <span className="text-white font-bold tracking-wider font-display uppercase">Jersey World Cup Lab 2026</span>
+              <span className="text-text-primary font-bold tracking-wider font-display uppercase">{t("footer.brand")}</span>
             </div>
-            <p className="text-zinc-500 text-xs mt-1">
-              Phân phối áo đấu cao cấp và hỗ trợ thiết kế in ấn chuyển nhiệt chuẩn kỹ thuật số vệ tinh.
+            <p className="text-text-muted text-xs mt-1">
+              {t("footer.desc")}
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-zinc-400 text-sm mt-4 border-t border-zinc-900/40 pt-4">
-            <span className="hover:text-yellow-400 cursor-pointer transition-colors">Zalo: 0907-281-361</span>
-            <span className="text-zinc-700 hidden sm:inline">|</span>
-            <a href="https://www.facebook.com/dannguyentien22/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 cursor-pointer transition-colors text-blue-400 hover:underline">FB: Dan Nguyen Tien</a>
-            <span className="text-zinc-700 hidden sm:inline">|</span>
-            <span 
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-text-muted text-sm mt-4 border-t border-border-default/40 pt-4">
+            <span className="hover:text-yellow-400 cursor-pointer transition-colors">{t("footer.contactZalo")}</span>
+            <span className="text-text-muted hidden sm:inline">|</span>
+            <a href="https://www.facebook.com/dannguyentien22/" target="_blank" rel="noopener noreferrer" className="hover:text-yellow-400 cursor-pointer transition-colors text-blue-400 hover:underline">{t("footer.contactFb")}</a>
+            <span className="text-text-muted hidden sm:inline">|</span>
+            <span
               onClick={() => {
                 if (isAdminLoggedIn) {
                   setActiveTab("admin-dashboard");
                 } else {
                   setActiveTab("admin-login");
                 }
-              }} 
-              className="text-zinc-500 hover:text-yellow-500 font-semibold hover:underline cursor-pointer select-none transition-colors"
+              }}
+              className="text-text-muted hover:text-yellow-500 font-semibold hover:underline cursor-pointer select-none transition-colors"
             >
-              Hệ thống quản lý bởi Dan Nguyen Tien
+              {t("footer.managedBy")}
             </span>
           </div>
 
-          <p className="text-[11px] text-zinc-600 tracking-wide font-mono">
-            &copy; {new Date().getFullYear()} World Cup Jersey Hub. Crafted with premium Sports-Luxe Theme.
+          <p className="text-[11px] text-text-muted tracking-wide font-mono">
+            {t("footer.copyright", { year: new Date().getFullYear() })}
           </p>
         </div>
       </footer>
@@ -3760,7 +3774,7 @@ export default function App() {
         <button
           onClick={scrollToTop}
           className="fixed bottom-6 right-6 z-50 bg-yellow-500 hover:bg-yellow-400 text-black p-3.5 rounded-xl border border-yellow-600/40 shadow-xl shadow-yellow-500/25 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center duration-300"
-          title="Quay lại đầu trang"
+          title={t("ui.backToTop")}
         >
           <ArrowUp className="w-5 h-5" />
         </button>

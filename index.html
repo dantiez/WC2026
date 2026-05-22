@@ -1,13 +1,20 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>My Google AI Studio App</title>
+    <script>
+      try {
+        var t = localStorage.getItem('app.theme') || 'dark';
+        if (t === 'dark') document.documentElement.classList.add('dark');
+        var l = localStorage.getItem('app.language') || 'vn';
+        document.documentElement.setAttribute('lang', l === 'vn' ? 'vi' : 'en');
+      } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
-

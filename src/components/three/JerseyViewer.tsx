@@ -4,7 +4,8 @@
  */
 
 import { useState, useRef, MouseEvent } from "react";
-import { Shirt, Sparkles, Shield, Trophy } from "lucide-react";
+import { Shield } from "lucide-react";
+import { useTranslation } from "../../i18n/LanguageContext";
 
 interface JerseyViewerProps {
   colorHex?: string;
@@ -21,19 +22,20 @@ export default function JerseyViewer({
   number = 10,
   teamName = "Vietnam 🇻🇳"
 }: JerseyViewerProps) {
+  const { t } = useTranslation();
   const [isFront, setIsFront] = useState(false); // Back is customizable by default so let's show back or toggle
   const cardRef = useRef<HTMLDivElement>(null);
   const [tiltStyle, setTiltStyle] = useState<string>("");
 
   // Clean normalizing of team name
   const originalTeamNormalized = teamName.toLowerCase();
-  
+
   // Detect if Away jersey based on color context (usually whites or secondary color)
   const isAway = colorHex.toLowerCase() === "#efefef" || colorHex.toLowerCase() === "#ffffff" || colorHex.toLowerCase() === "#ffffff";
 
   // Determine official team config
   let teamDetails = {
-    displayName: "Việt Nam",
+    displayName: t("teams.vietnam"),
     flag: "🇻🇳",
     badgeUrl: null,
     baseColor: "#DA251D",       
@@ -47,7 +49,7 @@ export default function JerseyViewer({
 
   if (originalTeamNormalized.includes("vietnam")) {
     teamDetails = {
-      displayName: "Việt Nam",
+      displayName: t("teams.vietnam"),
       flag: "🇻🇳",
       badgeUrl: null,
       baseColor: isAway ? "#FFFFFF" : "#DA251D",
@@ -60,7 +62,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("argentina")) {
     teamDetails = {
-      displayName: "Argentina",
+      displayName: t("teams.argentina"),
       flag: "🇦🇷",
       badgeUrl: null,
       baseColor: isAway ? "#0F2240" : "#75AADB",
@@ -73,7 +75,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("brazil")) {
     teamDetails = {
-      displayName: "Brazil",
+      displayName: t("teams.brazil"),
       flag: "🇧🇷",
       baseColor: isAway ? "#002D62" : "#FDD116",
       accentColor: isAway ? "#FDD116" : "#009C3B",
@@ -86,7 +88,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("france")) {
     teamDetails = {
-      displayName: "Pháp",
+      displayName: t("teams.france"),
       flag: "🇫🇷",
       baseColor: isAway ? "#FFFFFF" : "#0F2148",
       accentColor: isAway ? "#0F2148" : "#C61B21",
@@ -99,7 +101,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("germany")) {
     teamDetails = {
-      displayName: "Đức",
+      displayName: t("teams.germany"),
       flag: "🇩🇪",
       baseColor: isAway ? "#1E1E1E" : "#FFFFFF",
       accentColor: isAway ? "#EA1824" : "#111111",
@@ -112,7 +114,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("japan")) {
     teamDetails = {
-      displayName: "Nhật Bản",
+      displayName: t("teams.japan"),
       flag: "🇯🇵",
       baseColor: isAway ? "#FFFFFF" : "#0F2248",
       accentColor: isAway ? "#0F2248" : "#E2001A",
@@ -125,7 +127,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("spain")) {
     teamDetails = {
-      displayName: "Tây Ban Nha",
+      displayName: t("teams.spain"),
       flag: "🇪🇸",
       baseColor: isAway ? "#F9F6E7" : "#C61B21",
       accentColor: isAway ? "#C61B21" : "#FDD116",
@@ -138,7 +140,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("portugal")) {
     teamDetails = {
-      displayName: "Bồ Đào Nha",
+      displayName: t("teams.portugal"),
       flag: "🇵🇹",
       baseColor: isAway ? "#F3EBE1" : "#8B0000",
       accentColor: isAway ? "#008000" : "#FDD116",
@@ -151,7 +153,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("korea")) {
     teamDetails = {
-      displayName: "Hàn Quốc",
+      displayName: t("teams.korea"),
       flag: "🇰🇷",
       baseColor: isAway ? "#EBEBEB" : "#FF3B47",
       accentColor: isAway ? "#FF3B47" : "#1E1E2D",
@@ -164,7 +166,7 @@ export default function JerseyViewer({
     };
   } else if (originalTeamNormalized.includes("england")) {
     teamDetails = {
-      displayName: "Anh",
+      displayName: t("teams.england"),
       flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
       baseColor: isAway ? "#0F1A35" : "#FFFFFF",
       accentColor: isAway ? "#E61B27" : "#0F1A35",
@@ -663,27 +665,27 @@ export default function JerseyViewer({
   };
 
   return (
-    <div className="relative w-full h-full min-h-[580px] md:min-h-[660px] lg:min-h-[740px] flex flex-col justify-between overflow-hidden bg-gradient-to-b from-[#0b0c10] to-[#040406] rounded-3xl border border-zinc-800 shadow-2xl p-6 select-none">
-      
+    <div className="relative w-full h-full min-h-[580px] md:min-h-[660px] lg:min-h-[740px] flex flex-col justify-between overflow-hidden bg-gradient-to-b from-surface-2 to-surface-base rounded-3xl border border-border-default shadow-2xl p-6 select-none">
+
       {/* Live Badge and Indicators */}
       <div className="flex justify-between items-center z-10 w-full mb-2">
-        <div className="bg-[#111118]/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-yellow-500/20 flex items-center gap-2 shadow-lg">
+        <div className="bg-surface-3/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-yellow-500/20 flex items-center gap-2 shadow-lg">
           <span className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></span>
-          <span className="text-[10px] font-black uppercase tracking-wider text-green-400">Xem Áo 2.5D Studio</span>
+          <span className="text-[10px] font-black uppercase tracking-wider text-green-400">{t("jerseyViewer.liveBadge")}</span>
         </div>
 
         {/* Rotator toggles */}
-        <div className="flex gap-1.5 bg-black/60 p-1.5 rounded-xl border border-zinc-800">
+        <div className="flex gap-1.5 bg-surface-base/60 p-1.5 rounded-xl border border-border-default">
           <button
             id="btn-rotate-front"
             onClick={() => setIsFront(true)}
             className={`px-3 py-1 text-[10px] sm:text-xs font-extrabold uppercase rounded-lg transition-all cursor-pointer ${
               isFront
                 ? "bg-yellow-500 text-black shadow-md"
-                : "text-zinc-400 hover:text-white"
+                : "text-text-muted hover:text-text-primary"
             }`}
           >
-            Mặt Trước
+            {t("jerseyViewer.front")}
           </button>
           <button
             id="btn-rotate-back"
@@ -691,10 +693,10 @@ export default function JerseyViewer({
             className={`px-3 py-1 text-[10px] sm:text-xs font-extrabold uppercase rounded-lg transition-all cursor-pointer ${
               !isFront
                 ? "bg-yellow-500 text-black shadow-md"
-                : "text-zinc-400 hover:text-white"
+                : "text-text-muted hover:text-text-primary"
             }`}
           >
-            Mặt Sau
+            {t("jerseyViewer.back")}
           </button>
         </div>
       </div>
@@ -737,13 +739,13 @@ export default function JerseyViewer({
       </div>
 
       {/* Instruction Overlay */}
-      <div className="w-full flex items-center justify-between text-[11px] text-zinc-400 mt-2 z-10 border-t border-zinc-900 pt-4 bg-transparent">
-        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-zinc-500">
+      <div className="w-full flex items-center justify-between text-[11px] text-text-muted mt-2 z-10 border-t border-border-default pt-4 bg-transparent">
+        <div className="flex items-center gap-1.5 font-bold uppercase tracking-wider text-text-muted">
           <Shield className="w-3.5 h-3.5 text-yellow-500/80" />
           <span>{teamDetails.displayName} {teamDetails.flag}</span>
         </div>
-        <p className="text-zinc-500 select-none font-medium text-right text-[10px] leading-tight">
-          Rao chuột qua áo để tương tác xoay 2.5D • In chuyển nhiệt 3D
+        <p className="text-text-muted select-none font-medium text-right text-[10px] leading-tight">
+          {t("jerseyViewer.helper")}
         </p>
       </div>
 

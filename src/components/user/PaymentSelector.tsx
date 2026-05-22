@@ -5,6 +5,7 @@
 
 import { CreditCard, Wallet, Landmark, HandCoins } from "lucide-react";
 import { PaymentMethod } from "../../types";
+import { useTranslation } from "../../i18n/LanguageContext";
 
 interface PaymentSelectorProps {
   selectedMethod: PaymentMethod;
@@ -12,35 +13,37 @@ interface PaymentSelectorProps {
 }
 
 export default function PaymentSelector({ selectedMethod, onChange }: PaymentSelectorProps) {
+  const { t } = useTranslation();
+
   const methods = [
     {
       id: "cod" as PaymentMethod,
-      title: "Thanh toán khi nhận hàng (COD)",
-      description: "Thanh toán bằng tiền mặt khi giao hàng tận nơi.",
+      title: t("payment.codTitle"),
+      description: t("payment.codDesc"),
       icon: HandCoins,
-      color: "border-gray-500/30 text-gray-400"
+      color: "border-gray-500/30 text-gray-400",
     },
     {
       id: "bank_transfer" as PaymentMethod,
-      title: "Chuyển khoản Ngân hàng",
-      description: "Thanh toán trực tiếp bằng SmartBanking qua số tài khoản.",
+      title: t("payment.bankTitle"),
+      description: t("payment.bankDesc"),
       icon: Landmark,
-      color: "border-blue-500/30 text-blue-400"
+      color: "border-blue-500/30 text-blue-400",
     },
     {
       id: "momo" as PaymentMethod,
-      title: "Ví điện tử MoMo",
-      description: "Thanh toán trực tuyến quét mã định danh MoMo siêu tốc.",
+      title: t("payment.momoTitle"),
+      description: t("payment.momoDesc"),
       icon: Wallet,
-      color: "border-pink-500/30 text-pink-400"
+      color: "border-pink-500/30 text-pink-400",
     },
     {
       id: "vnpay" as PaymentMethod,
-      title: "Cổng thanh toán VNPay",
-      description: "Thanh toán chuyển khoản bảo mật an toàn 100%.",
+      title: t("payment.vnpayTitle"),
+      description: t("payment.vnpayDesc"),
       icon: CreditCard,
-      color: "border-emerald-500/30 text-emerald-400"
-    }
+      color: "border-emerald-500/30 text-emerald-400",
+    },
   ];
 
   return (
@@ -56,16 +59,16 @@ export default function PaymentSelector({ selectedMethod, onChange }: PaymentSel
             className={`flex items-start gap-4 p-4 rounded-xl border-2 cursor-pointer transition-all ${
               isSelected
                 ? "bg-gradient-to-r from-yellow-500/5 to-amber-500/5 border-yellow-500 shadow-md shadow-yellow-500/10"
-                : "bg-[#111118]/60 border-[#1e1e2d] hover:border-gray-600"
+                : "bg-surface-3/60 border-border-default hover:border-border-strong"
             }`}
           >
-            <div className={`mt-0.5 p-2 rounded-lg border ${m.color} bg-black/40`}>
+            <div className={`mt-0.5 p-2 rounded-lg border ${m.color} bg-surface-base/40`}>
               <IconComponent className="w-5 h-5" />
             </div>
-            
+
             <div className="flex-1">
               <div className="flex items-center justify-between">
-                <span className={`text-sm font-bold ${isSelected ? "text-yellow-400" : "text-[#F8F8FF]"}`}>
+                <span className={`text-sm font-bold ${isSelected ? "text-yellow-400" : "text-text-primary"}`}>
                   {m.title}
                 </span>
                 <input
@@ -73,11 +76,11 @@ export default function PaymentSelector({ selectedMethod, onChange }: PaymentSel
                   name="paymentMethod"
                   value={m.id}
                   checked={isSelected}
-                  onChange={() => {}} // handled by click target
+                  onChange={() => {}}
                   className="w-4 h-4 accent-yellow-500 pointer-events-none"
                 />
               </div>
-              <p className="text-gray-400 text-xs mt-1 leading-normal">
+              <p className="text-text-muted text-xs mt-1 leading-normal">
                 {m.description}
               </p>
             </div>

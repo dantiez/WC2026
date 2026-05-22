@@ -4,6 +4,7 @@
  */
 
 import { Product } from "../../types";
+import { useTranslation } from "../../i18n/LanguageContext";
 
 interface JerseyCardProps {
   product: Product;
@@ -12,9 +13,11 @@ interface JerseyCardProps {
 }
 
 export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
+  const { t } = useTranslation();
+
   // Format price helper
   const formattedPrice = product.price.toLocaleString("vi-VN") + " ₫";
-  
+
   // Custom tag styling for Jersey selection
   const isHome = product.jerseyType === "home";
   const isAway = !isHome;
@@ -26,7 +29,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
 
   // Match official team details for synchronized vector rendering
   let teamDetails = {
-    displayName: "Việt Nam",
+    displayName: t("teams.vietnam"),
     flag: "🇻🇳",
     baseColor: "#DA251D",
     accentColor: "#FFFF00",
@@ -38,7 +41,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
 
   if (countryLower.includes("vietnam")) {
     teamDetails = {
-      displayName: "Việt Nam",
+      displayName: t("teams.vietnam"),
       flag: "🇻🇳",
       baseColor: isAway ? "#FFFFFF" : "#DA251D",
       accentColor: isAway ? "#DA251D" : "#FFFF00",
@@ -49,7 +52,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("argentina")) {
     teamDetails = {
-      displayName: "Argentina",
+      displayName: t("teams.argentina"),
       flag: "🇦🇷",
       baseColor: isAway ? "#0F2240" : "#75AADB",
       accentColor: isAway ? "#91B9DF" : "#FFFFFF",
@@ -60,7 +63,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("brazil")) {
     teamDetails = {
-      displayName: "Brazil",
+      displayName: t("teams.brazil"),
       flag: "🇧🇷",
       baseColor: isAway ? "#002D62" : "#FDD116",
       accentColor: isAway ? "#FDD116" : "#009C3B",
@@ -71,7 +74,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("france")) {
     teamDetails = {
-      displayName: "Pháp",
+      displayName: t("teams.france"),
       flag: "🇫🇷",
       baseColor: isAway ? "#FFFFFF" : "#0F2148",
       accentColor: isAway ? "#0F2148" : "#C61B21",
@@ -82,7 +85,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("germany")) {
     teamDetails = {
-      displayName: "Đức",
+      displayName: t("teams.germany"),
       flag: "🇩🇪",
       baseColor: isAway ? "#1E1E1E" : "#FFFFFF",
       accentColor: isAway ? "#EA1824" : "#111111",
@@ -93,7 +96,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("japan")) {
     teamDetails = {
-      displayName: "Nhật Bản",
+      displayName: t("teams.japan"),
       flag: "🇯🇵",
       baseColor: isAway ? "#FFFFFF" : "#0F2248",
       accentColor: isAway ? "#0F2248" : "#E2001A",
@@ -104,7 +107,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("spain")) {
     teamDetails = {
-      displayName: "Tây Ban Nha",
+      displayName: t("teams.spain"),
       flag: "🇪🇸",
       baseColor: isAway ? "#F9F6E7" : "#C61B21",
       accentColor: isAway ? "#C61B21" : "#FDD116",
@@ -115,7 +118,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("portugal")) {
     teamDetails = {
-      displayName: "Bồ Đào Nha",
+      displayName: t("teams.portugal"),
       flag: "🇵🇹",
       baseColor: isAway ? "#F3EBE1" : "#8B0000",
       accentColor: isAway ? "#008000" : "#FDD116",
@@ -126,7 +129,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("korea")) {
     teamDetails = {
-      displayName: "Hàn Quốc",
+      displayName: t("teams.korea"),
       flag: "🇰🇷",
       baseColor: isAway ? "#EBEBEB" : "#FF3B47",
       accentColor: isAway ? "#FF3B47" : "#1E1E2D",
@@ -137,7 +140,7 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
     };
   } else if (countryLower.includes("england")) {
     teamDetails = {
-      displayName: "Anh",
+      displayName: t("teams.england"),
       flag: "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
       baseColor: isAway ? "#0F1A35" : "#FFFFFF",
       accentColor: isAway ? "#E61B27" : "#0F1A35",
@@ -147,7 +150,6 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
       hasChestStar: false,
     };
   } else {
-    // Elegant Custom / Administrative default
     teamDetails = {
       displayName: product.teamCountry.replace(/[\uD800-\uDBFF][\uDC00-\uDFFF]/g, "").trim(),
       flag: "⚽",
@@ -168,8 +170,8 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
   const isLocalImage = product.imageUrl.startsWith("/images/") || product.imageUrl.startsWith("./images/");
 
   const jerseySVGFront = (
-    <svg 
-      viewBox="10 50 420 440" 
+    <svg
+      viewBox="10 50 420 440"
       className="w-[85%] h-[85%] drop-shadow-[0_15px_18px_rgba(0,0,0,0.55)] group-hover:scale-105 transition-transform duration-500"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -178,7 +180,6 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
           <path d={outerContour} />
         </clipPath>
 
-        {/* Breathable jersey fabric pattern */}
         <pattern id={`${svgId}-fabric-weave`} width="4" height="4" patternUnits="userSpaceOnUse">
           <rect width="4" height="4" fill="none" />
           <circle cx="2" cy="2" r="0.5" fill="#000000" opacity="0.08" />
@@ -188,14 +189,12 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
           <circle cx="4" cy="4" r="0.3" fill="#ffffff" opacity="0.09" />
         </pattern>
 
-        {/* Realistic volume overlay */}
         <radialGradient id={`${svgId}-body-volume`} cx="50%" cy="28%" r="65%" fx="50%" fy="18%">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.16" />
           <stop offset="45%" stopColor="#ffffff" stopOpacity="0.0" />
           <stop offset="100%" stopColor="#000000" stopOpacity="0.28" />
         </radialGradient>
 
-        {/* Sky-blue & white striped fill pattern for Argentina */}
         <pattern id={`${svgId}-argentina-stripes`} width="90" height="500" patternUnits="userSpaceOnUse">
           <rect width="90" height="500" fill="#FFFFFF" />
           <rect x="0" width="30" height="500" fill="#75AADB" />
@@ -203,16 +202,12 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
         </pattern>
       </defs>
 
-      {/* 1. Base Mesh outline */}
-      <path 
-        d={outerContour} 
+      <path
+        d={outerContour}
         fill={teamDetails.hasStripes ? `url(#${svgId}-argentina-stripes)` : bg}
       />
 
-      {/* 2. Layer elements inside mask */}
       <g clipPath={`url(#${svgId}-shirt-shape)`}>
-        
-        {/* Japan Away artistic print design line art */}
         {countryLower.includes("japan") && isAway && (
           <g opacity="0.75" strokeWidth="2.2">
             <line x1="130" y1="80" x2="130" y2="470" stroke="#4A90E2" />
@@ -228,11 +223,9 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
           </g>
         )}
 
-        {/* Elegant side panel bands */}
         <path d="M 114,185 L 114,465" stroke={acc} strokeWidth="10" strokeOpacity="0.85" />
         <path d="M 326,185 L 326,465" stroke={acc} strokeWidth="10" strokeOpacity="0.85" />
 
-        {/* Cuff ribs */}
         <path d="M 29,136 L 82,236" stroke={acc} strokeWidth="14" />
         <path d="M 29,136 L 82,236" stroke="#000000" strokeWidth="6" />
         <path d="M 29,136 L 82,236" stroke="#FFFFFF" strokeWidth="2" />
@@ -241,12 +234,10 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
         <path d="M 411,136 L 375,235" stroke="#000000" strokeWidth="6" />
         <path d="M 411,136 L 375,235" stroke="#FFFFFF" strokeWidth="2" />
 
-        {/* Collar structure */}
         <path d="M 160,82 C 160,82 195,115 220,115 C 245,115 280,82 280,82" fill="none" stroke={acc} strokeWidth="16" />
         <path d="M 160,82 C 160,82 195,115 220,115 C 245,115 280,82 280,82" fill="none" stroke="#000000" strokeWidth="10" />
         <path d="M 160,82 C 160,82 195,115 220,115 C 245,115 280,82 280,82" fill="none" stroke="#FFFFFF" strokeWidth="4" />
 
-        {/* Germany Shoulder Trims */}
         {teamDetails.hasShoulderStripes && countryLower.includes("germany") && (
           <g opacity="0.9">
             <line x1="100" y1="125" x2="145" y2="175" stroke="#FF0000" strokeWidth="5" />
@@ -259,7 +250,6 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
           </g>
         )}
 
-        {/* Spain Shoulder Trims */}
         {teamDetails.hasShoulderStripes && countryLower.includes("spain") && (
           <g opacity="0.9">
             <line x1="100" y1="125" x2="145" y2="175" stroke="#FDD116" strokeWidth="6" />
@@ -272,14 +262,11 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
           </g>
         )}
 
-        {/* Gold Sun on chest for Argentina */}
         {countryLower.includes("argentina") && (
           <circle cx="220" cy="145" r="11" fill="#FFCC00" stroke="#E59800" strokeWidth="1" />
         )}
 
-        {/* Crest & Logo Badges */}
         <g>
-          {/* National Crest Badge (Left side on viewer's right chest) */}
           <g transform="translate(290, 165) scale(1.15)">
             <path d="M -16,-18 L 16,-18 C 16,-18 20,12 0,24 C -20,12 -16,-18 -16,-18 Z" fill="#0d0e14" stroke={acc} strokeWidth="2.5" />
             <circle cx="0" cy="2" r="5" fill="#C61B21" />
@@ -289,7 +276,6 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
             </text>
           </g>
 
-          {/* Brand/Chest Star (Right side on viewer's left chest) */}
           <g transform="translate(150, 165) scale(1.15)">
             {teamDetails.hasChestStar ? (
               <polygon points="0,-16 4,-4 16,-4 6,3 10,15 0,7 -10,15 -6,3 -16,-4 -4,-4" fill="#FFFF00" stroke="#D4AC0D" strokeWidth="1" />
@@ -304,13 +290,11 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
             )}
           </g>
 
-          {/* Sponsor Logo center */}
           <text x="220" y="320" fill={textCol} fontFamily="Impact, sans-serif" fontSize="22" fontWeight="black" letterSpacing="4" textAnchor="middle" opacity="0.3">
             KITS PRO
           </text>
         </g>
 
-        {/* Creases and volumes */}
         <path d={outerContour} fill={`url(#${svgId}-fabric-weave)`} />
         <path d={outerContour} fill={`url(#${svgId}-body-volume)`} />
       </g>
@@ -318,60 +302,56 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
   );
 
   return (
-    <div className="relative group flex flex-col justify-between overflow-hidden bg-[#111118] border border-[#1e1e2d] hover:border-yellow-500/40 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-yellow-500/5">
-      {/* Absolute Badges on Image */}
+    <div className="relative group flex flex-col justify-between overflow-hidden bg-surface-3 border border-border-default hover:border-yellow-500/40 rounded-2xl transition-all duration-300 shadow-xl hover:shadow-2xl hover:shadow-yellow-500/5">
       <div className="absolute top-3 left-3 z-10 flex flex-col gap-1.5 items-start">
         <span className={`px-2.5 py-0.5 text-[10px] font-extrabold uppercase rounded-full ${
-          isHome 
-            ? "bg-red-500/10 text-red-500 border border-red-500/20" 
+          isHome
+            ? "bg-red-500/10 text-red-500 border border-red-500/20"
             : "bg-blue-500/10 text-blue-500 border border-blue-500/20"
         }`}>
-          {isHome ? "Sân Nhà (Home)" : "Sân Khách (Away)"}
+          {isHome ? t("jerseyCard.badgeHome") : t("jerseyCard.badgeAway")}
         </span>
-        
+
         {product.stock <= 5 && product.stock > 0 && (
           <span className="bg-amber-600/20 border border-amber-600/40 text-amber-500 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
-            Còn ít áo ({product.stock})
+            {t("jerseyCard.lowStock")} ({product.stock})
           </span>
         )}
         {product.stock === 0 && (
-          <span className="bg-zinc-800 text-zinc-500 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-zinc-700">
-            Hết hàng
+          <span className="bg-surface-4 text-text-muted text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-border-default">
+            {t("jerseyCard.outOfStock")}
           </span>
         )}
       </div>
 
       {isLocalImage ? (
-        <div className="relative w-full aspect-[4/5] overflow-hidden bg-gradient-to-br from-zinc-900 to-zinc-950">
+        <div className="relative w-full aspect-[4/5] overflow-hidden bg-gradient-to-br from-surface-4 to-surface-base">
           <img
             src={product.imageUrl}
             alt={product.name}
             referrerPolicy="no-referrer"
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
           />
-          {/* Hover Gradient Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-60 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-1 via-transparent to-transparent opacity-60 pointer-events-none" />
         </div>
       ) : (
-        <div className="relative w-full aspect-[4/5] overflow-hidden bg-gradient-to-br from-[#0c0c14] to-[#040406] flex items-center justify-center select-none p-5 sm:p-6">
-          {/* Dynamic soft light bloom */}
-          <div 
-            className="absolute w-44 h-44 rounded-full blur-[60px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none" 
-            style={{ backgroundColor: bg }} 
+        <div className="relative w-full aspect-[4/5] overflow-hidden bg-gradient-to-br from-surface-2 to-surface-base flex items-center justify-center select-none p-5 sm:p-6">
+          <div
+            className="absolute w-44 h-44 rounded-full blur-[60px] opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
+            style={{ backgroundColor: bg }}
           />
           {jerseySVGFront}
-          {/* Futuristic grid overlay to represent labs structure */}
           <div className="absolute inset-0 bg-[linear-gradient(to_right,#1f2937_1px,transparent_1px),linear-gradient(to_bottom,#1f2937_1px,transparent_1px)] bg-[size:24px_24px] opacity-[0.03] pointer-events-none" />
-          <div className="absolute inset-0 bg-gradient-to-t from-[#0a0a0f] via-transparent to-transparent opacity-80 pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-surface-1 via-transparent to-transparent opacity-80 pointer-events-none" />
         </div>
       )}
 
       <div className="p-4 flex flex-col justify-between flex-grow">
         <div>
-          <span className="text-[11px] font-bold text-gray-500 uppercase tracking-widest block mb-1">
+          <span className="text-[11px] font-bold text-text-muted uppercase tracking-widest block mb-1">
             {product.teamCountry}
           </span>
-          <h3 className="text-[#F8F8FF] font-sans font-bold text-sm sm:text-base tracking-tight mb-2 line-clamp-1 group-hover:text-yellow-400 transition-colors">
+          <h3 className="text-text-primary font-sans font-bold text-sm sm:text-base tracking-tight mb-2 line-clamp-1 group-hover:text-yellow-400 transition-colors">
             {product.name}
           </h3>
         </div>
@@ -381,8 +361,8 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
             <span className="text-yellow-400 font-mono font-black text-sm sm:text-base">
               {formattedPrice}
             </span>
-            <span className="text-[10px] text-gray-500">
-              Kho: {product.stock} áo
+            <span className="text-[10px] text-text-muted">
+              {t("jerseyCard.stockLabel")}: {product.stock} {t("jerseyCard.stockUnit")}
             </span>
           </div>
 
@@ -390,9 +370,9 @@ export default function JerseyCard({ product, onSelect }: JerseyCardProps) {
             id={`btn-customize-${product.id}`}
             onClick={() => onSelect(product.id)}
             disabled={product.stock === 0}
-            className="w-full bg-[#1e1e2e] active:bg-yellow-500 active:text-black group-hover:bg-yellow-500 group-hover:text-black hover:bg-yellow-400 text-[#F8F8FF] text-xs font-extrabold py-2.5 px-4 rounded-xl transition-all cursor-pointer disabled:bg-zinc-800 disabled:text-zinc-600 disabled:cursor-not-allowed uppercase tracking-wider"
+            className="w-full bg-surface-4 active:bg-yellow-500 active:text-black group-hover:bg-yellow-500 group-hover:text-black hover:bg-yellow-400 text-text-primary text-xs font-extrabold py-2.5 px-4 rounded-xl transition-all cursor-pointer disabled:bg-surface-4 disabled:text-text-muted disabled:cursor-not-allowed uppercase tracking-wider"
           >
-            {product.stock === 0 ? "Hết Hàng" : "Tùy Biến 2.5D"}
+            {product.stock === 0 ? t("jerseyCard.outOfStockCta") : t("jerseyCard.customizeCta")}
           </button>
         </div>
       </div>
