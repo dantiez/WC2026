@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { query } from "../lib/db";
-import type { OrderStatus } from "../src/types";
+import { query } from "../lib/db.js";
+import type { OrderStatus } from "../src/types.js";
 
 const STATUSES: OrderStatus[] = ["pending", "processing", "printing", "shipping", "completed", "cancelled"];
 

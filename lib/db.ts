@@ -51,7 +51,7 @@ export async function rawQuery<T extends QueryResultRow = QueryResultRow>(
 export async function ensureSchema(): Promise<void> {
   if (!globalThis.__dbInitPromise) {
     globalThis.__dbInitPromise = (async () => {
-      const { initSchema } = await import("./schema");
+      const { initSchema } = await import("./schema.js");
       await initSchema(getPool());
     })().catch((err) => {
       globalThis.__dbInitPromise = undefined;

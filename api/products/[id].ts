@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { query } from "../../lib/db";
-import { mapProduct } from "../../lib/mappers";
+import { query } from "../../lib/db.js";
+import { mapProduct } from "../../lib/mappers.js";
 
 const CAMEL_TO_SNAKE: Record<string, string> = {
   name: "name",

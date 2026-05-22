@@ -1,6 +1,6 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { query } from "../../lib/db";
-import { mapOrder } from "../../lib/mappers";
+import { query } from "../../lib/db.js";
+import { mapOrder } from "../../lib/mappers.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { query } from "../lib/db";
+import { query } from "../lib/db.js";
 
 type Row = {
   phone: string;

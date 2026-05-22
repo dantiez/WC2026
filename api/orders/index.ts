@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ensureSchema, getPool } from "../../lib/db";
-import { mapOrder, mapProduct, shortId } from "../../lib/mappers";
-import type { OrderItem, Payment } from "../../src/types";
+import { ensureSchema, getPool } from "../../lib/db.js";
+import { mapOrder, mapProduct, shortId } from "../../lib/mappers.js";
+import type { OrderItem, Payment } from "../../src/types.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

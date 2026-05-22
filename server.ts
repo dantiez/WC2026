@@ -7,15 +7,15 @@ dotenv.config();
 import express, { type Request, type RequestHandler } from "express";
 import { createServer as createViteServer } from "vite";
 
-import productsList from "./api/products/index";
-import productById from "./api/products/[id]";
-import ordersList from "./api/orders/index";
-import orderTrack from "./api/orders/track";
-import orderBulkStatus from "./api/orders/bulk-status";
-import orderStatus from "./api/orders/[id]/status";
-import customers from "./api/customers";
-import stats from "./api/stats";
-import paymentsSimulate from "./api/payments/simulate";
+import productsList from "./api/products/index.js";
+import productById from "./api/products/[id].js";
+import ordersList from "./api/orders/index.js";
+import orderTrack from "./api/orders/track.js";
+import orderBulkStatus from "./api/orders/bulk-status.js";
+import orderStatus from "./api/orders/[id]/status.js";
+import customers from "./api/customers.js";
+import stats from "./api/stats.js";
+import paymentsSimulate from "./api/payments/simulate.js";
 
 type VercelHandler = (req: any, res: any) => unknown | Promise<unknown>;
 

@@ -1,4 +1,4 @@
-import type { Order, OrderItem, Payment, Product } from "../src/types";
+import type { Order, OrderItem, Payment, Product } from "../src/types.js";
 
 type ProductRow = {
   id: string;
