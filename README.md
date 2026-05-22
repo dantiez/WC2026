@@ -111,19 +111,57 @@ Hai bảng chính:
 
 ## 6. Deploy lên Vercel
 
-1. **Provision Postgres production** — chọn 1 trong 3 provider ở mục 3-B.
-2. Push code lên Git (GitHub/GitLab/Bitbucket).
-3. Vercel dashboard → **Add New Project** → import repo.
-4. **Environment Variables** — thêm:
-   - `DATABASE_URL` = connection string production (có `?sslmode=require`)
-   - `GEMINI_API_KEY` = key Gemini của bạn
-5. **Deploy.** Vercel tự:
-   - Detect framework Vite → build `dist/`
-   - Discover 9 file trong `api/` → tạo 9 serverless functions
-   - Áp `vercel.json` rewrite cho SPA routing
-6. Lần đầu mở app sẽ tự tạo bảng + seed sản phẩm.
+### 6.1 Cấu hình project trên màn hình import
 
-Nếu dùng Vercel Postgres, bước 1 và 4 (set `DATABASE_URL`) được Vercel tự xử lý — chỉ cần bấm Connect.
+Push code lên Git, vào Vercel dashboard → **Add New Project** → import repo. Màn hình Configure hiển thị:
+
+| Field | Giá trị | Ghi chú |
+| --- | --- | --- |
+| Application Preset | `Vite` | Auto-detect đúng, không cần đổi |
+| Root Directory | `./` | Project nằm ở root repo |
+| Build Command | `vite build` | Khớp với `package.json` |
+| Output Directory | `dist` | Vite default |
+| Install Command | *(blank)* | Vercel tự chạy `npm install` |
+
+**Tất cả các field trên giữ nguyên mặc định.** Chỉ cần thêm **1 environment variable**:
+
+| Key | Value | Environments |
+| --- | --- | --- |
+| `DATABASE_URL` | Connection string Postgres production | Production + Preview + Development |
+
+> Lưu ý: app **không yêu cầu** `GEMINI_API_KEY` (mặc dù `.env.example` có sẵn để tương thích template gốc). Chỉ thêm khi nào bạn tích hợp Gemini.
+
+Sau khi điền xong → bấm **Deploy**.
+
+### 6.2 Chuẩn bị `DATABASE_URL` production
+
+Chọn 1 trong 2 đường:
+
+**Đường A — Vercel Postgres** (tích hợp 1 click, không phải copy-paste connection string)
+
+1. **Deploy trước** (chấp nhận app trả 500 tạm thời nếu chưa set `DATABASE_URL`).
+2. Sau khi project tạo xong: tab **Storage** → **Create Database** → **Postgres** → chọn region gần (Singapore / Tokyo).
+3. Bấm **Connect Project** → Vercel tự inject `DATABASE_URL` (và vài biến phụ) cho cả 3 environments.
+4. Tab **Deployments** → 3 chấm ở deploy mới nhất → **Redeploy** để pickup env mới.
+
+**Đường B — Neon / Supabase** (free, không khoá vào Vercel)
+
+1. Tạo project trên [neon.tech](https://neon.tech) hoặc [supabase.com](https://supabase.com).
+2. Copy connection string (Neon: **Pooled connection**; Supabase: **Transaction pooler URI**). Phải có `?sslmode=require`.
+3. Quay lại form Vercel ở mục 6.1, paste vào ô **Value** của `DATABASE_URL`.
+4. Bấm **Deploy**.
+
+### 6.3 Lần chạy đầu tiên
+
+Khi request đầu tiên đến `/api/*`, `ensureSchema()` chạy:
+- Tạo 2 bảng `products`, `orders` + indexes (idempotent với `IF NOT EXISTS`).
+- Seed 20 sản phẩm mặc định (chỉ khi bảng `products` rỗng).
+
+Lần thứ 2 trở đi: skip seed, chỉ tạo connection.
+
+### 6.4 Update connection string sau này
+
+Vào project → **Settings** → **Environment Variables** → sửa `DATABASE_URL` → **Save** → vào **Deployments** redeploy.
 
 ## 7. Cấu trúc project
 

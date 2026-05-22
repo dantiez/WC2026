@@ -1,7 +1,9 @@
 // Local development server: mounts Vite middleware + bridges the Vercel
 // serverless handlers in api/ as Express routes. NOT used in production —
 // Vercel runs each file under api/ as its own function.
-import "dotenv/config";
+import dotenv from "dotenv";
+dotenv.config({ path: ".env.local" });
+dotenv.config();
 import express, { type Request, type RequestHandler } from "express";
 import { createServer as createViteServer } from "vite";
 
