@@ -33,12 +33,16 @@ export default function HeroBanner({ onShopNow, onTrackNow }: HeroBannerProps) {
           </span>
         </div>
 
-        <h1 className="text-4xl sm:text-6xl font-black text-[#F8F8FF] tracking-tight leading-none mb-6">
+        <h1 className="text-4xl sm:text-6xl font-black text-[#F8F8FF] tracking-tight leading-none mb-4">
           SỞ HỮU ÁO ĐẤU <br />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-amber-300 to-yellow-500 leading-normal">
             WORLD CUP 2026
           </span>
         </h1>
+
+        <p className="text-xs sm:text-sm text-amber-500/90 font-medium italic mb-6">
+          * Chú ý: hình ảnh mẫu áo dưới đây mang tính chất minh họa
+        </p>
 
         <p className="text-gray-400 text-sm sm:text-lg max-w-xl mb-10 leading-relaxed font-sans font-medium">
           Lựa chọn áo đấu Player-version của đội tuyển bạn yêu thích và cá nhân hóa Tên & Số in sắc nét trên mô hình 2.5D chân thực nhất.

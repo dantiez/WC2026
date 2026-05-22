@@ -11,7 +11,7 @@ import {
   ExternalLink, FileSpreadsheet, Smartphone, MapPin, 
   Clipboard, Check, RotateCcw, Sparkles, Menu, X, ShieldAlert, 
   Clock, Shirt, BadgeDollarSign, HelpCircle, Eye, EyeOff,
-  Printer
+  Printer, ArrowUp
 } from "lucide-react";
 import * as XLSX from "xlsx";
 
@@ -21,6 +21,61 @@ import PaymentSelector from "./components/user/PaymentSelector";
 import StatsCard from "./components/admin/StatsCard";
 import JerseyViewer from "./components/three/JerseyViewer";
 import { Product, Order, OrderItem, Payment, OrderStatus, PaymentMethod, PaymentStatus, JerseyType, JerseySize, TeamPlayer } from "./types";
+
+const PROVINCES_VN = [
+  "Hà Nội", "TP. Hồ Chí Minh", "Đà Nẵng", "Hải Phòng", "Cần Thơ",
+  "An Giang", "Bà Rịa - Vũng Tàu", "Bắc Giang", "Bắc Kạn", "Bạc Liêu",
+  "Bắc Ninh", "Bến Tre", "Bình Định", "Bình Dương", "Bình Phước",
+  "Bình Thuận", "Cà Mau", "Cao Bằng", "Đắk Lắk", "Đắk Nông",
+  "Điện Biên", "Đồng Nai", "Đồng Tháp", "Gia Lai", "Hà Giang",
+  "Hà Nam", "Hà Tĩnh", "Hải Dương", "Hậu Giang", "Hòa Bình",
+  "Hưng Yên", "Khánh Hòa", "Kiên Giang", "Kon Tum", "Lai Châu",
+  "Lâm Đồng", "Lạng Sơn", "Lào Cai", "Long An", "Nam Định",
+  "Nghệ An", "Ninh Bình", "Ninh Thuận", "Phú Thọ", "Quảng Bình",
+  "Quảng Nam", "Quảng Ngãi", "Quảng Ninh", "Quảng Trị", "Sóc Trăng",
+  "Sơn La", "Tây Ninh", "Thái Bình", "Thái Nguyên", "Thanh Hóa",
+  "Thừa Thiên Huế", "Tiền Giang", "Trà Vinh", "Tuyên Quang", "Vĩnh Long",
+  "Vĩnh Phúc", "Yên Bái", "Phú Yên"
+].sort((a, b) => a.localeCompare(b, "vi"));
+
+const DISTRICTS_BY_PROVINCE: { [key: string]: string[] } = {
+  "Hà Nội": [
+    "Quận Ba Đình", "Quận Hoàn Kiếm", "Quận Tây Hồ", "Quận Long Biên", "Quận Cầu Giấy",
+    "Quận Đống Đa", "Quận Hai Bà Trưng", "Quận Hoàng Mai", "Quận Thanh Xuân", "Quận Hà Đông",
+    "Quận Nam Từ Liêm", "Quận Bắc Từ Liêm", "Huyện Sóc Sơn", "Huyện Đông Anh", "Huyện Gia Lâm",
+    "Huyện Thanh Trì", "Huyện Mê Linh", "Thị xã Sơn Tây", "Huyện Ba Vì", "Huyện Phúc Thọ",
+    "Huyện Thạch Thất", "Huyện Quốc Oai", "Huyện Chương Mỹ", "Huyện Đan Phượng", "Huyện Hoài Đức",
+    "Huyện Thanh Oai", "Huyện Mỹ Đức", "Huyện Ứng Hòa", "Huyện Thường Tín", "Huyện Phú Xuyên"
+  ],
+  "TP. Hồ Chí Minh": [
+    "Quận 1", "Quận 3", "Quận 4", "Quận 5", "Quận 6", "Quận 7", "Quận 8", "Quận 10",
+    "Quận 11", "Quận 12", "Quận Bình Tân", "Quận Bình Thạnh", "Quận Gò Vấp", "Quận Phú Nhuận",
+    "Quận Tân Bình", "Quận Tân Phú", "Thành phố Thủ Đức", "Huyện Bình Chánh", "Huyện Cần Giờ",
+    "Huyện Củ Chi", "Huyện Hóc Môn", "Huyện Nhà Bè"
+  ],
+  "Đà Nẵng": [
+    "Quận Hải Châu", "Quận Thanh Khê", "Quận Sơn Trà", "Quận Ngũ Hành Sơn", "Quận Liên Chiểu",
+    "Quận Cẩm Lệ", "Huyện Hòa Vang"
+  ],
+  "Hải Phòng": [
+    "Quận Hồng Bàng", "Quận Ngô Quyền", "Quận Lê Chân", "Quận Hải An", "Quận Kiến An",
+    "Quận Đồ Sơn", "Quận Dương Kinh", "Huyện Thuỷ Nguyên", "Huyện An Dương", "Huyện An Lão",
+    "Huyện Kiến Thuỵ", "Huyện Tiên Lãng", "Huyện Vĩnh Bảo"
+  ],
+  "Cần Thơ": [
+    "Quận Ninh Kiều", "Quận Bình Thủy", "Quận Cái Răng", "Quận Ô Môn", "Quận Thốt Nốt",
+    "Huyện Phong Điền", "Huyện Cờ Đỏ", "Huyện Vĩnh Thạnh", "Huyện Thới Lai"
+  ],
+  "Bình Dương": [
+    "Thành phố Thủ Dầu Một", "Thành phố Thuận An", "Thành phố Dĩ An", "Thành phố Tân Uyên",
+    "Thành phố Bến Cát", "Huyện Bắc Tân Uyên", "Huyện Dầu Tiếng", "Huyện Phú Giáo", "Huyện Bàu Bàng"
+  ],
+  "Đồng Nai": [
+    "Thành phố Biên Hòa", "Thành phố Long Khánh", "Huyện Long Thành", "Huyện Nhơn Trạch",
+    "Huyện Vĩnh Cửu", "Huyện Trảng Bom", "Huyện Thống Nhất", "Huyện Cẩm Mỹ", "Huyện Xuân Lộc",
+    "Huyện Định Quán", "Huyện Tân Phú"
+  ]
+};
 
 export default function App() {
   // Navigation Tabs state
@@ -61,6 +116,10 @@ export default function App() {
   // User Checkout Info Form Status
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
+  const [addressProvince, setAddressProvince] = useState("");
+  const [addressDistrict, setAddressDistrict] = useState("");
+  const [addressWard, setAddressWard] = useState("");
+  const [addressDetail, setAddressDetail] = useState("");
   const [shippingAddress, setShippingAddress] = useState("");
   const [notes, setNotes] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("cod");
@@ -77,6 +136,11 @@ export default function App() {
   // Search/Filters lists for Public & Admin
   const [searchQuery, setSearchQuery] = useState("");
   const [jerseyTypeFilter, setJerseyTypeFilter] = useState("all");
+
+  // Pagination & Scroll States
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showBackToTop, setShowBackToTop] = useState(false);
+  const productsPerPage = 8;
 
   // Mobile navigation helper
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -116,6 +180,44 @@ export default function App() {
   const [rosterSubTab, setRosterSubTab] = useState<"draft" | "order">("order");
   const [rosterCheckedItems, setRosterCheckedItems] = useState<{ [key: string]: boolean }>({});
   const [copiedRosterText, setCopiedRosterText] = useState(false);
+
+  // Reset to first page when filtering or searching changes
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchQuery, jerseyTypeFilter]);
+
+  // Track scroll position for "Back to Top" button visibility
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 300) {
+        setShowBackToTop(true);
+      } else {
+        setShowBackToTop(false);
+      }
+    };
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  };
+
+  // Compile individual address selections into shippingAddress string recursively
+  useEffect(() => {
+    const parts = [
+      addressDetail.trim(),
+      addressWard.trim(),
+      addressDistrict.trim(),
+      addressProvince.trim()
+    ].filter(Boolean);
+    setShippingAddress(parts.join(", "));
+  }, [addressProvince, addressDistrict, addressWard, addressDetail]);
 
   // --- Realtime / Periodic Sync ---
   // Periodically re-fetches stats & orders if logged in as admin
@@ -368,15 +470,34 @@ export default function App() {
     const errors: { [key: string]: string } = {};
     if (!fullName.trim()) errors.fullName = "Vui lòng nhập Họ tên.";
     
-    // VN phone regex
+    // VN phone regex: accepts standard mobile formats starting with 3, 5, 7, 8, 9 (9 digits after +84) or standard local zero (10 digits)
     const phoneClean = phone.trim().replace(/[\s\.\-\(\)]/g, "");
     if (!phoneClean) {
       errors.phone = "Vui lòng nhập Số điện thoại.";
-    } else if (!/^(0[35789])[0-9]{8}$/.test(phoneClean)) {
-      errors.phone = "Số điện thoại di động không đúng định dạng Việt Nam (10 chữ số).";
+    } else {
+      const is9Digits = /^[35789][0-9]{8}$/.test(phoneClean);
+      const is10Digits = /^0[35789][0-9]{8}$/.test(phoneClean);
+      if (!is9Digits && !is10Digits) {
+        errors.phone = "Số điện thoại không hợp lệ (9 hoặc 10 chữ số). Chi tiết: 3, 5, 7, 8, 9...";
+      }
     }
 
-    if (!shippingAddress.trim()) errors.shippingAddress = "Vui lòng cung cấp Địa chỉ nhận hàng.";
+    if (!addressProvince) {
+      errors.addressProvince = "Vui lòng chọn Tỉnh / Thành phố.";
+    }
+    if (!addressDistrict.trim()) {
+      errors.addressDistrict = "Vui lòng nhập/chọn Quận / Huyện.";
+    }
+    if (!addressWard.trim()) {
+      errors.addressWard = "Vui lòng nhập/chọn Phường / Xã.";
+    }
+    if (!addressDetail.trim()) {
+      errors.addressDetail = "Vui lòng nhập Số nhà, Tên đường... chi tiết.";
+    }
+
+    if (!addressProvince || !addressDistrict.trim() || !addressWard.trim() || !addressDetail.trim()) {
+      errors.shippingAddress = "Vui lòng cung cấp đầy đủ thông tin Địa chỉ nhận hàng.";
+    }
     
     setFormErrors(errors);
     return Object.keys(errors).length === 0;
@@ -417,9 +538,14 @@ export default function App() {
           quantity: 1
         }));
 
+    let finalPhone = phone.trim();
+    if (finalPhone && !finalPhone.startsWith("0")) {
+      finalPhone = "0" + finalPhone;
+    }
+
     const payload = {
       customerName: fullName.trim(),
-      phone: phone.trim(),
+      phone: finalPhone,
       address: shippingAddress.trim(),
       notes: notes.trim() + (customizeMode === "team" ? " [ĐƠN ĐẶT ĐỒNG ĐỘI NHÓM N > 20]" : ""),
       paymentMethod,
@@ -796,6 +922,13 @@ export default function App() {
     return matchesSearch && matchesType;
   });
 
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
+  const currentProducts = filteredProducts.slice(
+    (currentPage - 1) * productsPerPage,
+    currentPage * productsPerPage
+  );
+
   return (
     <div className="min-h-screen bg-[#07070b] text-[#F8F8FF] font-sans antialiased flex flex-col justify-between">
       {/* HEADER NAVBAR */}
@@ -1108,15 +1241,67 @@ export default function App() {
                 <p className="text-gray-400 text-xs">Vui lòng kiểm tra lại bộ lọc hoặc gõ tên nước khác.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-                {filteredProducts.map((p) => (
-                  <JerseyCard 
-                    key={p.id} 
-                    product={p} 
-                    onSelect={(id) => handleProductSelectToCustomize(id)} 
-                  />
-                ))}
-              </div>
+              <>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {currentProducts.map((p) => (
+                    <JerseyCard 
+                      key={p.id} 
+                      product={p} 
+                      onSelect={(id) => handleProductSelectToCustomize(id)} 
+                    />
+                  ))}
+                </div>
+
+                {/* Pagination Controls */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-center gap-1.5 mt-10">
+                    <button
+                      type="button"
+                      disabled={currentPage === 1}
+                      onClick={() => {
+                        setCurrentPage(prev => Math.max(1, prev - 1));
+                        window.scrollTo({ top: 300, behavior: "smooth" });
+                      }}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold uppercase border border-[#1e1e2d] bg-[#111118] text-zinc-400 hover:text-white hover:border-yellow-500/40 disabled:opacity-40 disabled:hover:text-zinc-400 disabled:hover:border-[#1e1e2d] transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                    >
+                      Trước
+                    </button>
+
+                    {Array.from({ length: totalPages }).map((_, idx) => {
+                      const pg = idx + 1;
+                      return (
+                        <button
+                          key={pg}
+                          type="button"
+                          onClick={() => {
+                            setCurrentPage(pg);
+                            window.scrollTo({ top: 300, behavior: "smooth" });
+                          }}
+                          className={`w-9 h-9 rounded-xl text-xs font-bold font-mono transition-all cursor-pointer select-none ${
+                            currentPage === pg
+                              ? "bg-yellow-500 text-black shadow-md shadow-yellow-500/15 font-black"
+                              : "bg-[#111118] hover:bg-black text-zinc-400 hover:text-white border border-[#1e1e2d] hover:border-yellow-500/20"
+                          }`}
+                        >
+                          {pg}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      type="button"
+                      disabled={currentPage === totalPages}
+                      onClick={() => {
+                        setCurrentPage(prev => Math.min(totalPages, prev + 1));
+                        window.scrollTo({ top: 300, behavior: "smooth" });
+                      }}
+                      className="px-3.5 py-2 rounded-xl text-xs font-bold uppercase border border-[#1e1e2d] bg-[#111118] text-zinc-400 hover:text-white hover:border-yellow-500/40 disabled:opacity-40 disabled:hover:text-zinc-400 disabled:hover:border-[#1e1e2d] transition-all cursor-pointer disabled:cursor-not-allowed select-none"
+                    >
+                      Sau
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}
@@ -1463,15 +1648,17 @@ export default function App() {
                     <div className="h-[1px] bg-zinc-800/85" />
 
                     {/* SHIPPINGS DETAIL INFO */}
-                    <div className="flex flex-col gap-3">
+                    <div className="flex flex-col gap-4">
                       <span className="text-zinc-400 text-xs font-black uppercase tracking-wider block mb-0.5">
-                        Địa chỉ vận chuyển nhận hàng
+                        Quy trình bàn giao & Địa chỉ nhận hàng
                       </span>
 
-                      <div>
+                      {/* Họ tên */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Họ và Tên khách hàng (*)</label>
                         <input
                           type="text"
-                          placeholder="Họ và Tên khách hàng (*)"
+                          placeholder="Nhập Họ và Tên đầy đủ"
                           value={fullName}
                           onChange={(e) => setFullName(e.target.value)}
                           className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs"
@@ -1479,35 +1666,152 @@ export default function App() {
                         {formErrors.fullName && <p className="text-red-500 text-[10px] mt-1 font-bold">{formErrors.fullName}</p>}
                       </div>
 
-                      <div>
-                        <input
-                          type="text"
-                          placeholder="Số điện thoại di động (*)"
-                          value={phone}
-                          onChange={(e) => setPhone(e.target.value)}
-                          className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs"
-                        />
+                      {/* Số điện thoại */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Số điện thoại di động (*)</label>
+                        <div className="flex items-stretch gap-2">
+                          <div className="flex items-center gap-1.5 bg-zinc-900/90 hover:bg-black px-3.5 rounded-xl border border-[#1e1e2d] text-xs font-mono text-zinc-300 select-none">
+                            <span className="text-sm">🇻🇳</span>
+                            <span className="font-extrabold text-zinc-400">+84</span>
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Nhập số điện thoại (ví dụ: 0907281361 hoặc 907281361)"
+                            value={phone}
+                            onChange={(e) => {
+                              const cleaned = e.target.value.replace(/[^0-9]/g, "");
+                              setPhone(cleaned);
+                            }}
+                            className="flex-1 bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs font-mono"
+                          />
+                        </div>
                         {formErrors.phone && <p className="text-red-500 text-[10px] mt-1 font-bold">{formErrors.phone}</p>}
                       </div>
 
-                      <div>
-                        <textarea
-                          placeholder="Địa chỉ giao nhận chi tiết (Số nhà, Tỉnh/TP...) (*)"
-                          value={shippingAddress}
-                          onChange={(e) => setShippingAddress(e.target.value)}
-                          rows={2}
-                          className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs resize-none"
-                        />
+                      {/* Address Fields */}
+                      <div className="border border-zinc-800/60 bg-black/20 p-3.5 rounded-2xl flex flex-col gap-3">
+                        <span className="text-[10.5px] text-zinc-400 font-bold uppercase tracking-wider block mb-0.5">Địa chỉ giao hàng</span>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* Tỉnh / Thành phố */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Tỉnh / Thành phố (*)</label>
+                            <select
+                              value={addressProvince}
+                              onChange={(e) => {
+                                setAddressProvince(e.target.value);
+                                setAddressDistrict("");
+                                setAddressWard("");
+                              }}
+                              className="w-full bg-black text-[#F8F8FF] px-3 py-2 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs cursor-pointer"
+                            >
+                              <option value="" disabled>Chọn Tỉnh / Thành phố</option>
+                              {PROVINCES_VN.map((p) => (
+                                <option key={p} value={p} className="bg-zinc-950">{p}</option>
+                              ))}
+                            </select>
+                            {formErrors.addressProvince && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressProvince}</p>}
+                          </div>
+
+                          {/* Quận / Huyện */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Quận / Huyện (*)</label>
+                            {addressProvince && DISTRICTS_BY_PROVINCE[addressProvince] ? (
+                              <select
+                                value={addressDistrict}
+                                onChange={(e) => {
+                                  setAddressDistrict(e.target.value);
+                                  setAddressWard("");
+                                }}
+                                className="w-full bg-black text-[#F8F8FF] px-3 py-2 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs cursor-pointer"
+                              >
+                                <option value="" disabled>Chọn Quận / Huyện</option>
+                                {DISTRICTS_BY_PROVINCE[addressProvince].map((d) => (
+                                  <option key={d} value={d} className="bg-zinc-950">{d}</option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                placeholder={addressProvince ? "Nhập Quận / Huyện" : "Chọn Tỉnh/TP trước"}
+                                disabled={!addressProvince}
+                                value={addressDistrict}
+                                onChange={(e) => setAddressDistrict(e.target.value)}
+                                className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                              />
+                            )}
+                            {formErrors.addressDistrict && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressDistrict}</p>}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {/* Phường / Xã */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Phường / Xã (*)</label>
+                            <input
+                              type="text"
+                              placeholder={addressDistrict ? "Nhập Phường/Xã/Thị trấn" : "Chọn Quận/Huyện trước"}
+                              disabled={!addressDistrict}
+                              value={addressWard}
+                              onChange={(e) => setAddressWard(e.target.value)}
+                              list={`wards-list-${addressProvince}-${addressDistrict}`}
+                              className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs disabled:opacity-50 disabled:cursor-not-allowed"
+                            />
+                            <datalist id={`wards-list-${addressProvince}-${addressDistrict}`}>
+                              {addressDistrict === "Quận 1" && [
+                                "Phường Bến Nghé", "Phường Bến Thành", "Phường Cô Giang", "Phường Cầu Kho", 
+                                "Phường Cầu Ông Lãnh", "Phường Đa Kao", "Phường Nguyễn Cư Trinh", 
+                                "Phường Nguyễn Thái Bình", "Phường Phạm Ngũ Lão", "Phường Tân Định"
+                              ].map(w => <option key={w} value={w} />)}
+                              
+                              {addressProvince === "Hà Nội" && [
+                                "Phường Cống Vị", "Phường Điện Biên", "Phường Giảng Võ", "Phường Kim Mã", 
+                                "Phường Láng Hạ", "Phường Mỹ Đình", "Phường Hàng Trống", "Phường Bạch Mai",
+                                "Phường Tràng Tiền", "Phường Hàng Bông", "Phường Trúc Bạch"
+                              ].map(w => <option key={w} value={w} />)}
+
+                              {["Phường 1", "Phường 2", "Phường 3", "Phường 4", "Phường 5", "Phường 6", "Phường 7", "Phường 8", "Phường 9", "Phường 10", "Phường 11", "Phường 12", "Phường 13", "Phường 14", "Phường 15", "Thị trấn"].map(w => (
+                                <option key={w} value={w} />
+                              ))}
+                            </datalist>
+                            {formErrors.addressWard && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressWard}</p>}
+                          </div>
+
+                          {/* Địa chỉ chi tiết */}
+                          <div className="flex flex-col gap-1">
+                            <label className="text-[9px] text-zinc-500 font-bold uppercase">Địa chỉ chi tiết (*)</label>
+                            <input
+                              type="text"
+                              placeholder="Số nhà, tên đường, thôn/xóm..."
+                              value={addressDetail}
+                              onChange={(e) => setAddressDetail(e.target.value)}
+                              className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs"
+                            />
+                            {formErrors.addressDetail && <p className="text-red-500 text-[9px] font-bold mt-0.5">{formErrors.addressDetail}</p>}
+                          </div>
+                        </div>
+
+                        {/* Combined Live Address Preview */}
+                        {shippingAddress && (
+                          <div className="bg-[#0e0e16] px-3 py-2 rounded-xl border border-zinc-800/40 text-[10px] text-zinc-400 font-medium flex items-start gap-1.5 leading-relaxed">
+                            <span className="text-yellow-500 select-none">📍</span>
+                            <span className="break-all"><strong>Địa chỉ bàn giao:</strong> {shippingAddress}</span>
+                          </div>
+                        )}
                         {formErrors.shippingAddress && <p className="text-red-500 text-[10px] mt-1 font-bold">{formErrors.shippingAddress}</p>}
                       </div>
 
-                      <input
-                        type="text"
-                        placeholder="Ghi chú thêm (Tùy chọn)"
-                        value={notes}
-                        onChange={(e) => setNotes(e.target.value)}
-                        className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs"
-                      />
+                      {/* Ghi chú */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-[10px] text-zinc-500 font-bold uppercase tracking-wider">Ghi chú khâu sản xuất (Tùy chọn)</label>
+                        <textarea
+                          placeholder="Ghi chú thêm (Có thể mở rộng góc dưới, ví dụ: In logo tay áo, lưu ý đặc biệt, liên hệ giờ hành chính...)"
+                          value={notes}
+                          onChange={(e) => setNotes(e.target.value)}
+                          rows={3}
+                          className="w-full bg-black/40 text-[#F8F8FF] px-3.5 py-2.5 rounded-xl border border-[#1e1e2d] focus:outline-none focus:border-yellow-500 text-xs resize-y min-h-[70px]"
+                        />
+                      </div>
                     </div>
 
                     <div className="h-[1px] bg-zinc-800 my-1" />
@@ -3450,6 +3754,17 @@ export default function App() {
           </p>
         </div>
       </footer>
+
+      {/* Back to Top button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-6 right-6 z-50 bg-yellow-500 hover:bg-yellow-400 text-black p-3.5 rounded-xl border border-yellow-600/40 shadow-xl shadow-yellow-500/25 hover:scale-110 active:scale-95 transition-all cursor-pointer flex items-center justify-center duration-300"
+          title="Quay lại đầu trang"
+        >
+          <ArrowUp className="w-5 h-5" />
+        </button>
+      )}
     </div>
   );
 }
