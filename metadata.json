@@ -1,0 +1,6 @@
+{
+  "name": "World Cup 2026 Jersey Customizer",
+  "description": "A dark-themed premium 3D football jersey customization and ordering hub for the World Cup 2026.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
