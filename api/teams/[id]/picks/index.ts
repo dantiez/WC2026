@@ -12,8 +12,8 @@ import { readCaptainClaims } from "../../../_lib/auth.js";
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchema();
-    const teamId = req.query.teamId as string | undefined;
-    if (!teamId) return res.status(400).json({ error: "Thiếu teamId." });
+    const teamId = req.query.id as string | undefined;
+    if (!teamId) return res.status(400).json({ error: "Thiếu team id." });
 
     const { rows: teamRows } = await query<TeamSessionRow>(
       `SELECT * FROM team_sessions WHERE id = $1`,
