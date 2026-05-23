@@ -22,6 +22,7 @@ import {
   type StoredMember,
 } from "../lib/memberToken";
 import type { Product, TeamPick, TeamSession } from "../types";
+import JerseyPreview from "../components/common/JerseyPreview";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 
@@ -413,6 +414,14 @@ export default function TeammatePicker() {
                 <span className="text-[11px] text-red-400">{fieldErrors.jerseyId}</span>
               ) : null}
             </label>
+
+            {productMap.get(form.jerseyId) ? (
+              <JerseyPreview
+                product={productMap.get(form.jerseyId)!}
+                nickname={form.nickname}
+                jerseyNumber={form.jerseyNumber}
+              />
+            ) : null}
 
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1.5">
