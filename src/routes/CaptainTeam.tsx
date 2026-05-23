@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   ArrowLeft,
   Lock,
@@ -10,9 +10,33 @@ import {
   Loader2,
   Clock,
   FileSpreadsheet,
+  Pencil,
+  X,
 } from "lucide-react";
 import { api } from "../lib/api";
-import type { Product, TeamAggregate } from "../types";
+import type { Product, TeamAggregate, TeamPick } from "../types";
+
+const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
+
+interface PickEditState {
+  memberName: string;
+  jerseyId: string;
+  size: string;
+  jerseyNumber: string;
+  nickname: string;
+  accentColor: string;
+}
+
+function toEditState(pick: TeamPick): PickEditState {
+  return {
+    memberName: pick.memberName,
+    jerseyId: pick.jerseyId,
+    size: pick.size,
+    jerseyNumber: pick.jerseyNumber ?? "",
+    nickname: pick.nickname ?? "",
+    accentColor: pick.accentColor ?? "",
+  };
+}
 
 export default function CaptainTeam() {
   const { id } = useParams<{ id: string }>();
@@ -23,6 +47,10 @@ export default function CaptainTeam() {
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const [editingPickId, setEditingPickId] = useState<string | null>(null);
+  const [editDraft, setEditDraft] = useState<PickEditState | null>(null);
+  const [savingPickId, setSavingPickId] = useState<string | null>(null);
+  const [rowError, setRowError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!id) return;
@@ -62,10 +90,46 @@ export default function CaptainTeam() {
     setData({ ...data, team: updated });
   };
 
-  const removePick = async (pickId: string) => {
+  const startEdit = (pick: TeamPick) => {
+    setRowError(null);
+    setEditingPickId(pick.id);
+    setEditDraft(toEditState(pick));
+  };
+
+  const cancelEdit = () => {
+    setEditingPickId(null);
+    setEditDraft(null);
+    setRowError(null);
+  };
+
+  const saveEdit = async (pickId: string) => {
+    if (!id || !editDraft) return;
+    setRowError(null);
+    setSavingPickId(pickId);
+    try {
+      await api.teams.updatePick(id, pickId, null, {
+        memberName: editDraft.memberName.trim(),
+        jerseyId: editDraft.jerseyId,
+        size: editDraft.size,
+        jerseyNumber: editDraft.jerseyNumber.trim() || null,
+        nickname: editDraft.nickname.trim() || null,
+        accentColor: editDraft.accentColor || null,
+      });
+      setEditingPickId(null);
+      setEditDraft(null);
+      await refresh();
+    } catch (err) {
+      setRowError(err instanceof Error ? err.message : "Không lưu được.");
+    } finally {
+      setSavingPickId(null);
+    }
+  };
+
+  const removePick = async (pick: TeamPick) => {
     if (!id) return;
-    if (!window.confirm("Xoá pick này?")) return;
-    await api.teams.deletePick(id, pickId, null);
+    if (!window.confirm(`Xoá pick của "${pick.memberName}"?`)) return;
+    await api.teams.deletePick(id, pick.id, null);
+    if (editingPickId === pick.id) cancelEdit();
     await refresh();
   };
 
@@ -112,7 +176,7 @@ export default function CaptainTeam() {
 
   return (
     <main className="min-h-screen bg-surface-base px-4 py-8">
-      <div className="max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="max-w-5xl mx-auto flex flex-col gap-6">
         <button
           type="button"
           onClick={() => navigate("/captain")}
@@ -234,41 +298,181 @@ export default function CaptainTeam() {
               Chưa có ai pick. Gửi link cho teammate để bắt đầu.
             </div>
           ) : (
-            <ul className="divide-y divide-border-default">
-              {picks.map((pick, idx) => {
-                const product = productMap.get(pick.jerseyId);
-                return (
-                  <li
-                    key={pick.id}
-                    className="px-4 py-3 flex items-center justify-between gap-3 flex-wrap"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="text-[11px] font-mono text-text-muted w-6 text-right">
-                        {idx + 1}
-                      </span>
-                      <div className="min-w-0">
-                        <p className="font-black text-sm text-text-primary truncate">
+            <div className="overflow-x-auto">
+              <table className="w-full text-xs">
+                <thead className="bg-surface-3 text-text-muted uppercase font-black tracking-wider text-[10px]">
+                  <tr>
+                    <th className="px-3 py-2 text-left w-10">#</th>
+                    <th className="px-3 py-2 text-left">Tên</th>
+                    <th className="px-3 py-2 text-left">Mẫu áo</th>
+                    <th className="px-3 py-2 text-left w-20">Size</th>
+                    <th className="px-3 py-2 text-left w-20">Số</th>
+                    <th className="px-3 py-2 text-left">Nickname</th>
+                    <th className="px-3 py-2 text-left w-16">Màu</th>
+                    <th className="px-3 py-2 text-right w-28">Thao tác</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border-default">
+                  {picks.map((pick, idx) => {
+                    const isEditing = editingPickId === pick.id && editDraft !== null;
+                    const isSaving = savingPickId === pick.id;
+                    const product = productMap.get(pick.jerseyId);
+                    if (isEditing && editDraft) {
+                      return (
+                        <tr key={pick.id} className="bg-yellow-500/5 align-middle">
+                          <td className="px-3 py-2 font-mono text-text-muted">{idx + 1}</td>
+                          <td className="px-3 py-2">
+                            <input
+                              value={editDraft.memberName}
+                              onChange={(e) =>
+                                setEditDraft({ ...editDraft, memberName: e.target.value })
+                              }
+                              className="bg-surface-3 border border-border-default rounded px-2 py-1 w-full text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-400"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <select
+                              value={editDraft.jerseyId}
+                              onChange={(e) =>
+                                setEditDraft({ ...editDraft, jerseyId: e.target.value })
+                              }
+                              className="bg-surface-3 border border-border-default rounded px-2 py-1 w-full text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-400 max-w-[180px]"
+                            >
+                              {products.map((p) => (
+                                <option key={p.id} value={p.id}>
+                                  {p.name}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-3 py-2">
+                            <select
+                              value={editDraft.size}
+                              onChange={(e) =>
+                                setEditDraft({ ...editDraft, size: e.target.value })
+                              }
+                              className="bg-surface-3 border border-border-default rounded px-2 py-1 w-full text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-400"
+                            >
+                              {SIZES.map((s) => (
+                                <option key={s} value={s}>
+                                  {s}
+                                </option>
+                              ))}
+                            </select>
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              value={editDraft.jerseyNumber}
+                              onChange={(e) =>
+                                setEditDraft({ ...editDraft, jerseyNumber: e.target.value })
+                              }
+                              inputMode="numeric"
+                              className="bg-surface-3 border border-border-default rounded px-2 py-1 w-full text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-400"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              value={editDraft.nickname}
+                              onChange={(e) =>
+                                setEditDraft({ ...editDraft, nickname: e.target.value })
+                              }
+                              className="bg-surface-3 border border-border-default rounded px-2 py-1 w-full text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-400"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <input
+                              type="color"
+                              value={editDraft.accentColor || "#ffd700"}
+                              onChange={(e) =>
+                                setEditDraft({ ...editDraft, accentColor: e.target.value })
+                              }
+                              className="bg-surface-3 border border-border-default rounded w-full h-8 cursor-pointer"
+                            />
+                          </td>
+                          <td className="px-3 py-2">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() => saveEdit(pick.id)}
+                                disabled={isSaving}
+                                aria-label="Lưu"
+                                className="p-1.5 min-w-8 min-h-8 bg-green-500/10 text-green-400 hover:bg-green-500 hover:text-white rounded-md transition-colors disabled:opacity-50"
+                              >
+                                {isSaving ? (
+                                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                                ) : (
+                                  <Check className="w-3.5 h-3.5" />
+                                )}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={cancelEdit}
+                                aria-label="Huỷ"
+                                className="p-1.5 min-w-8 min-h-8 text-text-muted hover:text-text-primary hover:bg-surface-3 rounded-md transition-colors"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            {rowError ? (
+                              <p className="text-[10px] text-red-400 mt-1 text-right">{rowError}</p>
+                            ) : null}
+                          </td>
+                        </tr>
+                      );
+                    }
+                    return (
+                      <tr key={pick.id} className="hover:bg-surface-3/40 align-middle">
+                        <td className="px-3 py-2 font-mono text-text-muted">{idx + 1}</td>
+                        <td className="px-3 py-2 font-black text-text-primary">
                           {pick.memberName}
-                        </p>
-                        <p className="text-[11px] text-text-muted truncate">
-                          {product?.name ?? pick.jerseyId} · Size {pick.size}
-                          {pick.jerseyNumber ? ` · #${pick.jerseyNumber}` : ""}
-                          {pick.nickname ? ` · ${pick.nickname}` : ""}
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => removePick(pick.id)}
-                      aria-label={`Xoá pick của ${pick.memberName}`}
-                      className="p-2 min-w-9 min-h-9 text-red-400 hover:text-white hover:bg-red-500 rounded-md transition-colors"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+                        </td>
+                        <td className="px-3 py-2 text-text-secondary truncate max-w-[200px]">
+                          {product?.name ?? pick.jerseyId}
+                        </td>
+                        <td className="px-3 py-2 text-text-secondary font-mono">{pick.size}</td>
+                        <td className="px-3 py-2 text-text-secondary font-mono">
+                          {pick.jerseyNumber ?? "—"}
+                        </td>
+                        <td className="px-3 py-2 text-text-secondary truncate max-w-[160px]">
+                          {pick.nickname ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {pick.accentColor ? (
+                            <span
+                              className="inline-block w-5 h-5 rounded border border-border-default"
+                              style={{ backgroundColor: pick.accentColor }}
+                              title={pick.accentColor}
+                            />
+                          ) : (
+                            <span className="text-text-muted">—</span>
+                          )}
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="flex items-center justify-end gap-1">
+                            <button
+                              type="button"
+                              onClick={() => startEdit(pick)}
+                              aria-label={`Sửa pick của ${pick.memberName}`}
+                              className="p-1.5 min-w-8 min-h-8 text-yellow-400 hover:bg-yellow-500 hover:text-black rounded-md transition-colors"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removePick(pick)}
+                              aria-label={`Xoá pick của ${pick.memberName}`}
+                              className="p-1.5 min-w-8 min-h-8 text-red-400 hover:bg-red-500 hover:text-white rounded-md transition-colors"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           )}
         </section>
       </div>

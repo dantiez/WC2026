@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, LogOut, Loader2, Clock, Lock, Unlock } from "lucide-react";
+import { Plus, LogOut, Loader2, Clock, Lock, Unlock, Trash2 } from "lucide-react";
 import { api } from "../lib/api";
 import type { TeamSession } from "../types";
 
@@ -14,6 +14,7 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
   const [teams, setTeams] = useState<TeamSession[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
 
   useEffect(() => {
     api.teams
@@ -27,6 +28,27 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
         setLoading(false);
       });
   }, []);
+
+  const handleDelete = async (e: React.MouseEvent, team: TeamSession) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (
+      !window.confirm(
+        `Xoá team "${team.name}"? Tất cả pick của thành viên trong team này cũng sẽ bị xoá. Không thể hoàn tác.`,
+      )
+    ) {
+      return;
+    }
+    setDeletingId(team.id);
+    try {
+      await api.teams.remove(team.id);
+      setTeams((prev) => prev.filter((t) => t.id !== team.id));
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Không xoá được team.");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-surface-base px-4 py-8">
@@ -76,10 +98,10 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
         ) : (
           <ul className="flex flex-col gap-3">
             {teams.map((t) => (
-              <li key={t.id}>
+              <li key={t.id} className="relative">
                 <Link
                   to={`/captain/teams/${t.id}`}
-                  className="block bg-surface-2 hover:bg-surface-3 border border-border-default rounded-2xl p-4 transition-colors"
+                  className="block bg-surface-2 hover:bg-surface-3 border border-border-default rounded-2xl p-4 pr-14 transition-colors"
                 >
                   <div className="flex items-center justify-between gap-3 flex-wrap">
                     <div>
@@ -107,6 +129,19 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
                     </div>
                   </div>
                 </Link>
+                <button
+                  type="button"
+                  onClick={(e) => handleDelete(e, t)}
+                  disabled={deletingId === t.id}
+                  aria-label={`Xoá team ${t.name}`}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 p-2 min-w-9 min-h-9 text-red-400 hover:text-white hover:bg-red-500 rounded-lg transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                >
+                  {deletingId === t.id ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                </button>
               </li>
             ))}
           </ul>
