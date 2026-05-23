@@ -1,5 +1,5 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import * as jsonwebtokenNs from "jsonwebtoken";
+import { createRequire } from "module";
 import { parse as parseCookies, serialize as serializeCookie } from "cookie";
 
 type JwtModule = {
@@ -7,9 +7,8 @@ type JwtModule = {
   verify: (token: string, secret: string) => unknown;
 };
 
-const jwt: JwtModule =
-  ((jsonwebtokenNs as unknown as { default?: JwtModule }).default ??
-    (jsonwebtokenNs as unknown as JwtModule));
+const requireCjs = createRequire(import.meta.url);
+const jwt: JwtModule = requireCjs("jsonwebtoken") as JwtModule;
 
 const COOKIE_NAME = "wc2026_captain";
 const TOKEN_TTL_SECONDS = 60 * 60 * 24 * 7; // 7 days

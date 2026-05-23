@@ -9,17 +9,8 @@ import { createServer as createViteServer } from "vite";
 
 import productsList from "./api/products/index.js";
 import productById from "./api/products/[id].js";
-import ordersList from "./api/orders/index.js";
-import orderTrack from "./api/orders/track.js";
-import orderBulkStatus from "./api/orders/bulk-status.js";
-import orderStatus from "./api/orders/[id]/status.js";
-import customers from "./api/customers.js";
-import stats from "./api/stats.js";
-import paymentsSimulate from "./api/payments/simulate.js";
 import health from "./api/health.js";
-import authLogin from "./api/auth/login.js";
-import authLogout from "./api/auth/logout.js";
-import authMe from "./api/auth/me.js";
+import authHandler from "./api/auth/index.js";
 import teamsIndex from "./api/teams/index.js";
 import teamById from "./api/teams/[id]/index.js";
 import teamByToken from "./api/teams/by-token.js";
@@ -47,20 +38,10 @@ app.post("/api/products", wrap(productsList));
 app.put("/api/products/:id", wrap(productById));
 app.delete("/api/products/:id", wrap(productById));
 
-app.get("/api/orders", wrap(ordersList));
-app.post("/api/orders", wrap(ordersList));
-app.get("/api/orders/track", wrap(orderTrack));
-app.put("/api/orders/bulk-status", wrap(orderBulkStatus));
-app.put("/api/orders/:id/status", wrap(orderStatus));
-
-app.get("/api/customers", wrap(customers));
-app.get("/api/stats", wrap(stats));
-app.post("/api/payments/simulate", wrap(paymentsSimulate));
 app.get("/api/health", wrap(health));
 
-app.post("/api/auth/login", wrap(authLogin));
-app.post("/api/auth/logout", wrap(authLogout));
-app.get("/api/auth/me", wrap(authMe));
+app.get("/api/auth", wrap(authHandler));
+app.post("/api/auth", wrap(authHandler));
 
 app.get("/api/teams", wrap(teamsIndex));
 app.post("/api/teams", wrap(teamsIndex));
@@ -68,11 +49,11 @@ app.get("/api/teams/by-token", wrap(teamByToken));
 app.get("/api/teams/:id", wrap(teamById));
 app.patch("/api/teams/:id", wrap(teamById));
 app.delete("/api/teams/:id", wrap(teamById));
-app.get("/api/teams/:teamId/picks", wrap(teamPicks));
-app.post("/api/teams/:teamId/picks", wrap(teamPicks));
-app.put("/api/teams/:teamId/picks/:pickId", wrap(teamPick));
-app.delete("/api/teams/:teamId/picks/:pickId", wrap(teamPick));
-app.get("/api/teams/:teamId/aggregate", wrap(teamAggregate));
+app.get("/api/teams/:id/picks", wrap(teamPicks));
+app.post("/api/teams/:id/picks", wrap(teamPicks));
+app.put("/api/teams/:id/picks/:pickId", wrap(teamPick));
+app.delete("/api/teams/:id/picks/:pickId", wrap(teamPick));
+app.get("/api/teams/:id/aggregate", wrap(teamAggregate));
 
 async function startServer() {
   const vite = await createViteServer({

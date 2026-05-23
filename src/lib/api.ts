@@ -35,12 +35,14 @@ export const api = {
 
   auth: {
     login: (email: string, password: string) =>
-      request<{ email: string }>("/api/auth/login", {
+      request<{ email: string }>("/api/auth?action=login", {
         method: "POST",
         body: JSON.stringify({ email, password }),
       }),
-    logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
-    me: () => request<{ authenticated: boolean; email?: string }>("/api/auth/me"),
+    logout: () =>
+      request<{ ok: boolean }>("/api/auth?action=logout", { method: "POST" }),
+    me: () =>
+      request<{ authenticated: boolean; email?: string }>("/api/auth?action=me"),
   },
 
   teams: {

@@ -1,4 +1,3 @@
-import { lazy, Suspense } from "react";
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { useCaptainAuth } from "./hooks/useCaptainAuth";
@@ -7,8 +6,6 @@ import CaptainDashboard from "./routes/CaptainDashboard";
 import CaptainSessionNew from "./routes/CaptainSessionNew";
 import CaptainTeam from "./routes/CaptainTeam";
 import TeammatePicker from "./routes/TeammatePicker";
-
-const LegacyApp = lazy(() => import("./LegacyApp"));
 
 function LoadingScreen() {
   return (
@@ -91,15 +88,6 @@ export default function App() {
         />
 
         <Route path="/t/:shareToken" element={<TeammatePicker />} />
-
-        <Route
-          path="/legacy"
-          element={
-            <Suspense fallback={<LoadingScreen />}>
-              <LegacyApp />
-            </Suspense>
-          }
-        />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

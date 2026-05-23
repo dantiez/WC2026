@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, LogOut, ExternalLink, Loader2, Clock, Lock, Unlock } from "lucide-react";
+import { Plus, LogOut, Loader2, Clock, Lock, Unlock } from "lucide-react";
 import { api } from "../lib/api";
 import type { TeamSession } from "../types";
 
@@ -112,14 +112,6 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
           </ul>
         )}
 
-        <p className="text-[11px] text-text-muted">
-          <ExternalLink className="w-3 h-3 inline-block mr-1" />
-          Trang admin sản phẩm cũ vẫn còn ở{" "}
-          <Link to="/legacy" className="text-yellow-400 underline">
-            /legacy
-          </Link>
-          .
-        </p>
       </div>
     </main>
   );
