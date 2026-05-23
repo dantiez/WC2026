@@ -1,12 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ensureSchema, query } from "../../lib/db.js";
+import { ensureSchema, query } from "../../../lib/db.js";
 import {
   mapTeamPick,
   mapTeamSession,
   type TeamPickRow,
   type TeamSessionRow,
-} from "../../lib/mappers.js";
-import { requireCaptain } from "../_lib/auth.js";
+} from "../../../lib/mappers.js";
+import { requireCaptain } from "../../_lib/auth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -18,8 +18,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const teamId = req.query.teamId as string | undefined;
-    if (!teamId) return res.status(400).json({ error: "Thiếu teamId." });
+    const teamId = req.query.id as string | undefined;
+    if (!teamId) return res.status(400).json({ error: "Thiếu team id." });
 
     const { rows: teamRows } = await query<TeamSessionRow>(
       `SELECT * FROM team_sessions WHERE id = $1`,

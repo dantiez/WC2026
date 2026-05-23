@@ -1,18 +1,18 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ensureSchema, query } from "../../lib/db.js";
+import { ensureSchema, query } from "../../../../lib/db.js";
 import {
   mapTeamPick,
   type TeamPickRow,
   type TeamSessionRow,
-} from "../../lib/mappers.js";
-import { readCaptainClaims } from "../_lib/auth.js";
+} from "../../../../lib/mappers.js";
+import { readCaptainClaims } from "../../../_lib/auth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     await ensureSchema();
-    const teamId = req.query.teamId as string | undefined;
+    const teamId = req.query.id as string | undefined;
     const pickId = req.query.pickId as string | undefined;
-    if (!teamId || !pickId) return res.status(400).json({ error: "Thiếu teamId hoặc pickId." });
+    if (!teamId || !pickId) return res.status(400).json({ error: "Thiếu team id hoặc pickId." });
 
     const memberToken = (req.headers["x-member-token"] as string | undefined) ?? undefined;
 

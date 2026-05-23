@@ -1,13 +1,13 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ensureSchema, query } from "../../lib/db.js";
+import { ensureSchema, query } from "../../../../lib/db.js";
 import {
   mapTeamPick,
   randomToken,
   shortId,
   type TeamPickRow,
   type TeamSessionRow,
-} from "../../lib/mappers.js";
-import { readCaptainClaims } from "../_lib/auth.js";
+} from "../../../../lib/mappers.js";
+import { readCaptainClaims } from "../../../_lib/auth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {

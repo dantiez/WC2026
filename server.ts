@@ -23,9 +23,9 @@ import authMe from "./api/auth/me.js";
 import teamsIndex from "./api/teams/index.js";
 import teamById from "./api/teams/[id].js";
 import teamByToken from "./api/teams/by-token.js";
-import teamPicks from "./api/teams/picks.js";
-import teamPick from "./api/teams/pick.js";
-import teamAggregate from "./api/teams/aggregate.js";
+import teamPicks from "./api/teams/[id]/picks/index.js";
+import teamPick from "./api/teams/[id]/picks/[pickId].js";
+import teamAggregate from "./api/teams/[id]/aggregate.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VercelHandler = (req: any, res: any) => unknown | Promise<unknown>;
