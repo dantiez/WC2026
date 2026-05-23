@@ -21,7 +21,7 @@ import authLogin from "./api/auth/login.js";
 import authLogout from "./api/auth/logout.js";
 import authMe from "./api/auth/me.js";
 import teamsIndex from "./api/teams/index.js";
-import teamById from "./api/teams/[id].js";
+import teamById from "./api/teams/[id]/index.js";
 import teamByToken from "./api/teams/by-token.js";
 import teamPicks from "./api/teams/[id]/picks/index.js";
 import teamPick from "./api/teams/[id]/picks/[pickId].js";

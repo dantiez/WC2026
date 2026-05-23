@@ -1,6 +1,11 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import bcrypt from "bcryptjs";
+import * as bcryptjsNs from "bcryptjs";
 import { setCaptainCookie, signCaptainToken } from "../_lib/auth.js";
+
+type BcryptModule = { compare: (data: string, hash: string) => Promise<boolean> };
+const bcrypt: BcryptModule =
+  ((bcryptjsNs as unknown as { default?: BcryptModule }).default ??
+    (bcryptjsNs as unknown as BcryptModule));
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

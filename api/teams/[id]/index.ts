@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { ensureSchema, query } from "../../lib/db.js";
-import { mapTeamSession, type TeamSessionRow } from "../../lib/mappers.js";
-import { requireCaptain } from "../_lib/auth.js";
+import { ensureSchema, query } from "../../../lib/db.js";
+import { mapTeamSession, type TeamSessionRow } from "../../../lib/mappers.js";
+import { requireCaptain } from "../../_lib/auth.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
