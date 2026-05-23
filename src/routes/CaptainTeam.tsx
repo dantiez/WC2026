@@ -13,7 +13,7 @@ import {
   Pencil,
   X,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, ApiError } from "../lib/api";
 import type { Product, TeamAggregate, TeamPick } from "../types";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
@@ -24,7 +24,6 @@ interface PickEditState {
   size: string;
   jerseyNumber: string;
   nickname: string;
-  accentColor: string;
 }
 
 function toEditState(pick: TeamPick): PickEditState {
@@ -34,7 +33,6 @@ function toEditState(pick: TeamPick): PickEditState {
     size: pick.size,
     jerseyNumber: pick.jerseyNumber ?? "",
     nickname: pick.nickname ?? "",
-    accentColor: pick.accentColor ?? "",
   };
 }
 
@@ -105,21 +103,36 @@ export default function CaptainTeam() {
   const saveEdit = async (pickId: string) => {
     if (!id || !editDraft) return;
     setRowError(null);
+
+    const missing: string[] = [];
+    if (!editDraft.memberName.trim()) missing.push("tên");
+    if (!editDraft.jerseyId) missing.push("mẫu áo");
+    if (!editDraft.size) missing.push("size");
+    if (!editDraft.jerseyNumber.trim()) missing.push("số áo");
+    if (missing.length > 0) {
+      setRowError(`Vui lòng nhập đủ: ${missing.join(", ")}.`);
+      return;
+    }
+
     setSavingPickId(pickId);
     try {
       await api.teams.updatePick(id, pickId, null, {
         memberName: editDraft.memberName.trim(),
         jerseyId: editDraft.jerseyId,
         size: editDraft.size,
-        jerseyNumber: editDraft.jerseyNumber.trim() || null,
+        jerseyNumber: editDraft.jerseyNumber.trim(),
         nickname: editDraft.nickname.trim() || null,
-        accentColor: editDraft.accentColor || null,
       });
       setEditingPickId(null);
       setEditDraft(null);
       await refresh();
     } catch (err) {
-      setRowError(err instanceof Error ? err.message : "Không lưu được.");
+      if (err instanceof ApiError && err.fieldErrors) {
+        const messages = Object.values(err.fieldErrors).join(" ");
+        setRowError(messages || err.message);
+      } else {
+        setRowError(err instanceof Error ? err.message : "Không lưu được.");
+      }
     } finally {
       setSavingPickId(null);
     }
@@ -138,7 +151,7 @@ export default function CaptainTeam() {
     setExporting(true);
     try {
       const XLSX = await import("xlsx");
-      const header = ["STT", "Tên", "Số áo", "Nickname", "Size", "Mẫu áo", "Màu nhấn"];
+      const header = ["STT", "Tên", "Số áo", "Nickname", "Size", "Mẫu áo"];
       const rows = data.picks.map((pick, i) => [
         i + 1,
         pick.memberName,
@@ -146,7 +159,6 @@ export default function CaptainTeam() {
         pick.nickname ?? "",
         pick.size,
         productMap.get(pick.jerseyId)?.name ?? pick.jerseyId,
-        pick.accentColor ?? "",
       ]);
       const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
       const wb = XLSX.utils.book_new();
@@ -308,7 +320,6 @@ export default function CaptainTeam() {
                     <th className="px-3 py-2 text-left w-20">Size</th>
                     <th className="px-3 py-2 text-left w-20">Số</th>
                     <th className="px-3 py-2 text-left">Nickname</th>
-                    <th className="px-3 py-2 text-left w-16">Màu</th>
                     <th className="px-3 py-2 text-right w-28">Thao tác</th>
                   </tr>
                 </thead>
@@ -380,16 +391,6 @@ export default function CaptainTeam() {
                             />
                           </td>
                           <td className="px-3 py-2">
-                            <input
-                              type="color"
-                              value={editDraft.accentColor || "#ffd700"}
-                              onChange={(e) =>
-                                setEditDraft({ ...editDraft, accentColor: e.target.value })
-                              }
-                              className="bg-surface-3 border border-border-default rounded w-full h-8 cursor-pointer"
-                            />
-                          </td>
-                          <td className="px-3 py-2">
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 type="button"
@@ -435,17 +436,6 @@ export default function CaptainTeam() {
                         </td>
                         <td className="px-3 py-2 text-text-secondary truncate max-w-[160px]">
                           {pick.nickname ?? "—"}
-                        </td>
-                        <td className="px-3 py-2">
-                          {pick.accentColor ? (
-                            <span
-                              className="inline-block w-5 h-5 rounded border border-border-default"
-                              style={{ backgroundColor: pick.accentColor }}
-                              title={pick.accentColor}
-                            />
-                          ) : (
-                            <span className="text-text-muted">—</span>
-                          )}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-end gap-1">

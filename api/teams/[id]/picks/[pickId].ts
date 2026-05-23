@@ -61,35 +61,47 @@ async function updatePick(req: VercelRequest, res: VercelResponse, pick: TeamPic
     size?: string;
     jerseyNumber?: string | number | null;
     nickname?: string | null;
-    accentColor?: string | null;
   };
 
   const sets: string[] = [];
   const params: unknown[] = [];
+  const fieldErrors: Record<string, string> = {};
 
   if (body.memberName !== undefined) {
-    params.push(body.memberName.trim());
+    const v = body.memberName.trim();
+    if (!v) fieldErrors.memberName = "Vui lòng nhập tên của bạn.";
+    params.push(v);
     sets.push(`member_name = $${params.length}`);
   }
   if (body.jerseyId !== undefined) {
-    params.push(body.jerseyId);
+    const v = body.jerseyId.trim();
+    if (!v) fieldErrors.jerseyId = "Vui lòng chọn mẫu áo.";
+    params.push(v);
     sets.push(`jersey_id = $${params.length}`);
   }
   if (body.size !== undefined) {
-    params.push(body.size);
+    const v = body.size.trim();
+    if (!v) fieldErrors.size = "Vui lòng chọn size.";
+    params.push(v);
     sets.push(`size = $${params.length}`);
   }
   if (body.jerseyNumber !== undefined) {
-    params.push(body.jerseyNumber === null ? null : String(body.jerseyNumber));
+    const v =
+      body.jerseyNumber === null ? "" : String(body.jerseyNumber).trim();
+    if (!v) fieldErrors.jerseyNumber = "Vui lòng nhập số áo.";
+    params.push(v);
     sets.push(`jersey_number = $${params.length}`);
   }
   if (body.nickname !== undefined) {
     params.push(body.nickname);
     sets.push(`nickname = $${params.length}`);
   }
-  if (body.accentColor !== undefined) {
-    params.push(body.accentColor);
-    sets.push(`accent_color = $${params.length}`);
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return res.status(400).json({
+      error: "Vui lòng điền đầy đủ các trường bắt buộc.",
+      fieldErrors,
+    });
   }
   if (sets.length === 0) {
     return res.status(400).json({ error: "Không có gì để cập nhật." });

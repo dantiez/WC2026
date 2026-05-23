@@ -123,7 +123,6 @@ export interface TeamPick {
   size: string;
   jerseyNumber: string | null;
   nickname: string | null;
-  accentColor: string | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -13,7 +13,7 @@ import {
   CheckCircle2,
   X,
 } from "lucide-react";
-import { api } from "../lib/api";
+import { api, ApiError } from "../lib/api";
 import {
   addMember,
   findMemberToken,
@@ -31,17 +31,15 @@ interface FormState {
   size: string;
   jerseyNumber: string;
   nickname: string;
-  accentColor: string;
 }
 
 function emptyForm(defaultJerseyId: string): FormState {
   return {
     memberName: "",
     jerseyId: defaultJerseyId,
-    size: "M",
+    size: "",
     jerseyNumber: "",
     nickname: "",
-    accentColor: "",
   };
 }
 
@@ -52,7 +50,6 @@ function pickToForm(pick: TeamPick): FormState {
     size: pick.size,
     jerseyNumber: pick.jerseyNumber ?? "",
     nickname: pick.nickname ?? "",
-    accentColor: pick.accentColor ?? "",
   };
 }
 
@@ -70,7 +67,28 @@ export default function TeammatePicker() {
   const [form, setForm] = useState<FormState>(emptyForm(""));
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  const validateForm = (f: FormState): Record<string, string> => {
+    const errs: Record<string, string> = {};
+    if (!f.memberName.trim()) errs.memberName = "Vui lòng nhập tên của bạn.";
+    if (!f.jerseyId) errs.jerseyId = "Vui lòng chọn mẫu áo.";
+    if (!f.size) errs.size = "Vui lòng chọn size.";
+    if (!f.jerseyNumber.trim()) errs.jerseyNumber = "Vui lòng nhập số áo.";
+    return errs;
+  };
+
+  const updateField = <K extends keyof FormState>(key: K, value: FormState[K]) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+    if (fieldErrors[key]) {
+      setFieldErrors((prev) => {
+        const next = { ...prev };
+        delete next[key];
+        return next;
+      });
+    }
+  };
 
   const productMap = useMemo(
     () => new Map(products.map((p) => [p.id, p])),
@@ -122,6 +140,7 @@ export default function TeammatePicker() {
     setEditingPickId(null);
     setForm(emptyForm(team.defaultProductId || products[0]?.id || ""));
     setSubmitError(null);
+    setFieldErrors({});
     setShowForm(true);
     setSuccessMsg(null);
   };
@@ -130,6 +149,7 @@ export default function TeammatePicker() {
     setEditingPickId(pick.id);
     setForm(pickToForm(pick));
     setSubmitError(null);
+    setFieldErrors({});
     setShowForm(true);
     setSuccessMsg(null);
   };
@@ -138,12 +158,20 @@ export default function TeammatePicker() {
     setShowForm(false);
     setEditingPickId(null);
     setSubmitError(null);
+    setFieldErrors({});
   };
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!team) return;
     setSubmitError(null);
+
+    const localErrs = validateForm(form);
+    if (Object.keys(localErrs).length > 0) {
+      setFieldErrors(localErrs);
+      return;
+    }
+    setFieldErrors({});
     setSubmitting(true);
     try {
       if (editingPickId) {
@@ -152,9 +180,8 @@ export default function TeammatePicker() {
           memberName: form.memberName.trim(),
           jerseyId: form.jerseyId,
           size: form.size,
-          jerseyNumber: form.jerseyNumber || null,
+          jerseyNumber: form.jerseyNumber.trim(),
           nickname: form.nickname || null,
-          accentColor: form.accentColor || null,
         });
         setSuccessMsg(`Đã cập nhật pick của ${form.memberName.trim()}.`);
       } else {
@@ -162,9 +189,8 @@ export default function TeammatePicker() {
           memberName: form.memberName.trim(),
           jerseyId: form.jerseyId,
           size: form.size,
-          jerseyNumber: form.jerseyNumber || null,
+          jerseyNumber: form.jerseyNumber.trim(),
           nickname: form.nickname || null,
-          accentColor: form.accentColor || null,
         });
         addMember(team.id, {
           pickId: result.pick.id,
@@ -177,6 +203,9 @@ export default function TeammatePicker() {
       closeForm();
       await refresh();
     } catch (err) {
+      if (err instanceof ApiError && err.fieldErrors) {
+        setFieldErrors(err.fieldErrors);
+      }
       setSubmitError(err instanceof Error ? err.message : "Không lưu được pick.");
     } finally {
       setSubmitting(false);
@@ -345,66 +374,88 @@ export default function TeammatePicker() {
 
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-                Tên (bắt buộc)
+                Tên <span className="text-red-400">*</span>
               </span>
               <input
                 value={form.memberName}
-                onChange={(e) => setForm({ ...form, memberName: e.target.value })}
-                required
+                onChange={(e) => updateField("memberName", e.target.value)}
                 placeholder="Tên thật hoặc bí danh"
-                className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                aria-invalid={!!fieldErrors.memberName}
+                className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
+                  fieldErrors.memberName ? "border-red-500/60" : "border-border-default"
+                }`}
               />
+              {fieldErrors.memberName ? (
+                <span className="text-[11px] text-red-400">{fieldErrors.memberName}</span>
+              ) : null}
             </label>
 
             <label className="flex flex-col gap-1.5">
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-                Mẫu áo
+                Mẫu áo <span className="text-red-400">*</span>
               </span>
               <select
                 value={form.jerseyId}
-                onChange={(e) => setForm({ ...form, jerseyId: e.target.value })}
-                required
-                className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                onChange={(e) => updateField("jerseyId", e.target.value)}
+                aria-invalid={!!fieldErrors.jerseyId}
+                className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
+                  fieldErrors.jerseyId ? "border-red-500/60" : "border-border-default"
+                }`}
               >
+                <option value="">— Chọn mẫu áo —</option>
                 {products.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.name}
                   </option>
                 ))}
               </select>
+              {fieldErrors.jerseyId ? (
+                <span className="text-[11px] text-red-400">{fieldErrors.jerseyId}</span>
+              ) : null}
             </label>
 
             <div className="grid grid-cols-2 gap-3">
               <label className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-                  Size
+                  Size <span className="text-red-400">*</span>
                 </span>
                 <select
                   value={form.size}
-                  onChange={(e) => setForm({ ...form, size: e.target.value })}
-                  className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                  onChange={(e) => updateField("size", e.target.value)}
+                  aria-invalid={!!fieldErrors.size}
+                  className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
+                    fieldErrors.size ? "border-red-500/60" : "border-border-default"
+                  }`}
                 >
+                  <option value="">— Chọn size —</option>
                   {SIZES.map((s) => (
                     <option key={s} value={s}>
                       {s}
                     </option>
                   ))}
                 </select>
+                {fieldErrors.size ? (
+                  <span className="text-[11px] text-red-400">{fieldErrors.size}</span>
+                ) : null}
               </label>
 
               <label className="flex flex-col gap-1.5">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-                  Số áo (tuỳ chọn)
+                  Số áo <span className="text-red-400">*</span>
                 </span>
                 <input
                   value={form.jerseyNumber}
-                  onChange={(e) =>
-                    setForm({ ...form, jerseyNumber: e.target.value })
-                  }
+                  onChange={(e) => updateField("jerseyNumber", e.target.value)}
                   inputMode="numeric"
                   placeholder="VD: 10"
-                  className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                  aria-invalid={!!fieldErrors.jerseyNumber}
+                  className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
+                    fieldErrors.jerseyNumber ? "border-red-500/60" : "border-border-default"
+                  }`}
                 />
+                {fieldErrors.jerseyNumber ? (
+                  <span className="text-[11px] text-red-400">{fieldErrors.jerseyNumber}</span>
+                ) : null}
               </label>
             </div>
 
@@ -414,21 +465,9 @@ export default function TeammatePicker() {
               </span>
               <input
                 value={form.nickname}
-                onChange={(e) => setForm({ ...form, nickname: e.target.value })}
+                onChange={(e) => updateField("nickname", e.target.value)}
                 placeholder="VD: TIEN LINH"
                 className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-              />
-            </label>
-
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-                Màu nhấn (tuỳ chọn)
-              </span>
-              <input
-                type="color"
-                value={form.accentColor || "#ffd700"}
-                onChange={(e) => setForm({ ...form, accentColor: e.target.value })}
-                className="bg-surface-3 border border-border-default rounded-lg h-10 w-20 cursor-pointer"
               />
             </label>
 

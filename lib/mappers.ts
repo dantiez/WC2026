@@ -113,7 +113,6 @@ export type TeamPickRow = {
   size: string;
   jersey_number: string | null;
   nickname: string | null;
-  accent_color: string | null;
   created_at: Date;
   updated_at: Date;
 };
@@ -126,7 +125,6 @@ export type TeamPick = {
   size: string;
   jerseyNumber: string | null;
   nickname: string | null;
-  accentColor: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -140,7 +138,6 @@ export function mapTeamPick(r: TeamPickRow): TeamPick {
     size: r.size,
     jerseyNumber: r.jersey_number,
     nickname: r.nickname,
-    accentColor: r.accent_color,
     createdAt: r.created_at.toISOString(),
     updatedAt: r.updated_at.toISOString(),
   };

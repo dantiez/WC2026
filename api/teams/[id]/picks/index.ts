@@ -59,21 +59,34 @@ async function createPick(
     size?: string;
     jerseyNumber?: string | number | null;
     nickname?: string | null;
-    accentColor?: string | null;
   };
 
   const memberName = (body.memberName ?? "").trim();
   const jerseyId = (body.jerseyId ?? "").trim();
   const size = (body.size ?? "").trim();
-  if (!memberName || !jerseyId || !size) {
-    return res.status(400).json({ error: "Cần đủ tên, mẫu áo và size." });
+  const jerseyNumber =
+    body.jerseyNumber !== null && body.jerseyNumber !== undefined
+      ? String(body.jerseyNumber).trim()
+      : "";
+
+  const fieldErrors: Record<string, string> = {};
+  if (!memberName) fieldErrors.memberName = "Vui lòng nhập tên của bạn.";
+  if (!jerseyId) fieldErrors.jerseyId = "Vui lòng chọn mẫu áo.";
+  if (!size) fieldErrors.size = "Vui lòng chọn size.";
+  if (!jerseyNumber) fieldErrors.jerseyNumber = "Vui lòng nhập số áo.";
+
+  if (Object.keys(fieldErrors).length > 0) {
+    return res.status(400).json({
+      error: "Vui lòng điền đầy đủ các trường bắt buộc.",
+      fieldErrors,
+    });
   }
 
   const id = shortId("pick");
   const memberToken = randomToken(28);
   const { rows } = await query<TeamPickRow>(
-    `INSERT INTO team_picks (id, team_id, member_name, member_token, jersey_id, size, jersey_number, nickname, accent_color)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+    `INSERT INTO team_picks (id, team_id, member_name, member_token, jersey_id, size, jersey_number, nickname)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
      RETURNING *`,
     [
       id,
@@ -82,11 +95,8 @@ async function createPick(
       memberToken,
       jerseyId,
       size,
-      body.jerseyNumber !== null && body.jerseyNumber !== undefined
-        ? String(body.jerseyNumber)
-        : null,
+      jerseyNumber,
       body.nickname ?? null,
-      body.accentColor ?? null,
     ],
   );
   return res.status(201).json({ pick: mapTeamPick(rows[0]), memberToken });

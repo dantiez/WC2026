@@ -6,6 +6,7 @@ import CaptainDashboard from "./routes/CaptainDashboard";
 import CaptainSessionNew from "./routes/CaptainSessionNew";
 import CaptainTeam from "./routes/CaptainTeam";
 import TeammatePicker from "./routes/TeammatePicker";
+import Footer from "./components/common/Footer";
 
 function LoadingScreen() {
   return (
@@ -34,7 +35,9 @@ export default function App() {
 
   return (
     <BrowserRouter>
-      <Routes>
+      <div className="flex flex-col min-h-screen bg-surface-base">
+        <div className="flex-1">
+          <Routes>
         <Route
           path="/"
           element={
@@ -89,8 +92,11 @@ export default function App() {
 
         <Route path="/t/:shareToken" element={<TeammatePicker />} />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </div>
+        <Footer />
+      </div>
     </BrowserRouter>
   );
 }

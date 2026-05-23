@@ -5,6 +5,16 @@ import type {
   TeamAggregate,
 } from "../types";
 
+export class ApiError extends Error {
+  status: number;
+  fieldErrors?: Record<string, string>;
+  constructor(message: string, status: number, fieldErrors?: Record<string, string>) {
+    super(message);
+    this.status = status;
+    this.fieldErrors = fieldErrors;
+  }
+}
+
 async function request<T>(input: string, init?: RequestInit): Promise<T> {
   const res = await fetch(input, {
     credentials: "include",
@@ -16,13 +26,18 @@ async function request<T>(input: string, init?: RequestInit): Promise<T> {
   });
   if (!res.ok) {
     let message = `Request failed (${res.status})`;
+    let fieldErrors: Record<string, string> | undefined;
     try {
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        fieldErrors?: Record<string, string>;
+      };
       if (data?.error) message = data.error;
+      if (data?.fieldErrors) fieldErrors = data.fieldErrors;
     } catch {
       // ignore
     }
-    throw new Error(message);
+    throw new ApiError(message, res.status, fieldErrors);
   }
   if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
@@ -88,7 +103,6 @@ export const api = {
         size: string;
         jerseyNumber?: string | null;
         nickname?: string | null;
-        accentColor?: string | null;
       },
     ) =>
       request<{ pick: TeamPick; memberToken: string }>(
@@ -105,7 +119,6 @@ export const api = {
         size: string;
         jerseyNumber: string | null;
         nickname: string | null;
-        accentColor: string | null;
       }>,
     ) =>
       request<TeamPick>(`/api/teams/${teamId}/picks/${pickId}`, {
