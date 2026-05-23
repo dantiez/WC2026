@@ -1,32 +1,54 @@
 const KEY_PREFIX = "wc2026.member.";
 
-interface StoredMember {
+export interface StoredMember {
   pickId: string;
   memberToken: string;
 }
 
-export function saveMember(teamId: string, member: StoredMember): void {
-  try {
-    window.localStorage.setItem(KEY_PREFIX + teamId, JSON.stringify(member));
-  } catch {
-    // ignore
-  }
-}
-
-export function readMember(teamId: string): StoredMember | null {
+function readRaw(teamId: string): StoredMember[] {
   try {
     const raw = window.localStorage.getItem(KEY_PREFIX + teamId);
-    if (!raw) return null;
-    return JSON.parse(raw) as StoredMember;
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed as StoredMember[];
+    // Migrate old single-object format → array
+    if (parsed && typeof parsed === "object" && parsed.pickId && parsed.memberToken) {
+      return [parsed as StoredMember];
+    }
+    return [];
   } catch {
-    return null;
+    return [];
   }
 }
 
-export function clearMember(teamId: string): void {
+function writeRaw(teamId: string, members: StoredMember[]): void {
   try {
-    window.localStorage.removeItem(KEY_PREFIX + teamId);
+    if (members.length === 0) {
+      window.localStorage.removeItem(KEY_PREFIX + teamId);
+    } else {
+      window.localStorage.setItem(KEY_PREFIX + teamId, JSON.stringify(members));
+    }
   } catch {
     // ignore
   }
+}
+
+export function getMembers(teamId: string): StoredMember[] {
+  return readRaw(teamId);
+}
+
+export function addMember(teamId: string, member: StoredMember): void {
+  const existing = readRaw(teamId);
+  if (existing.some((m) => m.pickId === member.pickId)) return;
+  writeRaw(teamId, [...existing, member]);
+}
+
+export function removeMember(teamId: string, pickId: string): void {
+  const existing = readRaw(teamId);
+  writeRaw(teamId, existing.filter((m) => m.pickId !== pickId));
+}
+
+export function findMemberToken(teamId: string, pickId: string): string | null {
+  const members = readRaw(teamId);
+  return members.find((m) => m.pickId === pickId)?.memberToken ?? null;
 }
