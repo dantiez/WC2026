@@ -35,6 +35,38 @@ CREATE TABLE IF NOT EXISTS orders (
 CREATE INDEX IF NOT EXISTS orders_phone_idx       ON orders (phone);
 CREATE INDEX IF NOT EXISTS orders_status_idx      ON orders (status);
 CREATE INDEX IF NOT EXISTS orders_created_at_idx  ON orders (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS team_sessions (
+  id                  TEXT PRIMARY KEY,
+  name                TEXT NOT NULL,
+  captain_email       TEXT NOT NULL,
+  share_token         TEXT UNIQUE NOT NULL,
+  default_product_id  TEXT REFERENCES products(id),
+  deadline_at         TIMESTAMPTZ,
+  status              TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','locked')),
+  created_at          TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at          TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS team_sessions_token_idx   ON team_sessions (share_token);
+CREATE INDEX IF NOT EXISTS team_sessions_captain_idx ON team_sessions (captain_email);
+
+CREATE TABLE IF NOT EXISTS team_picks (
+  id             TEXT PRIMARY KEY,
+  team_id        TEXT NOT NULL REFERENCES team_sessions(id) ON DELETE CASCADE,
+  member_name    TEXT NOT NULL,
+  member_token   TEXT NOT NULL,
+  jersey_id      TEXT NOT NULL REFERENCES products(id),
+  size           TEXT NOT NULL,
+  jersey_number  TEXT,
+  nickname       TEXT,
+  accent_color   TEXT,
+  created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS team_picks_team_idx  ON team_picks (team_id);
+CREATE INDEX IF NOT EXISTS team_picks_token_idx ON team_picks (team_id, member_token);
 `;
 
 type SeedProduct = {

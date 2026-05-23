@@ -101,3 +101,38 @@ export interface TeamPlayer {
   size: JerseySize;
 }
 
+export type TeamStatus = 'open' | 'locked';
+
+export interface TeamSession {
+  id: string;
+  name: string;
+  captainEmail: string;
+  shareToken: string;
+  defaultProductId: string | null;
+  deadlineAt: string | null;
+  status: TeamStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamPick {
+  id: string;
+  teamId: string;
+  memberName: string;
+  jerseyId: string;
+  size: string;
+  jerseyNumber: string | null;
+  nickname: string | null;
+  accentColor: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface TeamAggregate {
+  team: TeamSession;
+  picks: TeamPick[];
+  total: number;
+  sizeBreakdown: Record<string, number>;
+  jerseyBreakdown: Record<string, number>;
+}
+

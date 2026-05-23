@@ -1,0 +1,126 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { Plus, LogOut, ExternalLink, Loader2, Clock, Lock, Unlock } from "lucide-react";
+import { api } from "../lib/api";
+import type { TeamSession } from "../types";
+
+interface Props {
+  captainEmail: string;
+  onLogout: () => Promise<void>;
+}
+
+export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
+  const navigate = useNavigate();
+  const [teams, setTeams] = useState<TeamSession[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    api.teams
+      .listMine()
+      .then((data) => {
+        setTeams(data);
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError(err instanceof Error ? err.message : "Lỗi tải danh sách team.");
+        setLoading(false);
+      });
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-surface-base px-4 py-8">
+      <div className="max-w-4xl mx-auto flex flex-col gap-6">
+        <header className="flex items-center justify-between gap-3 flex-wrap">
+          <div>
+            <h1 className="text-xl font-black uppercase tracking-wide text-text-primary">
+              Captain Dashboard
+            </h1>
+            <p className="text-xs text-text-muted">{captainEmail}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Link
+              to="/captain/teams/new"
+              className="bg-yellow-500 hover:bg-yellow-400 text-black font-black uppercase text-xs rounded-lg px-3.5 py-2 flex items-center gap-1.5 transition-colors"
+            >
+              <Plus className="w-3.5 h-3.5" /> Tạo team
+            </Link>
+            <button
+              type="button"
+              onClick={async () => {
+                await onLogout();
+                navigate("/captain/login", { replace: true });
+              }}
+              aria-label="Đăng xuất"
+              className="p-2 min-w-11 min-h-11 bg-red-500/10 hover:bg-red-500 text-red-500 hover:text-white rounded-lg transition-colors border border-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+            >
+              <LogOut className="w-4 h-4" />
+            </button>
+          </div>
+        </header>
+
+        {loading ? (
+          <div className="flex items-center gap-2 text-text-muted text-sm">
+            <Loader2 className="w-4 h-4 animate-spin" /> Đang tải…
+          </div>
+        ) : error ? (
+          <div className="text-xs text-red-400 bg-red-500/10 border border-red-500/20 rounded-lg px-3 py-2">
+            {error}
+          </div>
+        ) : teams.length === 0 ? (
+          <div className="bg-surface-2 border border-dashed border-border-default rounded-2xl p-8 text-center">
+            <p className="text-sm text-text-muted">
+              Chưa có team nào. Tạo team đầu tiên để bắt đầu thu pick.
+            </p>
+          </div>
+        ) : (
+          <ul className="flex flex-col gap-3">
+            {teams.map((t) => (
+              <li key={t.id}>
+                <Link
+                  to={`/captain/teams/${t.id}`}
+                  className="block bg-surface-2 hover:bg-surface-3 border border-border-default rounded-2xl p-4 transition-colors"
+                >
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <div>
+                      <h2 className="font-black text-text-primary text-base">{t.name}</h2>
+                      <p className="text-[11px] text-text-muted font-mono">
+                        /t/{t.shareToken}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2 text-[11px]">
+                      {t.status === "locked" ? (
+                        <span className="bg-red-500/10 text-red-400 border border-red-500/30 rounded-full px-2 py-0.5 flex items-center gap-1 font-bold uppercase">
+                          <Lock className="w-3 h-3" /> Đã chốt
+                        </span>
+                      ) : (
+                        <span className="bg-green-500/10 text-green-400 border border-green-500/30 rounded-full px-2 py-0.5 flex items-center gap-1 font-bold uppercase">
+                          <Unlock className="w-3 h-3" /> Đang mở
+                        </span>
+                      )}
+                      {t.deadlineAt ? (
+                        <span className="text-text-muted flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {new Date(t.deadlineAt).toLocaleString("vi-VN")}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+
+        <p className="text-[11px] text-text-muted">
+          <ExternalLink className="w-3 h-3 inline-block mr-1" />
+          Trang admin sản phẩm cũ vẫn còn ở{" "}
+          <Link to="/legacy" className="text-yellow-400 underline">
+            /legacy
+          </Link>
+          .
+        </p>
+      </div>
+    </main>
+  );
+}

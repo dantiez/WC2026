@@ -1,30 +1,17 @@
-import {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useMemo,
-  useState,
-  ReactNode,
-} from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { vn } from "./translations/vn";
-import { en } from "./translations/en";
 
-export type Lang = "vn" | "en";
-
-const STORAGE_KEY = "app.language";
-
-const dictionaries = { vn, en } as const;
+export type Lang = "vn";
 
 type Dict = typeof vn;
 type Vars = Record<string, string | number>;
 
 function resolvePath(dict: Dict, path: string): string | undefined {
   const parts = path.split(".");
-  let cursor: any = dict;
+  let cursor: unknown = dict;
   for (const p of parts) {
-    if (cursor == null) return undefined;
-    cursor = cursor[p];
+    if (cursor == null || typeof cursor !== "object") return undefined;
+    cursor = (cursor as Record<string, unknown>)[p];
   }
   return typeof cursor === "string" ? cursor : undefined;
 }
@@ -42,54 +29,27 @@ interface LanguageContextValue {
   t: (path: string, vars?: Vars) => string;
 }
 
-const LanguageContext = createContext<LanguageContextValue | null>(null);
+const translate = (path: string, vars?: Vars) => {
+  const value = resolvePath(vn, path) ?? path;
+  return interpolate(value, vars);
+};
 
-function readInitialLang(): Lang {
-  if (typeof window === "undefined") return "vn";
-  try {
-    const v = window.localStorage.getItem(STORAGE_KEY);
-    if (v === "vn" || v === "en") return v;
-  } catch {}
-  return "vn";
-}
+const VALUE: LanguageContextValue = {
+  lang: "vn",
+  setLang: () => {},
+  t: translate,
+};
+
+const LanguageContext = createContext<LanguageContextValue>(VALUE);
 
 export function LanguageProvider({ children }: { children: ReactNode }) {
-  const [lang, setLangState] = useState<Lang>(readInitialLang);
-
-  const setLang = useCallback((next: Lang) => {
-    setLangState(next);
-    try {
-      window.localStorage.setItem(STORAGE_KEY, next);
-    } catch {}
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("lang", next === "vn" ? "vi" : "en");
-    }
-  }, []);
-
-  useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.setAttribute("lang", lang === "vn" ? "vi" : "en");
-    }
-  }, [lang]);
-
-  const t = useCallback(
-    (path: string, vars?: Vars) => {
-      const active = dictionaries[lang] as Dict;
-      const fallback = dictionaries.vn;
-      const value = resolvePath(active, path) ?? resolvePath(fallback, path) ?? path;
-      return interpolate(value, vars);
-    },
-    [lang],
-  );
-
-  const value = useMemo(() => ({ lang, setLang, t }), [lang, setLang, t]);
+  const value = useMemo(() => VALUE, []);
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("lang", "vi");
+  }
   return <LanguageContext.Provider value={value}>{children}</LanguageContext.Provider>;
 }
 
 export function useTranslation(): LanguageContextValue {
-  const ctx = useContext(LanguageContext);
-  if (!ctx) {
-    throw new Error("useTranslation must be used within LanguageProvider");
-  }
-  return ctx;
+  return useContext(LanguageContext);
 }

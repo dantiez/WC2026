@@ -17,7 +17,17 @@ import customers from "./api/customers.js";
 import stats from "./api/stats.js";
 import paymentsSimulate from "./api/payments/simulate.js";
 import health from "./api/health.js";
+import authLogin from "./api/auth/login.js";
+import authLogout from "./api/auth/logout.js";
+import authMe from "./api/auth/me.js";
+import teamsIndex from "./api/teams/index.js";
+import teamById from "./api/teams/[id].js";
+import teamByToken from "./api/teams/by-token.js";
+import teamPicks from "./api/teams/picks.js";
+import teamPick from "./api/teams/pick.js";
+import teamAggregate from "./api/teams/aggregate.js";
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VercelHandler = (req: any, res: any) => unknown | Promise<unknown>;
 
 const wrap =
@@ -47,6 +57,22 @@ app.get("/api/customers", wrap(customers));
 app.get("/api/stats", wrap(stats));
 app.post("/api/payments/simulate", wrap(paymentsSimulate));
 app.get("/api/health", wrap(health));
+
+app.post("/api/auth/login", wrap(authLogin));
+app.post("/api/auth/logout", wrap(authLogout));
+app.get("/api/auth/me", wrap(authMe));
+
+app.get("/api/teams", wrap(teamsIndex));
+app.post("/api/teams", wrap(teamsIndex));
+app.get("/api/teams/by-token", wrap(teamByToken));
+app.get("/api/teams/:id", wrap(teamById));
+app.patch("/api/teams/:id", wrap(teamById));
+app.delete("/api/teams/:id", wrap(teamById));
+app.get("/api/teams/:teamId/picks", wrap(teamPicks));
+app.post("/api/teams/:teamId/picks", wrap(teamPicks));
+app.put("/api/teams/:teamId/picks/:pickId", wrap(teamPick));
+app.delete("/api/teams/:teamId/picks/:pickId", wrap(teamPick));
+app.get("/api/teams/:teamId/aggregate", wrap(teamAggregate));
 
 async function startServer() {
   const vite = await createViteServer({
