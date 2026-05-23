@@ -49,9 +49,9 @@ type SeedProduct = {
 };
 
 const SEED_PRODUCTS: SeedProduct[] = [
-  { id: "prod-arg-home", name: "Argentina Home Jersey 2026", team_country: "Argentina 🇦🇷", jersey_type: "home", glb_url: null, image_url: "/images/argentina_home_jersey_1779381978902.png", price: 420000, stock: 45 },
+  { id: "prod-arg-home", name: "Argentina Home Jersey 2026", team_country: "Argentina 🇦🇷", jersey_type: "home", glb_url: null, image_url: "https://images.unsplash.com/photo-1551279880-03041531948f?w=500&auto=format&fit=crop&q=60", price: 420000, stock: 45 },
   { id: "prod-arg-away", name: "Argentina Away Jersey 2026", team_country: "Argentina 🇦🇷", jersey_type: "away", glb_url: null, image_url: "https://images.unsplash.com/photo-1518063319789-7217e6706b04?w=500&auto=format&fit=crop&q=60", price: 390000, stock: 30 },
-  { id: "prod-bra-home", name: "Brazil Home Jersey 2026", team_country: "Brazil 🇧🇷", jersey_type: "home", glb_url: null, image_url: "/images/brazil_home_jersey_1779382002096.png", price: 420000, stock: 50 },
+  { id: "prod-bra-home", name: "Brazil Home Jersey 2026", team_country: "Brazil 🇧🇷", jersey_type: "home", glb_url: null, image_url: "https://images.unsplash.com/photo-1574629810360-7efbbe195018?w=500&auto=format&fit=crop&q=60", price: 420000, stock: 50 },
   { id: "prod-bra-away", name: "Brazil Away Jersey 2026", team_country: "Brazil 🇧🇷", jersey_type: "away", glb_url: null, image_url: "https://images.unsplash.com/photo-1544698310-74ea9d1c8258?w=500&auto=format&fit=crop&q=60", price: 390000, stock: 25 },
   { id: "prod-fra-home", name: "France Home Jersey 2026", team_country: "France 🇫🇷", jersey_type: "home", glb_url: null, image_url: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?w=500&auto=format&fit=crop&q=60", price: 450000, stock: 35 },
   { id: "prod-fra-away", name: "France Away Jersey 2026", team_country: "France 🇫🇷", jersey_type: "away", glb_url: null, image_url: "https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?w=500&auto=format&fit=crop&q=60", price: 420000, stock: 20 },
@@ -67,8 +67,8 @@ const SEED_PRODUCTS: SeedProduct[] = [
   { id: "prod-por-away", name: "Portugal Away Jersey 2026", team_country: "Portugal 🇵🇹", jersey_type: "away", glb_url: null, image_url: "https://images.unsplash.com/photo-1553126593-7036cd0a382e?w=500&auto=format&fit=crop&q=60", price: 390000, stock: 28 },
   { id: "prod-kor-home", name: "South Korea Home Jersey 2026", team_country: "South Korea 🇰🇷", jersey_type: "home", glb_url: null, image_url: "https://images.unsplash.com/photo-1517649763962-0c623066013b?w=500&auto=format&fit=crop&q=60", price: 430000, stock: 30 },
   { id: "prod-kor-away", name: "South Korea Away Jersey 2026", team_country: "South Korea 🇰🇷", jersey_type: "away", glb_url: null, image_url: "https://images.unsplash.com/photo-1543351611-58f69d7c1781?w=500&auto=format&fit=crop&q=60", price: 400000, stock: 20 },
-  { id: "prod-vie-home", name: "Vietnam Home Jersey 2026", team_country: "Vietnam 🇻🇳", jersey_type: "home", glb_url: null, image_url: "/images/vietnam_home_jersey_1779381941180.png", price: 350000, stock: 120 },
-  { id: "prod-vie-away", name: "Vietnam Away Jersey 2026", team_country: "Vietnam 🇻🇳", jersey_type: "away", glb_url: null, image_url: "/images/vietnam_away_jersey_1779381960428.png", price: 350000, stock: 80 },
+  { id: "prod-vie-home", name: "Vietnam Home Jersey 2026", team_country: "Vietnam 🇻🇳", jersey_type: "home", glb_url: null, image_url: "https://images.unsplash.com/photo-1556056504-5c7696c4c28d?w=500&auto=format&fit=crop&q=60", price: 350000, stock: 120 },
+  { id: "prod-vie-away", name: "Vietnam Away Jersey 2026", team_country: "Vietnam 🇻🇳", jersey_type: "away", glb_url: null, image_url: "https://images.unsplash.com/photo-1431324155629-1a6deb1dec8d?w=500&auto=format&fit=crop&q=60", price: 350000, stock: 80 },
 ];
 
 export async function initSchema(pool: Pool): Promise<void> {
