@@ -21,10 +21,11 @@ import {
   removeMember,
   type StoredMember,
 } from "../lib/memberToken";
-import type { Product, TeamPick, TeamSession } from "../types";
+import type { Shop, ShopJersey, TeamPick, TeamSession } from "../types";
 import JerseyPreview from "../components/common/JerseyPreview";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
+const ALL_SHOPS = "__all__";
 
 interface FormState {
   memberName: string;
@@ -58,9 +59,11 @@ export default function TeammatePicker() {
   const { shareToken = "" } = useParams<{ shareToken: string }>();
   const [team, setTeam] = useState<TeamSession | null>(null);
   const [picks, setPicks] = useState<TeamPick[]>([]);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [jerseys, setJerseys] = useState<ShopJersey[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [shopFilter, setShopFilter] = useState<string>(ALL_SHOPS);
 
   const [storedMembers, setStoredMembers] = useState<StoredMember[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -91,28 +94,36 @@ export default function TeammatePicker() {
     }
   };
 
-  const productMap = useMemo(
-    () => new Map(products.map((p) => [p.id, p])),
-    [products],
+  const jerseyMap = useMemo(
+    () => new Map(jerseys.map((j) => [j.id, j])),
+    [jerseys],
   );
+  const shopMap = useMemo(() => new Map(shops.map((s) => [s.id, s])), [shops]);
 
   const myPicks = useMemo(() => {
     const ids = new Set(storedMembers.map((m) => m.pickId));
     return picks.filter((p) => ids.has(p.id));
   }, [picks, storedMembers]);
 
+  const filteredJerseys = useMemo(() => {
+    if (shopFilter === ALL_SHOPS) return jerseys;
+    return jerseys.filter((j) => j.shopId === shopFilter);
+  }, [jerseys, shopFilter]);
+
   const refresh = useCallback(async () => {
     try {
-      const [byToken, prods] = await Promise.all([
+      const [byToken, jerseyList, shopList] = await Promise.all([
         api.teams.byToken(shareToken),
-        api.products.list(),
+        api.jerseys.list(),
+        api.shops.list(),
       ]);
       setTeam(byToken.team);
       setPicks(byToken.picks);
-      setProducts(prods);
+      setJerseys(jerseyList);
+      setShops(shopList);
       setStoredMembers(getMembers(byToken.team.id));
       const defaultJersey =
-        byToken.team.defaultProductId || prods[0]?.id || "";
+        byToken.team.defaultProductId || jerseyList[0]?.id || "";
       setForm((prev) => (prev.jerseyId ? prev : emptyForm(defaultJersey)));
       setError(null);
     } catch (err) {
@@ -139,7 +150,7 @@ export default function TeammatePicker() {
   const openNewForm = () => {
     if (!team) return;
     setEditingPickId(null);
-    setForm(emptyForm(team.defaultProductId || products[0]?.id || ""));
+    setForm(emptyForm(team.defaultProductId || jerseys[0]?.id || ""));
     setSubmitError(null);
     setFieldErrors({});
     setShowForm(true);
@@ -243,6 +254,7 @@ export default function TeammatePicker() {
   }
 
   const locked = team.status === "locked";
+  const selectedJersey = jerseyMap.get(form.jerseyId);
 
   return (
     <main className="min-h-screen bg-surface-base px-4 py-8">
@@ -322,7 +334,7 @@ export default function TeammatePicker() {
                       {pick.memberName} · Size {pick.size}
                     </p>
                     <p className="text-[11px] text-text-muted truncate">
-                      {productMap.get(pick.jerseyId)?.name ?? pick.jerseyId}
+                      {jerseyMap.get(pick.jerseyId)?.name ?? pick.jerseyId}
                       {pick.jerseyNumber ? ` · #${pick.jerseyNumber}` : ""}
                       {pick.nickname ? ` · ${pick.nickname}` : ""}
                     </p>
@@ -391,33 +403,87 @@ export default function TeammatePicker() {
               ) : null}
             </label>
 
-            <label className="flex flex-col gap-1.5">
+            <div className="flex flex-col gap-2">
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                 Mẫu áo <span className="text-red-400">*</span>
               </span>
-              <select
-                value={form.jerseyId}
-                onChange={(e) => updateField("jerseyId", e.target.value)}
-                aria-invalid={!!fieldErrors.jerseyId}
-                className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
-                  fieldErrors.jerseyId ? "border-red-500/60" : "border-border-default"
-                }`}
-              >
-                <option value="">— Chọn mẫu áo —</option>
-                {products.map((p) => (
-                  <option key={p.id} value={p.id}>
-                    {p.name}
-                  </option>
-                ))}
-              </select>
+
+              {shops.length > 1 ? (
+                <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
+                  <ShopChip
+                    label="Tất cả shop"
+                    active={shopFilter === ALL_SHOPS}
+                    onClick={() => setShopFilter(ALL_SHOPS)}
+                  />
+                  {shops.map((shop) => (
+                    <ShopChip
+                      key={shop.id}
+                      label={shop.name}
+                      active={shopFilter === shop.id}
+                      onClick={() => setShopFilter(shop.id)}
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              {filteredJerseys.length === 0 ? (
+                <div className="text-xs text-text-muted bg-surface-3 border border-dashed border-border-default rounded-lg px-3 py-4 text-center">
+                  Chưa có mẫu áo nào{shopFilter !== ALL_SHOPS ? " trong shop này" : ""}.
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                  {filteredJerseys.map((jersey) => {
+                    const isSelected = jersey.id === form.jerseyId;
+                    return (
+                      <button
+                        type="button"
+                        key={jersey.id}
+                        onClick={() => updateField("jerseyId", jersey.id)}
+                        aria-pressed={isSelected}
+                        className={`group bg-surface-3 rounded-xl overflow-hidden border-2 text-left transition-all hover:-translate-y-0.5 ${
+                          isSelected
+                            ? "border-yellow-400 ring-2 ring-yellow-400/30"
+                            : "border-border-default hover:border-yellow-500/40"
+                        }`}
+                      >
+                        <div className="aspect-[4/5] bg-surface-base relative">
+                          <img
+                            src={jersey.imageUrl}
+                            alt={jersey.name}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            decoding="async"
+                          />
+                          {isSelected ? (
+                            <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1">
+                              <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                            </span>
+                          ) : null}
+                        </div>
+                        <div className="px-2.5 py-2">
+                          <p className="text-xs font-black text-text-primary truncate">
+                            {jersey.name}
+                          </p>
+                          <p className="text-[10px] text-text-muted truncate">
+                            {shopMap.get(jersey.shopId)?.name ?? ""}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               {fieldErrors.jerseyId ? (
                 <span className="text-[11px] text-red-400">{fieldErrors.jerseyId}</span>
               ) : null}
-            </label>
+            </div>
 
-            {productMap.get(form.jerseyId) ? (
+            {selectedJersey ? (
               <JerseyPreview
-                product={productMap.get(form.jerseyId)!}
+                jerseyId={selectedJersey.id}
+                imageUrl={selectedJersey.imageUrl}
+                name={selectedJersey.name}
+                subtitle={shopMap.get(selectedJersey.shopId)?.name}
                 nickname={form.nickname}
                 jerseyNumber={form.jerseyNumber}
               />
@@ -526,7 +592,7 @@ export default function TeammatePicker() {
                 </thead>
                 <tbody className="divide-y divide-border-default">
                   {picks.map((pick, idx) => {
-                    const product = productMap.get(pick.jerseyId);
+                    const jersey = jerseyMap.get(pick.jerseyId);
                     return (
                       <tr key={pick.id} className="hover:bg-surface-3/40">
                         <td className="px-3 py-2 font-mono text-text-muted">
@@ -536,7 +602,7 @@ export default function TeammatePicker() {
                           {pick.memberName}
                         </td>
                         <td className="px-3 py-2 text-text-secondary truncate max-w-[200px]">
-                          {product?.name ?? pick.jerseyId}
+                          {jersey?.name ?? pick.jerseyId}
                         </td>
                         <td className="px-3 py-2 text-text-secondary font-mono">
                           {pick.size}
@@ -557,5 +623,29 @@ export default function TeammatePicker() {
         </section>
       </div>
     </main>
+  );
+}
+
+function ShopChip({
+  label,
+  active,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`shrink-0 text-[11px] uppercase font-black tracking-wider px-3 py-1.5 rounded-full border whitespace-nowrap ${
+        active
+          ? "bg-yellow-500 text-black border-yellow-500"
+          : "bg-surface-3 text-text-secondary border-border-default hover:bg-surface-2"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

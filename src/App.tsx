@@ -5,6 +5,7 @@ import CaptainLogin from "./routes/CaptainLogin";
 import CaptainDashboard from "./routes/CaptainDashboard";
 import CaptainSessionNew from "./routes/CaptainSessionNew";
 import CaptainTeam from "./routes/CaptainTeam";
+import CaptainCatalog from "./routes/CaptainCatalog";
 import TeammatePicker from "./routes/TeammatePicker";
 import Footer from "./components/common/Footer";
 
@@ -86,6 +87,14 @@ export default function App() {
           element={
             <CaptainGate email={auth.email} loading={auth.loading}>
               <CaptainTeam />
+            </CaptainGate>
+          }
+        />
+        <Route
+          path="/captain/catalog"
+          element={
+            <CaptainGate email={auth.email} loading={auth.loading}>
+              <CaptainCatalog />
             </CaptainGate>
           }
         />

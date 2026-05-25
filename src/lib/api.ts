@@ -1,5 +1,7 @@
 import type {
   Product,
+  Shop,
+  ShopJersey,
   TeamSession,
   TeamPick,
   TeamAggregate,
@@ -131,5 +133,59 @@ export const api = {
         method: "DELETE",
         headers: memberToken ? { "X-Member-Token": memberToken } : undefined,
       }),
+  },
+
+  shops: {
+    list: () => request<Shop[]>("/api/shops"),
+    create: (name: string) =>
+      request<Shop>("/api/shops", {
+        method: "POST",
+        body: JSON.stringify({ name }),
+      }),
+    update: (id: string, name: string) =>
+      request<Shop>(`/api/shops/${id}`, {
+        method: "PUT",
+        body: JSON.stringify({ name }),
+      }),
+    remove: (id: string) =>
+      request<{ ok: boolean }>(`/api/shops/${id}`, { method: "DELETE" }),
+  },
+
+  jerseys: {
+    list: (opts?: { shopId?: string; isAdmin?: boolean }) => {
+      const params = new URLSearchParams();
+      if (opts?.shopId) params.set("shopId", opts.shopId);
+      if (opts?.isAdmin) params.set("isAdmin", "true");
+      const qs = params.toString();
+      return request<ShopJersey[]>(`/api/jerseys${qs ? `?${qs}` : ""}`);
+    },
+    create: (input: {
+      shopId: string;
+      name: string;
+      imageUrl: string;
+      isActive?: boolean;
+    }) =>
+      request<ShopJersey>("/api/jerseys", {
+        method: "POST",
+        body: JSON.stringify(input),
+      }),
+    update: (
+      id: string,
+      input: Partial<{
+        shopId: string;
+        name: string;
+        imageUrl: string;
+        isActive: boolean;
+      }>,
+    ) =>
+      request<ShopJersey>(`/api/jerseys/${id}`, {
+        method: "PUT",
+        body: JSON.stringify(input),
+      }),
+    remove: (id: string) =>
+      request<{ ok: boolean; softDeleted?: boolean; jersey?: ShopJersey }>(
+        `/api/jerseys/${id}`,
+        { method: "DELETE" },
+      ),
   },
 };

@@ -1,7 +1,8 @@
-import type { Product } from "../../types";
-
 interface Props {
-  product: Product;
+  jerseyId: string;
+  imageUrl: string;
+  name: string;
+  subtitle?: string;
   nickname?: string;
   jerseyNumber?: string;
 }
@@ -13,20 +14,23 @@ const FALLBACK_PALETTE: Array<{ base: string; text: string }> = [
   { base: "#006A4E", text: "#FFFFFF" },
 ];
 
-function pickPalette(productId: string) {
+function pickPalette(seed: string) {
   let hash = 0;
-  for (let i = 0; i < productId.length; i++) {
-    hash = (hash * 31 + productId.charCodeAt(i)) >>> 0;
+  for (let i = 0; i < seed.length; i++) {
+    hash = (hash * 31 + seed.charCodeAt(i)) >>> 0;
   }
   return FALLBACK_PALETTE[hash % FALLBACK_PALETTE.length];
 }
 
 export default function JerseyPreview({
-  product,
+  jerseyId,
+  imageUrl,
+  name,
+  subtitle,
   nickname,
   jerseyNumber,
 }: Props) {
-  const palette = pickPalette(product.id);
+  const palette = pickPalette(jerseyId);
   const backName = (nickname || "TÊN").toUpperCase().slice(0, 14);
   const backNumber = (jerseyNumber || "00").toString().slice(0, 3);
 
@@ -38,8 +42,8 @@ export default function JerseyPreview({
       <div className="grid grid-cols-2 gap-3">
         <Pane label="Mặt trước">
           <img
-            src={product.imageUrl}
-            alt={`${product.name} (mặt trước)`}
+            src={imageUrl}
+            alt={`${name} (mặt trước)`}
             loading="lazy"
             decoding="async"
             referrerPolicy="no-referrer"
@@ -56,7 +60,8 @@ export default function JerseyPreview({
         </Pane>
       </div>
       <p className="mt-2 text-[10px] text-text-muted truncate">
-        {product.name} · {product.teamCountry}
+        {name}
+        {subtitle ? ` · ${subtitle}` : ""}
       </p>
     </section>
   );
@@ -90,8 +95,6 @@ function JerseyBack({
   name: string;
   number: string;
 }) {
-  // Simplified jersey-back silhouette in SVG, with name + number rendered as
-  // would be printed on the back. Approximation — not pixel-accurate.
   return (
     <svg
       viewBox="0 0 200 250"

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Plus, LogOut, Loader2, Clock, Lock, Unlock, Trash2 } from "lucide-react";
+import { Plus, LogOut, Loader2, Clock, Lock, Unlock, Trash2, Store } from "lucide-react";
 import { api } from "../lib/api";
 import type { TeamSession } from "../types";
 
@@ -61,6 +61,12 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
             <p className="text-xs text-text-muted">{captainEmail}</p>
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              to="/captain/catalog"
+              className="bg-surface-2 hover:bg-surface-3 border border-border-default text-text-secondary hover:text-text-primary font-black uppercase text-xs rounded-lg px-3.5 py-2 flex items-center gap-1.5 transition-colors"
+            >
+              <Store className="w-3.5 h-3.5" /> Catalog
+            </Link>
             <Link
               to="/captain/teams/new"
               className="bg-yellow-500 hover:bg-yellow-400 text-black font-black uppercase text-xs rounded-lg px-3.5 py-2 flex items-center gap-1.5 transition-colors"

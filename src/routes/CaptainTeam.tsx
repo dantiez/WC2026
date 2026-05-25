@@ -14,7 +14,7 @@ import {
   X,
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
-import type { Product, TeamAggregate, TeamPick } from "../types";
+import type { Shop, ShopJersey, TeamAggregate, TeamPick } from "../types";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 
@@ -40,7 +40,8 @@ export default function CaptainTeam() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [data, setData] = useState<TeamAggregate | null>(null);
-  const [products, setProducts] = useState<Product[]>([]);
+  const [jerseys, setJerseys] = useState<ShopJersey[]>([]);
+  const [shops, setShops] = useState<Shop[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
@@ -53,12 +54,14 @@ export default function CaptainTeam() {
   const refresh = useCallback(async () => {
     if (!id) return;
     try {
-      const [agg, prods] = await Promise.all([
+      const [agg, jerseyList, shopList] = await Promise.all([
         api.teams.aggregate(id),
-        api.products.list(),
+        api.jerseys.list({ isAdmin: true }),
+        api.shops.list(),
       ]);
       setData(agg);
-      setProducts(prods);
+      setJerseys(jerseyList);
+      setShops(shopList);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lỗi tải dữ liệu.");
@@ -71,10 +74,11 @@ export default function CaptainTeam() {
     refresh();
   }, [refresh]);
 
-  const productMap = useMemo(
-    () => new Map(products.map((p) => [p.id, p])),
-    [products],
+  const jerseyMap = useMemo(
+    () => new Map(jerseys.map((j) => [j.id, j])),
+    [jerseys],
   );
+  const shopMap = useMemo(() => new Map(shops.map((s) => [s.id, s])), [shops]);
 
   const shareUrl = useMemo(() => {
     if (!data || typeof window === "undefined") return "";
@@ -150,20 +154,13 @@ export default function CaptainTeam() {
     if (!data) return;
     setExporting(true);
     try {
-      const XLSX = await import("xlsx");
-      const header = ["STT", "Tên", "Số áo", "Nickname", "Size", "Mẫu áo"];
-      const rows = data.picks.map((pick, i) => [
-        i + 1,
-        pick.memberName,
-        pick.jerseyNumber ?? "",
-        pick.nickname ?? "",
-        pick.size,
-        productMap.get(pick.jerseyId)?.name ?? pick.jerseyId,
-      ]);
-      const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
-      const wb = XLSX.utils.book_new();
-      XLSX.utils.book_append_sheet(wb, ws, "DanhSachInAo");
-      XLSX.writeFile(wb, `${data.team.name.replace(/\s+/g, "_")}_picks.xlsx`);
+      const { exportPicksToExcel } = await import("../lib/excelExport");
+      await exportPicksToExcel({
+        team: data.team,
+        picks: data.picks,
+        jerseyMap,
+        shopMap,
+      });
     } finally {
       setExporting(false);
     }
@@ -327,7 +324,7 @@ export default function CaptainTeam() {
                   {picks.map((pick, idx) => {
                     const isEditing = editingPickId === pick.id && editDraft !== null;
                     const isSaving = savingPickId === pick.id;
-                    const product = productMap.get(pick.jerseyId);
+                    const jersey = jerseyMap.get(pick.jerseyId);
                     if (isEditing && editDraft) {
                       return (
                         <tr key={pick.id} className="bg-yellow-500/5 align-middle">
@@ -349,11 +346,15 @@ export default function CaptainTeam() {
                               }
                               className="bg-surface-3 border border-border-default rounded px-2 py-1 w-full text-text-primary focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-yellow-400 max-w-[180px]"
                             >
-                              {products.map((p) => (
-                                <option key={p.id} value={p.id}>
-                                  {p.name}
-                                </option>
-                              ))}
+                              {jerseys.map((j) => {
+                                const shopName = shopMap.get(j.shopId)?.name;
+                                return (
+                                  <option key={j.id} value={j.id}>
+                                    {j.name}
+                                    {shopName ? ` — ${shopName}` : ""}
+                                  </option>
+                                );
+                              })}
                             </select>
                           </td>
                           <td className="px-3 py-2">
@@ -428,7 +429,7 @@ export default function CaptainTeam() {
                           {pick.memberName}
                         </td>
                         <td className="px-3 py-2 text-text-secondary truncate max-w-[200px]">
-                          {product?.name ?? pick.jerseyId}
+                          {jersey?.name ?? pick.jerseyId}
                         </td>
                         <td className="px-3 py-2 text-text-secondary font-mono">{pick.size}</td>
                         <td className="px-3 py-2 text-text-secondary font-mono">
