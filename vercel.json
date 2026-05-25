@@ -4,6 +4,9 @@
   "buildCommand": "vite build",
   "outputDirectory": "dist",
   "rewrites": [
+    { "source": "/api/shops/:id", "destination": "/api/shops?id=:id" },
+    { "source": "/api/jerseys/:id", "destination": "/api/jerseys?id=:id" },
+    { "source": "/api/products/:id", "destination": "/api/products?id=:id" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

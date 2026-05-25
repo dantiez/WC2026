@@ -7,8 +7,7 @@ dotenv.config();
 import express, { type Request, type RequestHandler } from "express";
 import { createServer as createViteServer } from "vite";
 
-import productsList from "./api/products/index.js";
-import productById from "./api/products/[id].js";
+import products from "./api/products.js";
 import health from "./api/health.js";
 import authHandler from "./api/auth/index.js";
 import teamsIndex from "./api/teams/index.js";
@@ -17,10 +16,8 @@ import teamByToken from "./api/teams/by-token.js";
 import teamPicks from "./api/teams/[id]/picks/index.js";
 import teamPick from "./api/teams/[id]/picks/[pickId].js";
 import teamAggregate from "./api/teams/[id]/aggregate.js";
-import shopsIndex from "./api/shops/index.js";
-import shopById from "./api/shops/[id].js";
-import jerseysIndex from "./api/jerseys/index.js";
-import jerseyById from "./api/jerseys/[id].js";
+import shops from "./api/shops.js";
+import jerseys from "./api/jerseys.js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VercelHandler = (req: any, res: any) => unknown | Promise<unknown>;
@@ -37,10 +34,10 @@ const PORT = Number(process.env.PORT) || 3010;
 const app = express();
 app.use(express.json());
 
-app.get("/api/products", wrap(productsList));
-app.post("/api/products", wrap(productsList));
-app.put("/api/products/:id", wrap(productById));
-app.delete("/api/products/:id", wrap(productById));
+app.get("/api/products", wrap(products));
+app.post("/api/products", wrap(products));
+app.put("/api/products/:id", wrap(products));
+app.delete("/api/products/:id", wrap(products));
 
 app.get("/api/health", wrap(health));
 
@@ -59,15 +56,15 @@ app.put("/api/teams/:id/picks/:pickId", wrap(teamPick));
 app.delete("/api/teams/:id/picks/:pickId", wrap(teamPick));
 app.get("/api/teams/:id/aggregate", wrap(teamAggregate));
 
-app.get("/api/shops", wrap(shopsIndex));
-app.post("/api/shops", wrap(shopsIndex));
-app.put("/api/shops/:id", wrap(shopById));
-app.delete("/api/shops/:id", wrap(shopById));
+app.get("/api/shops", wrap(shops));
+app.post("/api/shops", wrap(shops));
+app.put("/api/shops/:id", wrap(shops));
+app.delete("/api/shops/:id", wrap(shops));
 
-app.get("/api/jerseys", wrap(jerseysIndex));
-app.post("/api/jerseys", wrap(jerseysIndex));
-app.put("/api/jerseys/:id", wrap(jerseyById));
-app.delete("/api/jerseys/:id", wrap(jerseyById));
+app.get("/api/jerseys", wrap(jerseys));
+app.post("/api/jerseys", wrap(jerseys));
+app.put("/api/jerseys/:id", wrap(jerseys));
+app.delete("/api/jerseys/:id", wrap(jerseys));
 
 async function startServer() {
   const vite = await createViteServer({
