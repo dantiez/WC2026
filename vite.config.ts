@@ -15,7 +15,7 @@ export default defineConfig(() => {
       rollupOptions: {
         output: {
           manualChunks: {
-            xlsx: ['xlsx'],
+            exceljs: ['exceljs'],
             'lucide-react': ['lucide-react'],
           },
         },
