@@ -17,6 +17,10 @@ import teamByToken from "./api/teams/by-token.js";
 import teamPicks from "./api/teams/[id]/picks/index.js";
 import teamPick from "./api/teams/[id]/picks/[pickId].js";
 import teamAggregate from "./api/teams/[id]/aggregate.js";
+import shopsIndex from "./api/shops/index.js";
+import shopById from "./api/shops/[id].js";
+import jerseysIndex from "./api/jerseys/index.js";
+import jerseyById from "./api/jerseys/[id].js";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type VercelHandler = (req: any, res: any) => unknown | Promise<unknown>;
@@ -54,6 +58,16 @@ app.post("/api/teams/:id/picks", wrap(teamPicks));
 app.put("/api/teams/:id/picks/:pickId", wrap(teamPick));
 app.delete("/api/teams/:id/picks/:pickId", wrap(teamPick));
 app.get("/api/teams/:id/aggregate", wrap(teamAggregate));
+
+app.get("/api/shops", wrap(shopsIndex));
+app.post("/api/shops", wrap(shopsIndex));
+app.put("/api/shops/:id", wrap(shopById));
+app.delete("/api/shops/:id", wrap(shopById));
+
+app.get("/api/jerseys", wrap(jerseysIndex));
+app.post("/api/jerseys", wrap(jerseysIndex));
+app.put("/api/jerseys/:id", wrap(jerseyById));
+app.delete("/api/jerseys/:id", wrap(jerseyById));
 
 async function startServer() {
   const vite = await createViteServer({

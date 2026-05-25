@@ -67,6 +67,63 @@ CREATE TABLE IF NOT EXISTS team_picks (
 
 CREATE INDEX IF NOT EXISTS team_picks_team_idx  ON team_picks (team_id);
 CREATE INDEX IF NOT EXISTS team_picks_token_idx ON team_picks (team_id, member_token);
+
+CREATE TABLE IF NOT EXISTS shops (
+  id          TEXT PRIMARY KEY,
+  name        TEXT NOT NULL,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS shop_jerseys (
+  id          TEXT PRIMARY KEY,
+  shop_id     TEXT NOT NULL REFERENCES shops(id) ON DELETE RESTRICT,
+  name        TEXT NOT NULL,
+  image_url   TEXT NOT NULL,
+  is_active   BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS shop_jerseys_shop_idx   ON shop_jerseys (shop_id);
+CREATE INDEX IF NOT EXISTS shop_jerseys_active_idx ON shop_jerseys (is_active);
+
+-- Seed a default shop so existing products can be migrated under it.
+INSERT INTO shops (id, name)
+VALUES ('shop-legacy', 'Legacy Catalog')
+ON CONFLICT (id) DO NOTHING;
+
+-- Backfill: every existing product becomes a shop_jersey with the SAME id,
+-- so existing team_picks.jersey_id values remain valid once the FK is swapped.
+INSERT INTO shop_jerseys (id, shop_id, name, image_url, is_active, created_at)
+SELECT p.id, 'shop-legacy', p.name, p.image_url, p.is_active, p.created_at
+FROM products p
+WHERE NOT EXISTS (SELECT 1 FROM shop_jerseys s WHERE s.id = p.id);
+
+-- Swap team_picks.jersey_id FK: products(id) -> shop_jerseys(id). Idempotent:
+-- drops any FK pointing at products and adds the new one only if missing.
+DO $$
+DECLARE
+  fk_record RECORD;
+BEGIN
+  FOR fk_record IN
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'team_picks'::regclass
+      AND contype = 'f'
+      AND confrelid = 'products'::regclass
+  LOOP
+    EXECUTE format('ALTER TABLE team_picks DROP CONSTRAINT %I', fk_record.conname);
+  END LOOP;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint
+    WHERE conrelid = 'team_picks'::regclass
+      AND contype = 'f'
+      AND confrelid = 'shop_jerseys'::regclass
+  ) THEN
+    ALTER TABLE team_picks
+      ADD CONSTRAINT team_picks_jersey_id_shop_jerseys_fkey
+      FOREIGN KEY (jersey_id) REFERENCES shop_jerseys(id);
+  END IF;
+END$$;
 `;
 
 type SeedProduct = {

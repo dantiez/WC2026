@@ -135,3 +135,18 @@ export interface TeamAggregate {
   jerseyBreakdown: Record<string, number>;
 }
 
+export interface Shop {
+  id: string;
+  name: string;
+  createdAt: string;
+}
+
+export interface ShopJersey {
+  id: string;
+  shopId: string;
+  name: string;
+  imageUrl: string;
+  isActive: boolean;
+  createdAt: string;
+}
+

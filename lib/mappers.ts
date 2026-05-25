@@ -1,4 +1,4 @@
-import type { Order, OrderItem, Payment, Product } from "../src/types.js";
+import type { Order, OrderItem, Payment, Product, Shop, ShopJersey } from "../src/types.js";
 
 type ProductRow = {
   id: string;
@@ -140,6 +140,40 @@ export function mapTeamPick(r: TeamPickRow): TeamPick {
     nickname: r.nickname,
     createdAt: r.created_at.toISOString(),
     updatedAt: r.updated_at.toISOString(),
+  };
+}
+
+export type ShopRow = {
+  id: string;
+  name: string;
+  created_at: Date;
+};
+
+export function mapShop(r: ShopRow): Shop {
+  return {
+    id: r.id,
+    name: r.name,
+    createdAt: r.created_at.toISOString(),
+  };
+}
+
+export type ShopJerseyRow = {
+  id: string;
+  shop_id: string;
+  name: string;
+  image_url: string;
+  is_active: boolean;
+  created_at: Date;
+};
+
+export function mapShopJersey(r: ShopJerseyRow): ShopJersey {
+  return {
+    id: r.id,
+    shopId: r.shop_id,
+    name: r.name,
+    imageUrl: r.image_url,
+    isActive: r.is_active,
+    createdAt: r.created_at.toISOString(),
   };
 }
 
