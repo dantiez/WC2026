@@ -7,6 +7,7 @@ import {
   type TeamSessionRow,
 } from "../../../lib/mappers.js";
 import { requireCaptain } from "../../_lib/auth.js";
+import { loadPollForTeam } from "../../_lib/poll.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -43,12 +44,15 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       jerseyBreakdown[p.jersey_id] = (jerseyBreakdown[p.jersey_id] ?? 0) + 1;
     }
 
+    const poll = await loadPollForTeam(team.id, null);
+
     return res.json({
       team,
       picks: picks.map(mapTeamPick),
       total: picks.length,
       sizeBreakdown,
       jerseyBreakdown,
+      poll,
     });
   } catch (err) {
     console.error("[/api/teams/aggregate] error", err);

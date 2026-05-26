@@ -21,8 +21,11 @@ import {
   removeMember,
   type StoredMember,
 } from "../lib/memberToken";
-import type { Shop, ShopJersey, TeamPick, TeamSession } from "../types";
+import { ensureVoter } from "../lib/voterToken";
+import type { Shop, ShopJersey, TeamPick, TeamPoll, TeamSession } from "../types";
 import JerseyPreview from "../components/common/JerseyPreview";
+import PollVoting from "../components/user/PollVoting";
+import { Trophy } from "lucide-react";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 const ALL_SHOPS = "__all__";
@@ -61,6 +64,7 @@ export default function TeammatePicker() {
   const [picks, setPicks] = useState<TeamPick[]>([]);
   const [jerseys, setJerseys] = useState<ShopJersey[]>([]);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [poll, setPoll] = useState<TeamPoll | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [shopFilter, setShopFilter] = useState<string>(ALL_SHOPS);
@@ -112,19 +116,28 @@ export default function TeammatePicker() {
 
   const refresh = useCallback(async () => {
     try {
+      const earlyTeam = await api.teams.byToken(shareToken);
+      const voter = ensureVoter(earlyTeam.team.id);
       const [byToken, jerseyList, shopList] = await Promise.all([
-        api.teams.byToken(shareToken),
+        api.teams.byToken(shareToken, voter.token),
         api.jerseys.list(),
         api.shops.list(),
       ]);
       setTeam(byToken.team);
       setPicks(byToken.picks);
+      setPoll(byToken.poll);
       setJerseys(jerseyList);
       setShops(shopList);
       setStoredMembers(getMembers(byToken.team.id));
+      const winnerId = byToken.poll?.winnerJerseyId ?? null;
       const defaultJersey =
-        byToken.team.defaultProductId || jerseyList[0]?.id || "";
-      setForm((prev) => (prev.jerseyId ? prev : emptyForm(defaultJersey)));
+        winnerId || byToken.team.defaultProductId || jerseyList[0]?.id || "";
+      setForm((prev) => {
+        if (winnerId && prev.jerseyId !== winnerId) {
+          return { ...prev, jerseyId: winnerId };
+        }
+        return prev.jerseyId ? prev : emptyForm(defaultJersey);
+      });
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lỗi tải team.");
@@ -150,7 +163,9 @@ export default function TeammatePicker() {
   const openNewForm = () => {
     if (!team) return;
     setEditingPickId(null);
-    setForm(emptyForm(team.defaultProductId || jerseys[0]?.id || ""));
+    const defaultJersey =
+      poll?.winnerJerseyId || team.defaultProductId || jerseys[0]?.id || "";
+    setForm(emptyForm(defaultJersey));
     setSubmitError(null);
     setFieldErrors({});
     setShowForm(true);
@@ -254,6 +269,9 @@ export default function TeammatePicker() {
   }
 
   const locked = team.status === "locked";
+  const winnerJerseyId = poll?.winnerJerseyId ?? null;
+  const inVoting = !!poll && !winnerJerseyId;
+  const winnerJersey = winnerJerseyId ? jerseyMap.get(winnerJerseyId) : null;
   const selectedJersey = jerseyMap.get(form.jerseyId);
 
   return (
@@ -307,7 +325,39 @@ export default function TeammatePicker() {
           </div>
         ) : null}
 
-        {myPicks.length > 0 ? (
+        {inVoting && poll ? (
+          <PollVoting
+            teamId={team.id}
+            poll={poll}
+            jerseyMap={jerseyMap}
+            onVoted={(updated) => setPoll(updated)}
+          />
+        ) : null}
+
+        {winnerJersey ? (
+          <div className="bg-green-500/10 border border-green-500/40 text-green-300 rounded-2xl p-4 flex items-center gap-3">
+            <Trophy className="w-5 h-5 text-green-400 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="text-[11px] uppercase tracking-wider font-bold text-green-400">
+                Mẫu áo đã chốt
+              </p>
+              <p className="text-sm font-black text-text-primary truncate">
+                {winnerJersey.name}
+              </p>
+              <p className="text-[11px] text-text-muted">
+                Cả team sẽ pick size/số trên mẫu này.
+              </p>
+            </div>
+            <img
+              src={winnerJersey.imageUrl}
+              alt={winnerJersey.name}
+              className="w-12 h-16 object-cover rounded-md shrink-0"
+              loading="lazy"
+            />
+          </div>
+        ) : null}
+
+        {!inVoting && myPicks.length > 0 ? (
           <section className="bg-surface-2 border border-yellow-500/30 rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
               <p className="text-[11px] uppercase tracking-wider text-yellow-400 font-bold">
@@ -363,7 +413,7 @@ export default function TeammatePicker() {
           </section>
         ) : null}
 
-        {!locked && (showForm || myPicks.length === 0) ? (
+        {!inVoting && !locked && (showForm || myPicks.length === 0) ? (
           <form
             onSubmit={submit}
             className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-4"
@@ -403,7 +453,27 @@ export default function TeammatePicker() {
               ) : null}
             </label>
 
-            <div className="flex flex-col gap-2">
+            {winnerJersey ? (
+              <div className="bg-surface-3 border border-green-500/40 rounded-lg px-3 py-2.5 flex items-center gap-3">
+                <Trophy className="w-4 h-4 text-green-400 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-[10px] uppercase tracking-wider text-green-400 font-bold">
+                    Mẫu đã chốt
+                  </p>
+                  <p className="text-sm font-black text-text-primary truncate">
+                    {winnerJersey.name}
+                  </p>
+                </div>
+                <img
+                  src={winnerJersey.imageUrl}
+                  alt={winnerJersey.name}
+                  className="w-10 h-12 object-cover rounded-md shrink-0"
+                  loading="lazy"
+                />
+              </div>
+            ) : null}
+
+            <div className={`flex flex-col gap-2 ${winnerJersey ? "hidden" : ""}`}>
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                 Mẫu áo <span className="text-red-400">*</span>
               </span>
@@ -567,6 +637,7 @@ export default function TeammatePicker() {
           </form>
         ) : null}
 
+        {inVoting ? null : (
         <section className="bg-surface-2 border border-border-default rounded-2xl overflow-hidden">
           <header className="px-4 py-3 border-b border-border-default">
             <h2 className="text-xs uppercase font-black tracking-wider text-text-muted">
@@ -621,6 +692,7 @@ export default function TeammatePicker() {
             </div>
           )}
         </section>
+        )}
       </div>
     </main>
   );

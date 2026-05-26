@@ -5,6 +5,7 @@ import type {
   TeamSession,
   TeamPick,
   TeamAggregate,
+  TeamPoll,
 } from "../types";
 
 export class ApiError extends Error {
@@ -89,9 +90,10 @@ export const api = {
       }),
     remove: (id: string) =>
       request<{ ok: boolean }>(`/api/teams/${id}`, { method: "DELETE" }),
-    byToken: (token: string) =>
-      request<{ team: TeamSession; picks: TeamPick[] }>(
+    byToken: (token: string, voterToken?: string | null) =>
+      request<{ team: TeamSession; picks: TeamPick[]; poll: TeamPoll | null }>(
         `/api/teams/by-token?token=${encodeURIComponent(token)}`,
+        voterToken ? { headers: { "X-Voter-Token": voterToken } } : undefined,
       ),
     aggregate: (id: string) => request<TeamAggregate>(`/api/teams/${id}/aggregate`),
 
@@ -133,6 +135,41 @@ export const api = {
         method: "DELETE",
         headers: memberToken ? { "X-Member-Token": memberToken } : undefined,
       }),
+
+    poll: {
+      get: (teamId: string, voterToken?: string | null) =>
+        request<{ poll: TeamPoll | null }>(`/api/teams/${teamId}/poll`, {
+          headers: voterToken ? { "X-Voter-Token": voterToken } : undefined,
+        }),
+      create: (teamId: string, candidateJerseyIds: string[]) =>
+        request<{ poll: TeamPoll }>(`/api/teams/${teamId}/poll`, {
+          method: "POST",
+          body: JSON.stringify({ candidateJerseyIds }),
+        }),
+      finalize: (teamId: string, winnerJerseyId: string) =>
+        request<{ poll: TeamPoll }>(`/api/teams/${teamId}/poll`, {
+          method: "PATCH",
+          body: JSON.stringify({ winnerJerseyId }),
+        }),
+      remove: (teamId: string) =>
+        request<{ ok: boolean }>(`/api/teams/${teamId}/poll`, {
+          method: "DELETE",
+        }),
+      vote: (
+        teamId: string,
+        candidateId: string,
+        voterName: string,
+        voterToken: string,
+      ) =>
+        request<{ poll: TeamPoll; voterToken: string }>(
+          `/api/teams/${teamId}/poll/vote`,
+          {
+            method: "POST",
+            headers: { "X-Voter-Token": voterToken },
+            body: JSON.stringify({ candidateId, voterName }),
+          },
+        ),
+    },
   },
 
   shops: {

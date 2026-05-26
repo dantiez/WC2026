@@ -124,6 +124,37 @@ BEGIN
       FOREIGN KEY (jersey_id) REFERENCES shop_jerseys(id);
   END IF;
 END$$;
+
+CREATE TABLE IF NOT EXISTS team_polls (
+  id                TEXT PRIMARY KEY,
+  team_id           TEXT NOT NULL UNIQUE REFERENCES team_sessions(id) ON DELETE CASCADE,
+  winner_jersey_id  TEXT REFERENCES shop_jerseys(id),
+  closed_at         TIMESTAMPTZ,
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE TABLE IF NOT EXISTS team_poll_candidates (
+  id          TEXT PRIMARY KEY,
+  poll_id     TEXT NOT NULL REFERENCES team_polls(id) ON DELETE CASCADE,
+  jersey_id   TEXT NOT NULL REFERENCES shop_jerseys(id),
+  position    INTEGER NOT NULL DEFAULT 0,
+  UNIQUE (poll_id, jersey_id)
+);
+CREATE INDEX IF NOT EXISTS team_poll_candidates_poll_idx ON team_poll_candidates (poll_id);
+
+CREATE TABLE IF NOT EXISTS team_poll_votes (
+  id            TEXT PRIMARY KEY,
+  poll_id       TEXT NOT NULL REFERENCES team_polls(id) ON DELETE CASCADE,
+  candidate_id  TEXT NOT NULL REFERENCES team_poll_candidates(id) ON DELETE CASCADE,
+  voter_token   TEXT NOT NULL,
+  voter_name    TEXT NOT NULL,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+  UNIQUE (poll_id, voter_token)
+);
+CREATE INDEX IF NOT EXISTS team_poll_votes_poll_idx      ON team_poll_votes (poll_id);
+CREATE INDEX IF NOT EXISTS team_poll_votes_candidate_idx ON team_poll_votes (candidate_id);
 `;
 
 type SeedProduct = {

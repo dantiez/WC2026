@@ -12,9 +12,20 @@ import {
   FileSpreadsheet,
   Pencil,
   X,
+  Vote,
+  Crown,
+  Trophy,
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
-import type { Shop, ShopJersey, TeamAggregate, TeamPick } from "../types";
+import type {
+  Shop,
+  ShopJersey,
+  TeamAggregate,
+  TeamPick,
+  TeamPoll,
+  TeamPollCandidate,
+} from "../types";
+import PollSetupModal from "../components/admin/PollSetupModal";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 
@@ -50,6 +61,10 @@ export default function CaptainTeam() {
   const [editDraft, setEditDraft] = useState<PickEditState | null>(null);
   const [savingPickId, setSavingPickId] = useState<string | null>(null);
   const [rowError, setRowError] = useState<string | null>(null);
+  const [showPollSetup, setShowPollSetup] = useState(false);
+  const [pendingWinnerId, setPendingWinnerId] = useState<string | null>(null);
+  const [pollBusy, setPollBusy] = useState(false);
+  const [pollError, setPollError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     if (!id) return;
@@ -181,7 +196,44 @@ export default function CaptainTeam() {
     );
   }
 
-  const { team, picks, sizeBreakdown } = data;
+  const { team, picks, sizeBreakdown, poll } = data;
+  const winnerJersey = poll?.winnerJerseyId
+    ? jerseyMap.get(poll.winnerJerseyId)
+    : null;
+
+  const finalizePoll = async () => {
+    if (!id || !pendingWinnerId) return;
+    if (!window.confirm("Sau khi chốt, toàn bộ team sẽ pick size/số trên mẫu này. Xác nhận?")) {
+      return;
+    }
+    setPollBusy(true);
+    setPollError(null);
+    try {
+      await api.teams.poll.finalize(id, pendingWinnerId);
+      setPendingWinnerId(null);
+      await refresh();
+    } catch (err) {
+      setPollError(err instanceof Error ? err.message : "Không chốt được.");
+    } finally {
+      setPollBusy(false);
+    }
+  };
+
+  const reopenPoll = async () => {
+    if (!id) return;
+    if (!window.confirm("Xoá poll và mở lại voting? Tất cả votes sẽ mất.")) return;
+    setPollBusy(true);
+    setPollError(null);
+    try {
+      await api.teams.poll.remove(id);
+      setPendingWinnerId(null);
+      await refresh();
+    } catch (err) {
+      setPollError(err instanceof Error ? err.message : "Không xoá được poll.");
+    } finally {
+      setPollBusy(false);
+    }
+  };
 
   return (
     <main className="min-h-screen bg-surface-base px-4 py-8">
@@ -259,6 +311,20 @@ export default function CaptainTeam() {
             </button>
           </div>
         </header>
+
+        <PollSection
+          teamId={team.id}
+          poll={poll}
+          jerseyMap={jerseyMap}
+          winnerJersey={winnerJersey ?? null}
+          pendingWinnerId={pendingWinnerId}
+          onChangePendingWinner={setPendingWinnerId}
+          onOpenSetup={() => setShowPollSetup(true)}
+          onFinalize={finalizePoll}
+          onReopen={reopenPoll}
+          busy={pollBusy}
+          error={pollError}
+        />
 
         <section className="grid grid-cols-2 md:grid-cols-4 gap-3">
           <Stat label="Tổng pick" value={picks.length.toString()} />
@@ -467,7 +533,229 @@ export default function CaptainTeam() {
           )}
         </section>
       </div>
+
+      {showPollSetup && id ? (
+        <PollSetupModal
+          teamId={id}
+          jerseys={jerseys}
+          shops={shops}
+          onClose={() => setShowPollSetup(false)}
+          onCreated={() => {
+            setShowPollSetup(false);
+            refresh();
+          }}
+        />
+      ) : null}
     </main>
+  );
+}
+
+function PollSection({
+  teamId: _teamId,
+  poll,
+  jerseyMap,
+  winnerJersey,
+  pendingWinnerId,
+  onChangePendingWinner,
+  onOpenSetup,
+  onFinalize,
+  onReopen,
+  busy,
+  error,
+}: {
+  teamId: string;
+  poll: TeamPoll | null;
+  jerseyMap: Map<string, ShopJersey>;
+  winnerJersey: ShopJersey | null;
+  pendingWinnerId: string | null;
+  onChangePendingWinner: (id: string | null) => void;
+  onOpenSetup: () => void;
+  onFinalize: () => void;
+  onReopen: () => void;
+  busy: boolean;
+  error: string | null;
+}) {
+  if (!poll) {
+    return (
+      <section className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Vote className="w-4 h-4 text-yellow-400" />
+          <h2 className="text-sm font-black uppercase tracking-wider text-text-primary">
+            Voting mẫu áo
+          </h2>
+        </div>
+        <p className="text-[12px] text-text-muted">
+          Mỗi người trong team thích 1 mẫu áo khác nhau? Mở poll để cả team vote
+          chọn 1 mẫu chung, sau đó pick size/số trên mẫu thắng.
+        </p>
+        <button
+          type="button"
+          onClick={onOpenSetup}
+          className="text-xs uppercase font-black px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black w-fit flex items-center gap-1.5"
+        >
+          <Vote className="w-3.5 h-3.5" /> Mở voting chọn mẫu áo
+        </button>
+      </section>
+    );
+  }
+
+  if (poll.winnerJerseyId) {
+    return (
+      <section className="bg-surface-2 border border-green-500/40 rounded-2xl p-5 flex flex-col gap-3">
+        <div className="flex items-center gap-2">
+          <Trophy className="w-4 h-4 text-green-400" />
+          <h2 className="text-sm font-black uppercase tracking-wider text-green-400">
+            Đã chốt mẫu thắng
+          </h2>
+        </div>
+        <div className="flex items-center gap-3 bg-surface-3 border border-border-default rounded-lg p-3">
+          {winnerJersey ? (
+            <img
+              src={winnerJersey.imageUrl}
+              alt={winnerJersey.name}
+              className="w-16 h-20 object-cover rounded-md"
+              loading="lazy"
+            />
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-black text-text-primary truncate">
+              {winnerJersey?.name ?? poll.winnerJerseyId}
+            </p>
+            <p className="text-[11px] text-text-muted">
+              {poll.totalVotes} vote · cả team đang pick size/số trên mẫu này.
+            </p>
+          </div>
+        </div>
+        {error ? (
+          <p className="text-[11px] text-red-400">{error}</p>
+        ) : null}
+        <button
+          type="button"
+          onClick={onReopen}
+          disabled={busy}
+          className="text-xs uppercase font-black px-3 py-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 w-fit flex items-center gap-1.5 disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <X className="w-3.5 h-3.5" />}
+          Mở lại voting (xoá poll)
+        </button>
+      </section>
+    );
+  }
+
+  const sortedCandidates: TeamPollCandidate[] = [...poll.candidates].sort(
+    (a, b) => {
+      if (b.voteCount !== a.voteCount) return b.voteCount - a.voteCount;
+      return a.position - b.position;
+    },
+  );
+  const topCount = sortedCandidates[0]?.voteCount ?? 0;
+
+  return (
+    <section className="bg-surface-2 border border-yellow-500/40 rounded-2xl p-5 flex flex-col gap-3">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2">
+          <Vote className="w-4 h-4 text-yellow-400" />
+          <h2 className="text-sm font-black uppercase tracking-wider text-text-primary">
+            Voting đang diễn ra
+          </h2>
+          <span className="text-[11px] text-text-muted">
+            · {poll.totalVotes} vote
+          </span>
+        </div>
+        <button
+          type="button"
+          onClick={onReopen}
+          disabled={busy}
+          className="text-[11px] uppercase font-black px-2.5 py-1.5 rounded-md text-red-400 hover:bg-red-500/10 disabled:opacity-50"
+        >
+          Xoá poll
+        </button>
+      </div>
+
+      <ul className="flex flex-col gap-2">
+        {sortedCandidates.map((c) => {
+          const jersey = jerseyMap.get(c.jerseyId);
+          const pct =
+            poll.totalVotes > 0
+              ? Math.round((c.voteCount / poll.totalVotes) * 100)
+              : 0;
+          const isLeading = c.voteCount === topCount && topCount > 0;
+          const isPending = pendingWinnerId === c.jerseyId;
+          return (
+            <li
+              key={c.id}
+              className={`bg-surface-3 border rounded-lg p-3 flex items-center gap-3 ${
+                isPending
+                  ? "border-yellow-400 ring-2 ring-yellow-400/30"
+                  : "border-border-default"
+              }`}
+            >
+              <label className="flex items-center gap-3 cursor-pointer flex-1 min-w-0">
+                <input
+                  type="radio"
+                  name="poll-winner"
+                  value={c.jerseyId}
+                  checked={isPending}
+                  onChange={() => onChangePendingWinner(c.jerseyId)}
+                  className="accent-yellow-400"
+                />
+                {jersey ? (
+                  <img
+                    src={jersey.imageUrl}
+                    alt={jersey.name}
+                    className="w-12 h-16 object-cover rounded-md"
+                    loading="lazy"
+                  />
+                ) : null}
+                <div className="min-w-0 flex-1">
+                  <p className="text-sm font-black text-text-primary truncate flex items-center gap-1.5">
+                    {jersey?.name ?? c.jerseyId}
+                    {isLeading ? (
+                      <Crown className="w-3.5 h-3.5 text-yellow-400 shrink-0" />
+                    ) : null}
+                  </p>
+                  <div className="h-1.5 bg-surface-base rounded-full overflow-hidden mt-1.5">
+                    <div
+                      className="h-full bg-yellow-500"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                  {c.voters.length > 0 ? (
+                    <p className="text-[10px] text-text-muted mt-1 truncate">
+                      {c.voters.join(", ")}
+                    </p>
+                  ) : null}
+                </div>
+              </label>
+              <div className="text-right font-mono text-text-secondary text-xs shrink-0">
+                <div className="font-black text-text-primary text-base">
+                  {c.voteCount}
+                </div>
+                <div className="text-[10px] text-text-muted">{pct}%</div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+
+      {error ? (
+        <p className="text-[11px] text-red-400">{error}</p>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onFinalize}
+        disabled={!pendingWinnerId || busy}
+        className="text-xs uppercase font-black px-3 py-2.5 rounded-lg bg-green-500 hover:bg-green-400 disabled:bg-green-500/30 disabled:cursor-not-allowed text-black flex items-center justify-center gap-1.5"
+      >
+        {busy ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Trophy className="w-3.5 h-3.5" />
+        )}
+        Chốt mẫu thắng
+      </button>
+    </section>
   );
 }
 

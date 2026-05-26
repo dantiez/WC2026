@@ -177,6 +177,53 @@ export function mapShopJersey(r: ShopJerseyRow): ShopJersey {
   };
 }
 
+export type TeamPollRow = {
+  id: string;
+  team_id: string;
+  winner_jersey_id: string | null;
+  closed_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type TeamPollCandidateRow = {
+  id: string;
+  poll_id: string;
+  jersey_id: string;
+  position: number;
+};
+
+export type TeamPollVoteRow = {
+  id: string;
+  poll_id: string;
+  candidate_id: string;
+  voter_token: string;
+  voter_name: string;
+  created_at: Date;
+  updated_at: Date;
+};
+
+export type TeamPollCandidateDTO = {
+  id: string;
+  pollId: string;
+  jerseyId: string;
+  position: number;
+  voteCount: number;
+  voters: string[];
+};
+
+export type TeamPollDTO = {
+  id: string;
+  teamId: string;
+  winnerJerseyId: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  candidates: TeamPollCandidateDTO[];
+  totalVotes: number;
+  myVoteCandidateId: string | null;
+};
+
 export function randomToken(len = 22): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let out = "";

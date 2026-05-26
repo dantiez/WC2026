@@ -6,6 +6,7 @@ import {
   type TeamPickRow,
   type TeamSessionRow,
 } from "../../lib/mappers.js";
+import { loadPollForTeam } from "../_lib/poll.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -32,9 +33,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       [team.id],
     );
 
+    const voterToken =
+      (req.headers["x-voter-token"] as string | undefined) ?? null;
+    const poll = await loadPollForTeam(team.id, voterToken);
+
     return res.json({
       team,
       picks: pickRows.map(mapTeamPick),
+      poll,
     });
   } catch (err) {
     console.error("[/api/teams/by-token] error", err);

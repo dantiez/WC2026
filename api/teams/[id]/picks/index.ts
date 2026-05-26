@@ -53,6 +53,19 @@ async function createPick(
   if (team.status === "locked" && !isCaptain) {
     return res.status(423).json({ error: "Team đã chốt đơn, không thể thêm pick mới." });
   }
+
+  const { rows: pollRows } = await query<{ winner_jersey_id: string | null }>(
+    `SELECT winner_jersey_id FROM team_polls WHERE team_id = $1`,
+    [team.id],
+  );
+  const hasPoll = pollRows.length > 0;
+  const winnerJerseyId = hasPoll ? pollRows[0].winner_jersey_id : null;
+  if (hasPoll && !winnerJerseyId && !isCaptain) {
+    return res
+      .status(423)
+      .json({ error: "Đang voting chọn mẫu áo, chưa thể pick. Vui lòng chờ captain chốt." });
+  }
+
   const body = (req.body ?? {}) as {
     memberName?: string;
     jerseyId?: string;
@@ -62,7 +75,10 @@ async function createPick(
   };
 
   const memberName = (body.memberName ?? "").trim();
-  const jerseyId = (body.jerseyId ?? "").trim();
+  let jerseyId = (body.jerseyId ?? "").trim();
+  if (winnerJerseyId && !isCaptain) {
+    jerseyId = winnerJerseyId;
+  }
   const size = (body.size ?? "").trim();
   const jerseyNumber =
     body.jerseyNumber !== null && body.jerseyNumber !== undefined

@@ -133,6 +133,28 @@ export interface TeamAggregate {
   total: number;
   sizeBreakdown: Record<string, number>;
   jerseyBreakdown: Record<string, number>;
+  poll: TeamPoll | null;
+}
+
+export interface TeamPollCandidate {
+  id: string;
+  pollId: string;
+  jerseyId: string;
+  position: number;
+  voteCount: number;
+  voters: string[];
+}
+
+export interface TeamPoll {
+  id: string;
+  teamId: string;
+  winnerJerseyId: string | null;
+  closedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  candidates: TeamPollCandidate[];
+  totalVotes: number;
+  myVoteCandidateId: string | null;
 }
 
 export interface Shop {
