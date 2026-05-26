@@ -17,7 +17,6 @@ import teamPicks from "./api/teams/[id]/picks/index.js";
 import teamPick from "./api/teams/[id]/picks/[pickId].js";
 import teamAggregate from "./api/teams/[id]/aggregate.js";
 import teamPoll from "./api/teams/[id]/poll/index.js";
-import teamPollVote from "./api/teams/[id]/poll/vote.js";
 import shops from "./api/shops.js";
 import jerseys from "./api/jerseys.js";
 
@@ -61,7 +60,6 @@ app.get("/api/teams/:id/poll", wrap(teamPoll));
 app.post("/api/teams/:id/poll", wrap(teamPoll));
 app.patch("/api/teams/:id/poll", wrap(teamPoll));
 app.delete("/api/teams/:id/poll", wrap(teamPoll));
-app.post("/api/teams/:id/poll/vote", wrap(teamPollVote));
 
 app.get("/api/shops", wrap(shops));
 app.post("/api/shops", wrap(shops));

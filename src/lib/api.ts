@@ -162,7 +162,7 @@ export const api = {
         voterToken: string,
       ) =>
         request<{ poll: TeamPoll; voterToken: string }>(
-          `/api/teams/${teamId}/poll/vote`,
+          `/api/teams/${teamId}/poll?action=vote`,
           {
             method: "POST",
             headers: { "X-Voter-Token": voterToken },
