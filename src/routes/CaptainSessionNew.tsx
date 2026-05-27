@@ -1,37 +1,23 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, ArrowLeft } from "lucide-react";
 import { api } from "../lib/api";
-import type { Product } from "../types";
 
 export default function CaptainSessionNew() {
   const navigate = useNavigate();
   const [name, setName] = useState("");
   const [deadlineAt, setDeadlineAt] = useState("");
-  const [defaultProductId, setDefaultProductId] = useState<string>("");
-  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    api.products
-      .list()
-      .then(setProducts)
-      .catch((err) => setError(err instanceof Error ? err.message : "Lỗi tải sản phẩm"));
-  }, []);
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
-    if (!defaultProductId) {
-      setError("Vui lòng chọn mẫu áo mặc định. Bạn có thể mở voting sau để cả team chọn lại.");
-      return;
-    }
     setLoading(true);
     try {
       const team = await api.teams.create({
         name: name.trim(),
-        defaultProductId,
+        defaultProductId: null,
         deadlineAt: deadlineAt ? new Date(deadlineAt).toISOString() : null,
       });
       navigate(`/captain/teams/${team.id}`, { replace: true });
@@ -62,7 +48,8 @@ export default function CaptainSessionNew() {
               Tạo đợt đặt áo mới
             </h1>
             <p className="text-xs text-text-muted">
-              Sau khi tạo, bạn sẽ có một link share cho cả team.
+              Sau khi tạo, bạn sẽ có một link share cho cả team. Mở voting để cả team
+              chọn mẫu áo.
             </p>
           </header>
 
@@ -89,28 +76,6 @@ export default function CaptainSessionNew() {
               onChange={(e) => setDeadlineAt(e.target.value)}
               className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             />
-          </label>
-
-          <label className="flex flex-col gap-1.5">
-            <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-              Mẫu áo mặc định <span className="text-red-400">*</span>
-            </span>
-            <select
-              value={defaultProductId}
-              onChange={(e) => setDefaultProductId(e.target.value)}
-              required
-              className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
-            >
-              <option value="">— Chọn mẫu áo —</option>
-              {products.map((p) => (
-                <option key={p.id} value={p.id}>
-                  {p.name}
-                </option>
-              ))}
-            </select>
-            <span className="text-[11px] text-text-muted">
-              Có thể thay đổi sau, hoặc mở voting để cả team chọn lại.
-            </span>
           </label>
 
           {error ? (
