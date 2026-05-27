@@ -23,11 +23,15 @@ export default function CaptainSessionNew() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     setError(null);
+    if (!defaultProductId) {
+      setError("Vui lòng chọn mẫu áo mặc định. Bạn có thể mở voting sau để cả team chọn lại.");
+      return;
+    }
     setLoading(true);
     try {
       const team = await api.teams.create({
         name: name.trim(),
-        defaultProductId: defaultProductId || null,
+        defaultProductId,
         deadlineAt: deadlineAt ? new Date(deadlineAt).toISOString() : null,
       });
       navigate(`/captain/teams/${team.id}`, { replace: true });
@@ -89,20 +93,24 @@ export default function CaptainSessionNew() {
 
           <label className="flex flex-col gap-1.5">
             <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-              Mẫu áo mặc định (tuỳ chọn)
+              Mẫu áo mặc định <span className="text-red-400">*</span>
             </span>
             <select
               value={defaultProductId}
               onChange={(e) => setDefaultProductId(e.target.value)}
+              required
               className="bg-surface-3 border border-border-default rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
             >
-              <option value="">— Để teammate tự chọn —</option>
+              <option value="">— Chọn mẫu áo —</option>
               {products.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.name}
                 </option>
               ))}
             </select>
+            <span className="text-[11px] text-text-muted">
+              Có thể thay đổi sau, hoặc mở voting để cả team chọn lại.
+            </span>
           </label>
 
           {error ? (

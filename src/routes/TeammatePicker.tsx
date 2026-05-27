@@ -130,11 +130,11 @@ export default function TeammatePicker() {
       setShops(shopList);
       setStoredMembers(getMembers(byToken.team.id));
       const winnerId = byToken.poll?.winnerJerseyId ?? null;
-      const defaultJersey =
-        winnerId || byToken.team.defaultProductId || jerseyList[0]?.id || "";
+      const lockedId = winnerId ?? byToken.team.defaultProductId ?? null;
+      const defaultJersey = lockedId || jerseyList[0]?.id || "";
       setForm((prev) => {
-        if (winnerId && prev.jerseyId !== winnerId) {
-          return { ...prev, jerseyId: winnerId };
+        if (lockedId && prev.jerseyId !== lockedId) {
+          return { ...prev, jerseyId: lockedId };
         }
         return prev.jerseyId ? prev : emptyForm(defaultJersey);
       });
@@ -164,7 +164,7 @@ export default function TeammatePicker() {
     if (!team) return;
     setEditingPickId(null);
     const defaultJersey =
-      poll?.winnerJerseyId || team.defaultProductId || jerseys[0]?.id || "";
+      poll?.winnerJerseyId ?? team.defaultProductId ?? jerseys[0]?.id ?? "";
     setForm(emptyForm(defaultJersey));
     setSubmitError(null);
     setFieldErrors({});
@@ -271,7 +271,9 @@ export default function TeammatePicker() {
   const locked = team.status === "locked";
   const winnerJerseyId = poll?.winnerJerseyId ?? null;
   const inVoting = !!poll && !winnerJerseyId;
-  const winnerJersey = winnerJerseyId ? jerseyMap.get(winnerJerseyId) : null;
+  const lockedJerseyId = winnerJerseyId ?? team.defaultProductId ?? null;
+  const lockedJersey = lockedJerseyId ? jerseyMap.get(lockedJerseyId) : null;
+  const noJerseyChosen = !inVoting && !lockedJerseyId;
   const selectedJersey = jerseyMap.get(form.jerseyId);
 
   return (
@@ -334,7 +336,7 @@ export default function TeammatePicker() {
           />
         ) : null}
 
-        {winnerJersey ? (
+        {winnerJerseyId && lockedJersey ? (
           <div className="bg-green-500/10 border border-green-500/40 text-green-300 rounded-2xl p-4 flex items-center gap-3">
             <Trophy className="w-5 h-5 text-green-400 shrink-0" />
             <div className="min-w-0 flex-1">
@@ -342,18 +344,25 @@ export default function TeammatePicker() {
                 Mẫu áo đã chốt
               </p>
               <p className="text-sm font-black text-text-primary truncate">
-                {winnerJersey.name}
+                {lockedJersey.name}
               </p>
               <p className="text-[11px] text-text-muted">
                 Cả team sẽ pick size/số trên mẫu này.
               </p>
             </div>
             <img
-              src={winnerJersey.imageUrl}
-              alt={winnerJersey.name}
+              src={lockedJersey.imageUrl}
+              alt={lockedJersey.name}
               className="w-12 h-16 object-cover rounded-md shrink-0"
               loading="lazy"
             />
+          </div>
+        ) : null}
+
+        {noJerseyChosen ? (
+          <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 rounded-2xl px-4 py-3 text-sm flex items-start gap-2">
+            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
+            Captain chưa chọn mẫu áo cho team. Liên hệ captain để mở voting hoặc chọn mẫu mặc định trước khi pick.
           </div>
         ) : null}
 
@@ -413,7 +422,7 @@ export default function TeammatePicker() {
           </section>
         ) : null}
 
-        {!inVoting && !locked && (showForm || myPicks.length === 0) ? (
+        {!inVoting && !locked && !noJerseyChosen && (showForm || myPicks.length === 0) ? (
           <form
             onSubmit={submit}
             className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-4"
@@ -453,27 +462,27 @@ export default function TeammatePicker() {
               ) : null}
             </label>
 
-            {winnerJersey ? (
+            {lockedJersey ? (
               <div className="bg-surface-3 border border-green-500/40 rounded-lg px-3 py-2.5 flex items-center gap-3">
                 <Trophy className="w-4 h-4 text-green-400 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <p className="text-[10px] uppercase tracking-wider text-green-400 font-bold">
-                    Mẫu đã chốt
+                    {winnerJerseyId ? "Mẫu đã chốt" : "Mẫu áo của team"}
                   </p>
                   <p className="text-sm font-black text-text-primary truncate">
-                    {winnerJersey.name}
+                    {lockedJersey.name}
                   </p>
                 </div>
                 <img
-                  src={winnerJersey.imageUrl}
-                  alt={winnerJersey.name}
+                  src={lockedJersey.imageUrl}
+                  alt={lockedJersey.name}
                   className="w-10 h-12 object-cover rounded-md shrink-0"
                   loading="lazy"
                 />
               </div>
             ) : null}
 
-            <div className={`flex flex-col gap-2 ${winnerJersey ? "hidden" : ""}`}>
+            <div className={`flex flex-col gap-2 ${lockedJersey ? "hidden" : ""}`}>
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                 Mẫu áo <span className="text-red-400">*</span>
               </span>

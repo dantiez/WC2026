@@ -66,6 +66,13 @@ async function createPick(
       .json({ error: "Đang voting chọn mẫu áo, chưa thể pick. Vui lòng chờ captain chốt." });
   }
 
+  const lockedJerseyId = winnerJerseyId ?? team.default_product_id;
+  if (!isCaptain && !lockedJerseyId) {
+    return res.status(423).json({
+      error: "Captain chưa chọn mẫu áo cho team. Vui lòng liên hệ captain.",
+    });
+  }
+
   const body = (req.body ?? {}) as {
     memberName?: string;
     jerseyId?: string;
@@ -76,8 +83,8 @@ async function createPick(
 
   const memberName = (body.memberName ?? "").trim();
   let jerseyId = (body.jerseyId ?? "").trim();
-  if (winnerJerseyId && !isCaptain) {
-    jerseyId = winnerJerseyId;
+  if (lockedJerseyId && !isCaptain) {
+    jerseyId = lockedJerseyId;
   }
   const size = (body.size ?? "").trim();
   const jerseyNumber =
