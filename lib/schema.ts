@@ -283,17 +283,52 @@ const SEED_PRODUCTS: SeedProduct[] = [
   { id: "prod-nor-away", name: "Norway Away Jersey 2026",  team_country: "Norway 🇳🇴",  jersey_type: "away", glb_url: null, image_url: "https://placehold.co/400x500/ffffff/00205b?text=Norway+Away",  price: 390000, stock: 16 },
 ];
 
+// Official-look jersey photos sourced from store.fifa.com (Shopify CDN, public).
+// These hotlink to FIFA's commercial assets — fine for internal team-order use
+// per project memory. If FIFA adds hotlink protection, fall back to placehold.co
+// or re-upload via the admin UI.
+const FIFA_IMAGES: Record<string, string> = {
+  "prod-arg-home": "https://store.fifa.com/cdn/shop/files/image_ab8f6ea2-c16a-4882-822e-aa52e9506054.png",
+  "prod-arg-away": "https://store.fifa.com/cdn/shop/files/image_b6a5a8ac-8a79-460f-904c-9fc586a854f0.jpg",
+  "prod-bra-home": "https://store.fifa.com/cdn/shop/files/image_02047e33-3b4e-41f2-869b-ac361dd4b283.jpg",
+  "prod-bra-away": "https://store.fifa.com/cdn/shop/files/image_5a01cfb2-988b-42a3-95a4-39da4fb8791d.jpg",
+  "prod-eng-away": "https://store.fifa.com/cdn/shop/files/image_80255efb-0ad1-4b46-aafd-9ed0fa63706d.jpg",
+  "prod-fra-home": "https://store.fifa.com/cdn/shop/files/image_97c7b304-c8ac-48bb-b2a2-d6349ac9c33a.jpg",
+  "prod-ger-home": "https://store.fifa.com/cdn/shop/files/image_61d45520-598b-40d1-a19c-dc2f4d43085a.png",
+  "prod-ger-away": "https://store.fifa.com/cdn/shop/files/image_5fe1b402-ce80-4dc7-94af-ebe68b7edd76.jpg",
+  "prod-jap-home": "https://store.fifa.com/cdn/shop/files/image_5975e9aa-665b-42c2-a93e-c1da0e990f7c.png",
+  "prod-spa-home": "https://store.fifa.com/cdn/shop/files/image_8b6f5358-fe86-4ed5-96dc-051e62e3e943.png",
+  "prod-spa-away": "https://store.fifa.com/cdn/shop/files/image_9010dbcf-a2b4-40d0-a818-43835ebd6047.jpg",
+  "prod-por-home": "https://store.fifa.com/cdn/shop/files/image_0c8a09d2-f012-494a-acd8-524248c421bd.jpg",
+  "prod-usa-home": "https://store.fifa.com/cdn/shop/files/image_761374ad-2a69-46d2-a956-8b5518aa5365.jpg",
+  "prod-usa-away": "https://store.fifa.com/cdn/shop/files/image_c78fa204-51ce-440a-a410-c8b8a4258deb.jpg",
+  "prod-can-home": "https://store.fifa.com/cdn/shop/files/image_caef3fca-e5d6-41a6-9c13-08ace1fb29ff.jpg",
+  "prod-mex-home": "https://store.fifa.com/cdn/shop/files/image_bb8e2e3e-8c87-4469-b928-0dffe04d9d6f.png",
+  "prod-mex-away": "https://store.fifa.com/cdn/shop/files/image_8c109ac7-6e21-4d48-b300-b77698d533cd.jpg",
+  "prod-ita-home": "https://store.fifa.com/cdn/shop/files/image_3bf28b9c-e9f3-49e3-ac48-fd7473b92b15.png",
+  "prod-uru-home": "https://store.fifa.com/cdn/shop/files/image_e7197667-877e-443a-9146-ba7749edd47f.jpg",
+  "prod-col-home": "https://store.fifa.com/cdn/shop/files/image_55556576-2225-4f6e-89fd-92619caa592b.png",
+  "prod-alg-home": "https://store.fifa.com/cdn/shop/files/image_949f3b79-9383-4430-88e7-c844b59f689c.png",
+  "prod-bel-home": "https://store.fifa.com/cdn/shop/files/image_dde2dcc5-5067-4cf8-b2c9-05bc9461709a.png",
+  "prod-ksa-home": "https://store.fifa.com/cdn/shop/files/JL6948_1_APPAREL_Photography_FrontCenterView_white.jpg",
+  "prod-crc-home": "https://store.fifa.com/cdn/shop/files/KA4039_1_APPAREL_Photography_FrontCenterView_white.jpg",
+};
+
+// Idempotent: only overwrites image_url that's still on the original placeholder
+// hosts (unsplash, placehold.co). User-uploaded URLs (e.g. Cloudinary) are untouched.
+const FIFA_REFRESH_FILTER =
+  "image_url LIKE 'https://images.unsplash.com/%' OR image_url LIKE 'https://placehold.co/%'";
+
 export async function initSchema(pool: Pool): Promise<void> {
   await pool.query(DDL);
 
-  // Idempotent seed: ON CONFLICT DO NOTHING means existing rows keep their
-  // current image_url / price / stock; only missing teams get inserted.
   const values: string[] = [];
   const params: unknown[] = [];
   let i = 1;
   for (const p of SEED_PRODUCTS) {
+    const imageUrl = FIFA_IMAGES[p.id] ?? p.image_url;
     values.push(`($${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++}, $${i++})`);
-    params.push(p.id, p.name, p.team_country, p.jersey_type, p.glb_url, p.image_url, p.price, p.stock);
+    params.push(p.id, p.name, p.team_country, p.jersey_type, p.glb_url, imageUrl, p.price, p.stock);
   }
   await pool.query(
     `INSERT INTO products (id, name, team_country, jersey_type, glb_url, image_url, price, stock)
@@ -301,4 +336,24 @@ export async function initSchema(pool: Pool): Promise<void> {
      ON CONFLICT (id) DO NOTHING`,
     params
   );
+
+  // Refresh placeholder images on existing rows to the official FIFA photos.
+  const ids = Object.keys(FIFA_IMAGES);
+  if (ids.length > 0) {
+    const urls = ids.map((id) => FIFA_IMAGES[id]);
+    await pool.query(
+      `UPDATE products
+         SET image_url = m.url, updated_at = now()
+       FROM unnest($1::text[], $2::text[]) AS m(id, url)
+       WHERE products.id = m.id AND (${FIFA_REFRESH_FILTER})`,
+      [ids, urls]
+    );
+    await pool.query(
+      `UPDATE shop_jerseys
+         SET image_url = m.url
+       FROM unnest($1::text[], $2::text[]) AS m(id, url)
+       WHERE shop_jerseys.id = m.id AND (${FIFA_REFRESH_FILTER})`,
+      [ids, urls]
+    );
+  }
 }
