@@ -3,15 +3,18 @@ import { Check, Loader2, Vote } from "lucide-react";
 import { api, ApiError } from "../../lib/api";
 import { ensureVoter, setVoterName } from "../../lib/voterToken";
 import type { ShopJersey, TeamPoll } from "../../types";
+import JerseyImage from "../common/JerseyImage";
+import PollCountdown from "../common/PollCountdown";
 
 interface Props {
   teamId: string;
   poll: TeamPoll;
   jerseyMap: Map<string, ShopJersey>;
   onVoted: (poll: TeamPoll) => void;
+  onDeadlinePassed?: () => void;
 }
 
-export default function PollVoting({ teamId, poll, jerseyMap, onVoted }: Props) {
+export default function PollVoting({ teamId, poll, jerseyMap, onVoted, onDeadlinePassed }: Props) {
   const initialVoter = ensureVoter(teamId);
   const [name, setName] = useState<string>(initialVoter.name);
   const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
@@ -77,6 +80,13 @@ export default function PollVoting({ teamId, poll, jerseyMap, onVoted }: Props) 
         </div>
       </header>
 
+      {poll.deadlineAt ? (
+        <PollCountdown
+          deadlineIso={poll.deadlineAt}
+          onExpired={onDeadlinePassed}
+        />
+      ) : null}
+
       <label className="flex flex-col gap-1.5">
         <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
           Tên của bạn <span className="text-red-400">*</span>
@@ -132,23 +142,22 @@ export default function PollVoting({ teamId, poll, jerseyMap, onVoted }: Props) 
             >
               <div className="aspect-[4/5] bg-surface-base relative">
                 {jersey ? (
-                  <img
+                  <JerseyImage
                     src={jersey.imageUrl}
                     alt={jersey.name}
-                    className="w-full h-full object-cover"
-                    loading="lazy"
-                    decoding="async"
+                    imgClassName="w-full h-full object-cover"
+                    wrapperClassName="block w-full h-full"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-text-muted text-xs">
                     {c.jerseyId}
                   </div>
                 )}
-                <span className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full">
+                <span className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full z-10">
                   {c.voteCount} vote{c.voteCount === 1 ? "" : "s"} · {pct}%
                 </span>
                 {isMyVote ? (
-                  <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1">
+                  <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1 z-10">
                     <Check className="w-3.5 h-3.5" strokeWidth={3} />
                   </span>
                 ) : null}

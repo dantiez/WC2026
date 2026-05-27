@@ -119,7 +119,8 @@ export interface TeamPick {
   id: string;
   teamId: string;
   memberName: string;
-  jerseyId: string;
+  /** Null while voting is still open — auto-filled with the winner once the poll closes. */
+  jerseyId: string | null;
   size: string;
   jerseyNumber: string | null;
   nickname: string | null;
@@ -149,6 +150,7 @@ export interface TeamPoll {
   id: string;
   teamId: string;
   winnerJerseyId: string | null;
+  deadlineAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;

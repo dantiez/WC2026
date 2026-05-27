@@ -8,6 +8,7 @@ import {
   type TeamSessionRow,
 } from "../../../../lib/mappers.js";
 import { readCaptainClaims } from "../../../_lib/auth.js";
+import { autoFinalizeIfExpired } from "../../../_lib/poll.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -54,20 +55,16 @@ async function createPick(
     return res.status(423).json({ error: "Team đã chốt đơn, không thể thêm pick mới." });
   }
 
+  await autoFinalizeIfExpired(team.id);
   const { rows: pollRows } = await query<{ winner_jersey_id: string | null }>(
     `SELECT winner_jersey_id FROM team_polls WHERE team_id = $1`,
     [team.id],
   );
   const hasPoll = pollRows.length > 0;
   const winnerJerseyId = hasPoll ? pollRows[0].winner_jersey_id : null;
-  if (hasPoll && !winnerJerseyId && !isCaptain) {
-    return res
-      .status(423)
-      .json({ error: "Đang voting chọn mẫu áo, chưa thể pick. Vui lòng chờ captain chốt." });
-  }
-
+  const inVoting = hasPoll && !winnerJerseyId;
   const lockedJerseyId = winnerJerseyId ?? team.default_product_id;
-  if (!isCaptain && !lockedJerseyId) {
+  if (!isCaptain && !inVoting && !lockedJerseyId) {
     return res.status(423).json({
       error: "Captain chưa chọn mẫu áo cho team. Vui lòng liên hệ captain.",
     });
@@ -82,9 +79,11 @@ async function createPick(
   };
 
   const memberName = (body.memberName ?? "").trim();
-  let jerseyId = (body.jerseyId ?? "").trim();
-  if (lockedJerseyId && !isCaptain) {
-    jerseyId = lockedJerseyId;
+  let jerseyId: string | null = (body.jerseyId ?? "").trim() || null;
+  if (!isCaptain) {
+    // Members never get to choose: jersey is the winner (set), the default
+    // (no poll), or null (voting in progress → backfilled on finalize).
+    jerseyId = inVoting ? null : lockedJerseyId;
   }
   const size = (body.size ?? "").trim();
   const jerseyNumber =
@@ -94,7 +93,7 @@ async function createPick(
 
   const fieldErrors: Record<string, string> = {};
   if (!memberName) fieldErrors.memberName = "Vui lòng nhập tên của bạn.";
-  if (!jerseyId) fieldErrors.jerseyId = "Vui lòng chọn mẫu áo.";
+  if (!inVoting && !jerseyId) fieldErrors.jerseyId = "Vui lòng chọn mẫu áo.";
   if (!size) fieldErrors.size = "Vui lòng chọn size.";
   if (!jerseyNumber) fieldErrors.jerseyNumber = "Vui lòng nhập số áo.";
 

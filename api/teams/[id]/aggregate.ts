@@ -41,7 +41,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const jerseyBreakdown: Record<string, number> = {};
     for (const p of picks) {
       sizeBreakdown[p.size] = (sizeBreakdown[p.size] ?? 0) + 1;
-      jerseyBreakdown[p.jersey_id] = (jerseyBreakdown[p.jersey_id] ?? 0) + 1;
+      const jKey = p.jersey_id ?? "__pending__";
+      jerseyBreakdown[jKey] = (jerseyBreakdown[jKey] ?? 0) + 1;
     }
 
     const poll = await loadPollForTeam(team.id, null);

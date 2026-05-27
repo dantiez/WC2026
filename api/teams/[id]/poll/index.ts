@@ -125,7 +125,10 @@ async function castVote(req: VercelRequest, res: VercelResponse, teamId: string)
 }
 
 async function createPoll(req: VercelRequest, res: VercelResponse, teamId: string) {
-  const body = (req.body ?? {}) as { candidateJerseyIds?: unknown };
+  const body = (req.body ?? {}) as {
+    candidateJerseyIds?: unknown;
+    deadlineAt?: string | null;
+  };
   const raw = Array.isArray(body.candidateJerseyIds) ? body.candidateJerseyIds : [];
   const ids = Array.from(
     new Set(
@@ -140,6 +143,18 @@ async function createPoll(req: VercelRequest, res: VercelResponse, teamId: strin
     return res.status(400).json({
       error: `Vui lòng chọn ${MIN_CANDIDATES}-${MAX_CANDIDATES} mẫu áo làm ứng cử.`,
     });
+  }
+
+  let deadlineIso: string | null = null;
+  if (body.deadlineAt !== undefined && body.deadlineAt !== null && body.deadlineAt !== "") {
+    const d = new Date(body.deadlineAt);
+    if (Number.isNaN(d.getTime())) {
+      return res.status(400).json({ error: "Hạn voting không hợp lệ." });
+    }
+    if (d.getTime() <= Date.now()) {
+      return res.status(400).json({ error: "Hạn voting phải ở tương lai." });
+    }
+    deadlineIso = d.toISOString();
   }
 
   const { rows: jerseyRows } = await query<{ id: string }>(
@@ -164,8 +179,8 @@ async function createPoll(req: VercelRequest, res: VercelResponse, teamId: strin
     await client.query("BEGIN");
     const pollId = shortId("poll");
     await client.query(
-      `INSERT INTO team_polls (id, team_id) VALUES ($1, $2)`,
-      [pollId, teamId],
+      `INSERT INTO team_polls (id, team_id, deadline_at) VALUES ($1, $2, $3)`,
+      [pollId, teamId, deadlineIso],
     );
     for (let i = 0; i < ids.length; i++) {
       await client.query(
@@ -224,6 +239,12 @@ async function finalizePoll(req: VercelRequest, res: VercelResponse, teamId: str
       `UPDATE team_sessions
          SET default_product_id = $1, updated_at = now()
        WHERE id = $2`,
+      [winnerJerseyId, teamId],
+    );
+    await client.query(
+      `UPDATE team_picks
+         SET jersey_id = $1, updated_at = now()
+       WHERE team_id = $2 AND jersey_id IS NULL`,
       [winnerJerseyId, teamId],
     );
     await client.query("COMMIT");

@@ -25,8 +25,9 @@ import { ensureVoter } from "../lib/voterToken";
 import { formatPickActivity } from "../lib/formatDate";
 import type { Shop, ShopJersey, TeamPick, TeamPoll, TeamSession } from "../types";
 import JerseyPreview from "../components/common/JerseyPreview";
+import JerseyImage from "../components/common/JerseyImage";
 import PollVoting from "../components/user/PollVoting";
-import { Trophy } from "lucide-react";
+import { Trophy, Vote } from "lucide-react";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 const ALL_SHOPS = "__all__";
@@ -52,7 +53,7 @@ function emptyForm(defaultJerseyId: string): FormState {
 function pickToForm(pick: TeamPick): FormState {
   return {
     memberName: pick.memberName,
-    jerseyId: pick.jerseyId,
+    jerseyId: pick.jerseyId ?? "",
     size: pick.size,
     jerseyNumber: pick.jerseyNumber ?? "",
     nickname: pick.nickname ?? "",
@@ -79,10 +80,10 @@ export default function TeammatePicker() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
-  const validateForm = (f: FormState): Record<string, string> => {
+  const validateForm = (f: FormState, requireJersey: boolean): Record<string, string> => {
     const errs: Record<string, string> = {};
     if (!f.memberName.trim()) errs.memberName = "Vui lòng nhập tên của bạn.";
-    if (!f.jerseyId) errs.jerseyId = "Vui lòng chọn mẫu áo.";
+    if (requireJersey && !f.jerseyId) errs.jerseyId = "Vui lòng chọn mẫu áo.";
     if (!f.size) errs.size = "Vui lòng chọn size.";
     if (!f.jerseyNumber.trim()) errs.jerseyNumber = "Vui lòng nhập số áo.";
     return errs;
@@ -194,7 +195,7 @@ export default function TeammatePicker() {
     if (!team) return;
     setSubmitError(null);
 
-    const localErrs = validateForm(form);
+    const localErrs = validateForm(form, !inVoting);
     if (Object.keys(localErrs).length > 0) {
       setFieldErrors(localErrs);
       return;
@@ -334,6 +335,9 @@ export default function TeammatePicker() {
             poll={poll}
             jerseyMap={jerseyMap}
             onVoted={(updated) => setPoll(updated)}
+            onDeadlinePassed={() => {
+              refresh();
+            }}
           />
         ) : null}
 
@@ -351,11 +355,12 @@ export default function TeammatePicker() {
                 Cả team sẽ pick size/số trên mẫu này.
               </p>
             </div>
-            <img
+            <JerseyImage
               src={lockedJersey.imageUrl}
               alt={lockedJersey.name}
-              className="w-12 h-16 object-cover rounded-md shrink-0"
-              loading="lazy"
+              imgClassName="w-12 h-16 object-cover rounded-md"
+              wrapperClassName="shrink-0 inline-block"
+              overlaySize="sm"
             />
           </div>
         ) : null}
@@ -367,7 +372,7 @@ export default function TeammatePicker() {
           </div>
         ) : null}
 
-        {!inVoting && myPicks.length > 0 ? (
+        {myPicks.length > 0 ? (
           <section className="bg-surface-2 border border-yellow-500/30 rounded-2xl p-4">
             <div className="flex items-center justify-between gap-3 flex-wrap mb-3">
               <p className="text-[11px] uppercase tracking-wider text-yellow-400 font-bold">
@@ -394,7 +399,9 @@ export default function TeammatePicker() {
                       {pick.memberName} · Size {pick.size}
                     </p>
                     <p className="text-[11px] text-text-muted truncate">
-                      {jerseyMap.get(pick.jerseyId)?.name ?? pick.jerseyId}
+                      {pick.jerseyId
+                        ? (jerseyMap.get(pick.jerseyId)?.name ?? pick.jerseyId)
+                        : "Chờ voting chốt mẫu"}
                       {pick.jerseyNumber ? ` · #${pick.jerseyNumber}` : ""}
                       {pick.nickname ? ` · ${pick.nickname}` : ""}
                     </p>
@@ -440,7 +447,7 @@ export default function TeammatePicker() {
           </section>
         ) : null}
 
-        {!inVoting && !locked && !noJerseyChosen && (showForm || myPicks.length === 0) ? (
+        {!locked && !noJerseyChosen && (showForm || myPicks.length === 0) ? (
           <form
             onSubmit={submit}
             className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-4"
@@ -480,7 +487,14 @@ export default function TeammatePicker() {
               ) : null}
             </label>
 
-            {lockedJersey ? (
+            {inVoting ? (
+              <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-lg px-3 py-2.5 flex items-center gap-2">
+                <Vote className="w-4 h-4 text-yellow-400 shrink-0" />
+                <p className="text-[11px] text-yellow-200">
+                  Mẫu áo sẽ được chốt sau khi voting kết thúc, tự áp dụng cho pick của bạn.
+                </p>
+              </div>
+            ) : lockedJersey ? (
               <div className="bg-surface-3 border border-green-500/40 rounded-lg px-3 py-2.5 flex items-center gap-3">
                 <Trophy className="w-4 h-4 text-green-400 shrink-0" />
                 <div className="min-w-0 flex-1">
@@ -491,16 +505,17 @@ export default function TeammatePicker() {
                     {lockedJersey.name}
                   </p>
                 </div>
-                <img
+                <JerseyImage
                   src={lockedJersey.imageUrl}
                   alt={lockedJersey.name}
-                  className="w-10 h-12 object-cover rounded-md shrink-0"
-                  loading="lazy"
+                  imgClassName="w-10 h-12 object-cover rounded-md"
+                  wrapperClassName="shrink-0 inline-block"
+                  overlaySize="sm"
                 />
               </div>
             ) : null}
 
-            <div className={`flex flex-col gap-2 ${lockedJersey ? "hidden" : ""}`}>
+            <div className={`flex flex-col gap-2 ${lockedJersey || inVoting ? "hidden" : ""}`}>
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                 Mẫu áo <span className="text-red-400">*</span>
               </span>
@@ -544,15 +559,14 @@ export default function TeammatePicker() {
                         }`}
                       >
                         <div className="aspect-[4/5] bg-surface-base relative">
-                          <img
+                          <JerseyImage
                             src={jersey.imageUrl}
                             alt={jersey.name}
-                            className="w-full h-full object-cover"
-                            loading="lazy"
-                            decoding="async"
+                            imgClassName="w-full h-full object-cover"
+                            wrapperClassName="block w-full h-full"
                           />
                           {isSelected ? (
-                            <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1">
+                            <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1 z-10">
                               <Check className="w-3.5 h-3.5" strokeWidth={3} />
                             </span>
                           ) : null}
@@ -664,7 +678,6 @@ export default function TeammatePicker() {
           </form>
         ) : null}
 
-        {inVoting ? null : (
         <section className="bg-surface-2 border border-border-default rounded-2xl overflow-hidden">
           <header className="px-4 py-3 border-b border-border-default">
             <h2 className="text-xs uppercase font-black tracking-wider text-text-muted">
@@ -691,7 +704,7 @@ export default function TeammatePicker() {
                 </thead>
                 <tbody className="divide-y divide-border-default">
                   {picks.map((pick, idx) => {
-                    const jersey = jerseyMap.get(pick.jerseyId);
+                    const jersey = pick.jerseyId ? jerseyMap.get(pick.jerseyId) : undefined;
                     return (
                       <tr key={pick.id} className="hover:bg-surface-3/40">
                         <td className="px-3 py-2 font-mono text-text-muted">
@@ -700,8 +713,14 @@ export default function TeammatePicker() {
                         <td className="px-3 py-2 font-black text-text-primary">
                           {pick.memberName}
                         </td>
-                        <td className="px-3 py-2 text-text-secondary truncate max-w-[200px]">
-                          {jersey?.name ?? pick.jerseyId}
+                        <td className="px-3 py-2 truncate max-w-[200px]">
+                          {jersey ? (
+                            <span className="text-text-secondary">{jersey.name}</span>
+                          ) : pick.jerseyId ? (
+                            <span className="text-text-muted">{pick.jerseyId}</span>
+                          ) : (
+                            <span className="text-yellow-400 italic">Chờ voting chốt</span>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-text-secondary font-mono">
                           {pick.size}
@@ -739,7 +758,6 @@ export default function TeammatePicker() {
             </div>
           )}
         </section>
-        )}
       </div>
     </main>
   );

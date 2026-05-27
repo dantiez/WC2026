@@ -14,6 +14,7 @@ import {
 import { api, ApiError } from "../lib/api";
 import type { Shop, ShopJersey } from "../types";
 import ImageInput from "../components/admin/ImageInput";
+import JerseyImage from "../components/common/JerseyImage";
 
 interface JerseyDraft {
   id?: string;
@@ -482,13 +483,12 @@ export default function CaptainCatalog() {
                         : "border-red-500/30 opacity-60"
                     }`}
                   >
-                    <div className="aspect-[4/5] bg-surface-base">
-                      <img
+                    <div className="aspect-[4/5] bg-surface-base relative">
+                      <JerseyImage
                         src={jersey.imageUrl}
                         alt={jersey.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
+                        imgClassName="w-full h-full object-cover"
+                        wrapperClassName="block w-full h-full"
                       />
                     </div>
                     <div className="px-3 py-2 flex-1 flex flex-col gap-1">

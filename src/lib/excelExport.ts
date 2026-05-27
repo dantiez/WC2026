@@ -88,7 +88,7 @@ export async function exportPicksToExcel({
   const uniqueImages = Array.from(
     new Set(
       picks
-        .map((p) => jerseyMap.get(p.jerseyId)?.imageUrl)
+        .map((p) => (p.jerseyId ? jerseyMap.get(p.jerseyId)?.imageUrl : undefined))
         .filter((u): u is string => Boolean(u)),
     ),
   );
@@ -98,7 +98,7 @@ export async function exportPicksToExcel({
   const imageByUrl = new Map(fetched);
 
   picks.forEach((pick, idx) => {
-    const jersey = jerseyMap.get(pick.jerseyId);
+    const jersey = pick.jerseyId ? jerseyMap.get(pick.jerseyId) : undefined;
     const shop = jersey ? shopMap.get(jersey.shopId) : undefined;
     const row = picksSheet.addRow({
       stt: idx + 1,
@@ -107,7 +107,7 @@ export async function exportPicksToExcel({
       size: pick.size,
       number: pick.jerseyNumber ?? "",
       nickname: pick.nickname ?? "",
-      jersey: jersey?.name ?? pick.jerseyId,
+      jersey: jersey?.name ?? (pick.jerseyId ?? "Chờ voting"),
       shop: shop?.name ?? "",
     });
     row.height = 72;
@@ -159,14 +159,18 @@ export async function exportPicksToExcel({
 
   const counts = new Map<string, number>();
   for (const pick of picks) {
-    counts.set(pick.jerseyId, (counts.get(pick.jerseyId) ?? 0) + 1);
+    const key = pick.jerseyId ?? "__pending__";
+    counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   const summaryRows = Array.from(counts.entries())
     .map(([jerseyId, qty]) => {
       const jersey = jerseyMap.get(jerseyId);
       const shop = jersey ? shopMap.get(jersey.shopId) : undefined;
       return {
-        jersey: jersey?.name ?? jerseyId,
+        jersey:
+          jerseyId === "__pending__"
+            ? "Chờ voting chốt"
+            : (jersey?.name ?? jerseyId),
         shop: shop?.name ?? "",
         qty,
       };

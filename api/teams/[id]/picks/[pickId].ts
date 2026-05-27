@@ -6,6 +6,7 @@ import {
   type TeamSessionRow,
 } from "../../../../lib/mappers.js";
 import { readCaptainClaims } from "../../../_lib/auth.js";
+import { autoFinalizeIfExpired } from "../../../_lib/poll.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -41,29 +42,31 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     let lockedJerseyId: string | null = null;
+    let memberInVoting = false;
     if (!isCaptain) {
+      await autoFinalizeIfExpired(teamId);
       const { rows: pollRows } = await query<{ winner_jersey_id: string | null }>(
         `SELECT winner_jersey_id FROM team_polls WHERE team_id = $1`,
         [teamId],
       );
       if (pollRows.length > 0) {
-        if (!pollRows[0].winner_jersey_id) {
-          return res.status(423).json({
-            error: "Đang voting chọn mẫu áo, chưa thể chỉnh sửa pick.",
-          });
+        if (pollRows[0].winner_jersey_id) {
+          lockedJerseyId = pollRows[0].winner_jersey_id;
+        } else {
+          memberInVoting = true;
         }
-        lockedJerseyId = pollRows[0].winner_jersey_id;
       } else {
         lockedJerseyId = team.default_product_id;
       }
-      if (!lockedJerseyId) {
+      if (!memberInVoting && !lockedJerseyId) {
         return res.status(423).json({
           error: "Captain chưa chọn mẫu áo cho team.",
         });
       }
     }
 
-    if (req.method === "PUT") return await updatePick(req, res, pick, lockedJerseyId);
+    if (req.method === "PUT")
+      return await updatePick(req, res, pick, lockedJerseyId, memberInVoting);
     if (req.method === "DELETE") {
       await query(`DELETE FROM team_picks WHERE id = $1`, [pickId]);
       return res.json({ ok: true });
@@ -82,6 +85,7 @@ async function updatePick(
   res: VercelResponse,
   pick: TeamPickRow,
   lockedJerseyId: string | null,
+  memberInVoting: boolean,
 ) {
   const body = (req.body ?? {}) as {
     memberName?: string;
@@ -101,7 +105,13 @@ async function updatePick(
     params.push(v);
     sets.push(`member_name = $${params.length}`);
   }
-  if (body.jerseyId !== undefined) {
+  if (memberInVoting) {
+    // jersey stays NULL while voting is open; ignore any incoming jerseyId
+    if (pick.jersey_id !== null) {
+      params.push(null);
+      sets.push(`jersey_id = $${params.length}`);
+    }
+  } else if (body.jerseyId !== undefined) {
     const v = lockedJerseyId ? lockedJerseyId : body.jerseyId.trim();
     if (!v) fieldErrors.jerseyId = "Vui lòng chọn mẫu áo.";
     params.push(v);

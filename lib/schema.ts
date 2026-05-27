@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS team_picks (
   team_id        TEXT NOT NULL REFERENCES team_sessions(id) ON DELETE CASCADE,
   member_name    TEXT NOT NULL,
   member_token   TEXT NOT NULL,
-  jersey_id      TEXT NOT NULL REFERENCES products(id),
+  jersey_id      TEXT REFERENCES products(id),
   size           TEXT NOT NULL,
   jersey_number  TEXT,
   nickname       TEXT,
@@ -64,6 +64,10 @@ CREATE TABLE IF NOT EXISTS team_picks (
   created_at     TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at     TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- Allow NULL jersey_id so members can pre-fill name/size/number while voting
+-- is still open; auto-filled with the winner once the poll closes.
+ALTER TABLE team_picks ALTER COLUMN jersey_id DROP NOT NULL;
 
 CREATE INDEX IF NOT EXISTS team_picks_team_idx  ON team_picks (team_id);
 CREATE INDEX IF NOT EXISTS team_picks_token_idx ON team_picks (team_id, member_token);
@@ -129,10 +133,13 @@ CREATE TABLE IF NOT EXISTS team_polls (
   id                TEXT PRIMARY KEY,
   team_id           TEXT NOT NULL UNIQUE REFERENCES team_sessions(id) ON DELETE CASCADE,
   winner_jersey_id  TEXT REFERENCES shop_jerseys(id),
+  deadline_at       TIMESTAMPTZ,
   closed_at         TIMESTAMPTZ,
   created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
   updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE team_polls ADD COLUMN IF NOT EXISTS deadline_at TIMESTAMPTZ;
 
 CREATE TABLE IF NOT EXISTS team_poll_candidates (
   id          TEXT PRIMARY KEY,

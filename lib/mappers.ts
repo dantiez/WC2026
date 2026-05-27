@@ -109,7 +109,7 @@ export type TeamPickRow = {
   team_id: string;
   member_name: string;
   member_token: string;
-  jersey_id: string;
+  jersey_id: string | null;
   size: string;
   jersey_number: string | null;
   nickname: string | null;
@@ -121,7 +121,7 @@ export type TeamPick = {
   id: string;
   teamId: string;
   memberName: string;
-  jerseyId: string;
+  jerseyId: string | null;
   size: string;
   jerseyNumber: string | null;
   nickname: string | null;
@@ -181,6 +181,7 @@ export type TeamPollRow = {
   id: string;
   team_id: string;
   winner_jersey_id: string | null;
+  deadline_at: Date | null;
   closed_at: Date | null;
   created_at: Date;
   updated_at: Date;
@@ -216,6 +217,7 @@ export type TeamPollDTO = {
   id: string;
   teamId: string;
   winnerJerseyId: string | null;
+  deadlineAt: string | null;
   closedAt: string | null;
   createdAt: string;
   updatedAt: string;

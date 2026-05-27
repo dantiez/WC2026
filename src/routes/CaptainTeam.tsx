@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
 import { formatPickActivity } from "../lib/formatDate";
+import JerseyImage from "../components/common/JerseyImage";
 import type {
   Shop,
   ShopJersey,
@@ -27,6 +28,7 @@ import type {
   TeamPollCandidate,
 } from "../types";
 import PollSetupModal from "../components/admin/PollSetupModal";
+import PollCountdown from "../components/common/PollCountdown";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 
@@ -41,7 +43,7 @@ interface PickEditState {
 function toEditState(pick: TeamPick): PickEditState {
   return {
     memberName: pick.memberName,
-    jerseyId: pick.jerseyId,
+    jerseyId: pick.jerseyId ?? "",
     size: pick.size,
     jerseyNumber: pick.jerseyNumber ?? "",
     nickname: pick.nickname ?? "",
@@ -323,6 +325,7 @@ export default function CaptainTeam() {
           onOpenSetup={() => setShowPollSetup(true)}
           onFinalize={finalizePoll}
           onReopen={reopenPoll}
+          onDeadlinePassed={refresh}
           busy={pollBusy}
           error={pollError}
         />
@@ -392,7 +395,7 @@ export default function CaptainTeam() {
                   {picks.map((pick, idx) => {
                     const isEditing = editingPickId === pick.id && editDraft !== null;
                     const isSaving = savingPickId === pick.id;
-                    const jersey = jerseyMap.get(pick.jerseyId);
+                    const jersey = pick.jerseyId ? jerseyMap.get(pick.jerseyId) : undefined;
                     if (isEditing && editDraft) {
                       return (
                         <tr key={pick.id} className="bg-yellow-500/5 align-middle">
@@ -515,8 +518,14 @@ export default function CaptainTeam() {
                         <td className="px-3 py-2 font-black text-text-primary">
                           {pick.memberName}
                         </td>
-                        <td className="px-3 py-2 text-text-secondary truncate max-w-[200px]">
-                          {jersey?.name ?? pick.jerseyId}
+                        <td className="px-3 py-2 truncate max-w-[200px]">
+                          {jersey ? (
+                            <span className="text-text-secondary">{jersey.name}</span>
+                          ) : pick.jerseyId ? (
+                            <span className="text-text-muted">{pick.jerseyId}</span>
+                          ) : (
+                            <span className="text-yellow-400 italic">Chờ voting chốt</span>
+                          )}
                         </td>
                         <td className="px-3 py-2 text-text-secondary font-mono">{pick.size}</td>
                         <td className="px-3 py-2 text-text-secondary font-mono">
@@ -600,6 +609,7 @@ function PollSection({
   onOpenSetup,
   onFinalize,
   onReopen,
+  onDeadlinePassed,
   busy,
   error,
 }: {
@@ -612,6 +622,7 @@ function PollSection({
   onOpenSetup: () => void;
   onFinalize: () => void;
   onReopen: () => void;
+  onDeadlinePassed: () => void;
   busy: boolean;
   error: string | null;
 }) {
@@ -650,11 +661,12 @@ function PollSection({
         </div>
         <div className="flex items-center gap-3 bg-surface-3 border border-border-default rounded-lg p-3">
           {winnerJersey ? (
-            <img
+            <JerseyImage
               src={winnerJersey.imageUrl}
               alt={winnerJersey.name}
-              className="w-16 h-20 object-cover rounded-md"
-              loading="lazy"
+              imgClassName="w-16 h-20 object-cover rounded-md"
+              wrapperClassName="shrink-0 inline-block"
+              overlaySize="sm"
             />
           ) : null}
           <div className="min-w-0 flex-1">
@@ -712,6 +724,10 @@ function PollSection({
         </button>
       </div>
 
+      {poll.deadlineAt ? (
+        <PollCountdown deadlineIso={poll.deadlineAt} onExpired={onDeadlinePassed} />
+      ) : null}
+
       <ul className="flex flex-col gap-2">
         {sortedCandidates.map((c) => {
           const jersey = jerseyMap.get(c.jerseyId);
@@ -740,11 +756,12 @@ function PollSection({
                   className="accent-yellow-400"
                 />
                 {jersey ? (
-                  <img
+                  <JerseyImage
                     src={jersey.imageUrl}
                     alt={jersey.name}
-                    className="w-12 h-16 object-cover rounded-md"
-                    loading="lazy"
+                    imgClassName="w-12 h-16 object-cover rounded-md"
+                    wrapperClassName="shrink-0 inline-block"
+                    overlaySize="sm"
                   />
                 ) : null}
                 <div className="min-w-0 flex-1">

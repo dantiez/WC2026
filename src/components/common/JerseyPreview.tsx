@@ -1,3 +1,5 @@
+import JerseyImage from "./JerseyImage";
+
 interface Props {
   jerseyId: string;
   imageUrl: string;
@@ -41,13 +43,12 @@ export default function JerseyPreview({
       </p>
       <div className="grid grid-cols-2 gap-3">
         <Pane label="Mặt trước">
-          <img
+          <JerseyImage
             src={imageUrl}
             alt={`${name} (mặt trước)`}
-            loading="lazy"
-            decoding="async"
-            referrerPolicy="no-referrer"
-            className="w-full h-full object-cover rounded-md bg-surface-base"
+            imgClassName="w-full h-full object-cover rounded-md bg-surface-base"
+            wrapperClassName="block w-full h-full"
+            overlaySize="sm"
           />
         </Pane>
         <Pane label="Mặt sau">

@@ -1,11 +1,24 @@
 import { useMemo, useState } from "react";
-import { Check, Loader2, Vote, X } from "lucide-react";
+import { Check, Clock, Loader2, Vote, X } from "lucide-react";
 import { api, ApiError } from "../../lib/api";
 import type { Shop, ShopJersey } from "../../types";
+import JerseyImage from "../common/JerseyImage";
 
 const MIN_CANDIDATES = 2;
 const MAX_CANDIDATES = 5;
 const ALL_SHOPS = "__all__";
+
+const DEADLINE_PRESETS: Array<{ label: string; hours: number }> = [
+  { label: "1h", hours: 1 },
+  { label: "4h", hours: 4 },
+  { label: "8h", hours: 8 },
+  { label: "1d", hours: 24 },
+];
+
+function toDatetimeLocalInput(d: Date): string {
+  const local = new Date(d.getTime() - d.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 16);
+}
 
 interface Props {
   teamId: string;
@@ -24,6 +37,16 @@ export default function PollSetupModal({
 }: Props) {
   const [selected, setSelected] = useState<string[]>([]);
   const [shopFilter, setShopFilter] = useState<string>(ALL_SHOPS);
+  const [deadlineInput, setDeadlineInput] = useState<string>(() =>
+    toDatetimeLocalInput(new Date(Date.now() + 24 * 60 * 60 * 1000)),
+  );
+
+  const setDeadlinePreset = (hours: number) => {
+    setDeadlineInput(
+      toDatetimeLocalInput(new Date(Date.now() + hours * 60 * 60 * 1000)),
+    );
+    setError(null);
+  };
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,10 +74,23 @@ export default function PollSetupModal({
       setError(`Vui lòng chọn ít nhất ${MIN_CANDIDATES} mẫu áo.`);
       return;
     }
+    let deadlineIso: string | null = null;
+    if (deadlineInput) {
+      const d = new Date(deadlineInput);
+      if (Number.isNaN(d.getTime())) {
+        setError("Hạn voting không hợp lệ.");
+        return;
+      }
+      if (d.getTime() <= Date.now()) {
+        setError("Hạn voting phải ở tương lai.");
+        return;
+      }
+      deadlineIso = d.toISOString();
+    }
     setSubmitting(true);
     setError(null);
     try {
-      await api.teams.poll.create(teamId, selected);
+      await api.teams.poll.create(teamId, selected, deadlineIso);
       onCreated();
     } catch (err) {
       setError(
@@ -96,7 +132,46 @@ export default function PollSetupModal({
         <div className="px-5 py-3 border-b border-border-default text-[11px] text-text-muted">
           Chọn {MIN_CANDIDATES}-{MAX_CANDIDATES} mẫu áo làm ứng cử. Members sẽ vote
           mẫu họ thích, captain bấm "Chốt mẫu thắng" để cả team pick size trên mẫu
-          thắng.
+          thắng (hoặc đợi tới hạn để tự chốt).
+        </div>
+
+        <div className="px-5 py-3 border-b border-border-default flex flex-col gap-1.5">
+          <label className="text-[11px] uppercase font-bold tracking-wider text-text-muted flex items-center gap-1.5">
+            <Clock className="w-3 h-3" /> Hạn chốt voting (tự chốt mẫu nhiều vote nhất)
+          </label>
+          <div className="flex gap-1.5 flex-wrap">
+            {DEADLINE_PRESETS.map((preset) => (
+              <button
+                type="button"
+                key={preset.label}
+                onClick={() => setDeadlinePreset(preset.hours)}
+                className="text-[11px] uppercase font-black tracking-wider px-2.5 py-1 rounded-full border border-border-default bg-surface-3 text-text-secondary hover:bg-yellow-500/10 hover:text-yellow-400 hover:border-yellow-500/40"
+              >
+                {preset.label}
+              </button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="datetime-local"
+              value={deadlineInput}
+              onChange={(e) => setDeadlineInput(e.target.value)}
+              className="bg-surface-3 border border-border-default rounded-lg px-3 py-2 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+            />
+            {deadlineInput ? (
+              <button
+                type="button"
+                onClick={() => setDeadlineInput("")}
+                className="text-[11px] text-text-muted hover:text-text-primary underline"
+              >
+                Bỏ deadline (chốt tay)
+              </button>
+            ) : null}
+          </div>
+          <p className="text-[10px] text-text-muted">
+            Đến hạn, mẫu nhiều vote nhất tự thắng (tie-break theo thứ tự ứng cử).
+            Cần ≥1 vote; nếu không, captain phải chốt tay.
+          </p>
         </div>
 
         {shops.length > 1 ? (
@@ -139,15 +214,14 @@ export default function PollSetupModal({
                     }`}
                   >
                     <div className="aspect-[4/5] bg-surface-base relative">
-                      <img
+                      <JerseyImage
                         src={jersey.imageUrl}
                         alt={jersey.name}
-                        className="w-full h-full object-cover"
-                        loading="lazy"
-                        decoding="async"
+                        imgClassName="w-full h-full object-cover"
+                        wrapperClassName="block w-full h-full"
                       />
                       {isSelected ? (
-                        <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1">
+                        <span className="absolute top-1.5 right-1.5 bg-yellow-400 text-black rounded-full p-1 z-10">
                           <Check className="w-3.5 h-3.5" strokeWidth={3} />
                         </span>
                       ) : null}

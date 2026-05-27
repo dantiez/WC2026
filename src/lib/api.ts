@@ -141,10 +141,14 @@ export const api = {
         request<{ poll: TeamPoll | null }>(`/api/teams/${teamId}/poll`, {
           headers: voterToken ? { "X-Voter-Token": voterToken } : undefined,
         }),
-      create: (teamId: string, candidateJerseyIds: string[]) =>
+      create: (
+        teamId: string,
+        candidateJerseyIds: string[],
+        deadlineAt?: string | null,
+      ) =>
         request<{ poll: TeamPoll }>(`/api/teams/${teamId}/poll`, {
           method: "POST",
-          body: JSON.stringify({ candidateJerseyIds }),
+          body: JSON.stringify({ candidateJerseyIds, deadlineAt: deadlineAt ?? null }),
         }),
       finalize: (teamId: string, winnerJerseyId: string) =>
         request<{ poll: TeamPoll }>(`/api/teams/${teamId}/poll`, {
