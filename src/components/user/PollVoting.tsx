@@ -13,6 +13,8 @@ interface Props {
   onVoted: (poll: TeamPoll) => void;
   onVoterNameChange?: (name: string) => void;
   onDeadlinePassed?: () => void;
+  externalNameError?: string | null;
+  externalVoteError?: string | null;
 }
 
 export default function PollVoting({
@@ -22,12 +24,15 @@ export default function PollVoting({
   onVoted,
   onVoterNameChange,
   onDeadlinePassed,
+  externalNameError,
+  externalVoteError,
 }: Props) {
   const initialVoter = ensureVoter(teamId);
   const [name, setName] = useState<string>(initialVoter.name);
   const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [nameError, setNameError] = useState<string | null>(null);
+  const effectiveNameError = nameError ?? externalNameError ?? null;
 
   useEffect(() => {
     setName(initialVoter.name);
@@ -95,7 +100,7 @@ export default function PollVoting({
         />
       ) : null}
 
-      <label className="flex flex-col gap-1.5">
+      <label data-field="memberName" className="flex flex-col gap-1.5 scroll-mt-24">
         <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
           Tên của bạn <span className="text-red-400">*</span>
         </span>
@@ -110,13 +115,13 @@ export default function PollVoting({
             onVoterNameChange?.(v.trim());
           }}
           placeholder="Tên thật hoặc bí danh"
-          aria-invalid={!!nameError}
+          aria-invalid={!!effectiveNameError}
           className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
-            nameError ? "border-red-500/60" : "border-border-default"
+            effectiveNameError ? "border-red-500/60" : "border-border-default"
           }`}
         />
-        {nameError ? (
-          <span className="text-[11px] text-red-400">{nameError}</span>
+        {effectiveNameError ? (
+          <span className="text-[11px] text-red-400">{effectiveNameError}</span>
         ) : null}
       </label>
 
@@ -126,7 +131,21 @@ export default function PollVoting({
         </div>
       ) : null}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+      {externalVoteError ? (
+        <div
+          data-field="vote-error"
+          className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2"
+        >
+          {externalVoteError}
+        </div>
+      ) : null}
+
+      <div
+        data-field="vote"
+        className={`grid grid-cols-2 sm:grid-cols-3 gap-3 scroll-mt-24 rounded-lg ${
+          externalVoteError ? "ring-2 ring-red-500/40 p-1" : ""
+        }`}
+      >
         {sortedCandidates.map((c) => {
           const jersey = jerseyMap.get(c.jerseyId);
           const isMyVote = poll.myVoteCandidateId === c.id;

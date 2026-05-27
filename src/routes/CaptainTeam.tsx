@@ -519,12 +519,14 @@ export default function CaptainTeam() {
                           {pick.memberName}
                         </td>
                         <td className="px-3 py-2 truncate max-w-[200px]">
-                          {jersey ? (
+                          {poll && !poll.winnerJerseyId ? (
+                            <span className="text-yellow-400 italic">Đang chờ vote áo</span>
+                          ) : jersey ? (
                             <span className="text-text-secondary">{jersey.name}</span>
                           ) : pick.jerseyId ? (
                             <span className="text-text-muted">{pick.jerseyId}</span>
                           ) : (
-                            <span className="text-yellow-400 italic">Chờ voting chốt</span>
+                            <span className="text-yellow-400 italic">Đang chờ vote áo</span>
                           )}
                         </td>
                         <td className="px-3 py-2 text-text-secondary font-mono">{pick.size}</td>

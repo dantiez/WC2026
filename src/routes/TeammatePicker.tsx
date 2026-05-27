@@ -80,12 +80,14 @@ export default function TeammatePicker() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement | null>(null);
 
-  const FIELD_ORDER = ["memberName", "jerseyId", "size", "jerseyNumber"] as const;
+  const FIELD_ORDER = ["memberName", "vote", "jerseyId", "size", "jerseyNumber"] as const;
 
   const scrollToFirstError = (errs: Record<string, string>) => {
     const firstKey = FIELD_ORDER.find((k) => errs[k]);
-    if (!firstKey || !formRef.current) return;
-    const target = formRef.current.querySelector<HTMLElement>(
+    if (!firstKey) return;
+    // Search the whole document — during voting the memberName field lives
+    // in <PollVoting> (above the pick form), not inside formRef.
+    const target = document.querySelector<HTMLElement>(
       `[data-field="${firstKey}"]`,
     );
     if (!target) return;
@@ -227,7 +229,10 @@ export default function TeammatePicker() {
     if (!team) return;
     setSubmitError(null);
 
-    const localErrs = validateForm(form, !inVoting);
+    const localErrs: Record<string, string> = validateForm(form, !inVoting);
+    if (inVoting && !poll?.myVoteCandidateId) {
+      localErrs.vote = "Vui lòng vote 1 mẫu áo trước khi gửi pick.";
+    }
     if (Object.keys(localErrs).length > 0) {
       setFieldErrors(localErrs);
       scrollToFirstError(localErrs);
@@ -368,13 +373,24 @@ export default function TeammatePicker() {
             teamId={team.id}
             poll={poll}
             jerseyMap={jerseyMap}
-            onVoted={(updated) => setPoll(updated)}
+            onVoted={(updated) => {
+              setPoll(updated);
+              if (fieldErrors.vote) {
+                setFieldErrors((prev) => {
+                  const next = { ...prev };
+                  delete next.vote;
+                  return next;
+                });
+              }
+            }}
             onVoterNameChange={(name) =>
               setForm((prev) => ({ ...prev, memberName: name }))
             }
             onDeadlinePassed={() => {
               refresh();
             }}
+            externalNameError={fieldErrors.memberName ?? null}
+            externalVoteError={fieldErrors.vote ?? null}
           />
         ) : null}
 
@@ -436,9 +452,11 @@ export default function TeammatePicker() {
                       {pick.memberName} · Size {pick.size}
                     </p>
                     <p className="text-[11px] text-text-muted truncate">
-                      {pick.jerseyId
-                        ? (jerseyMap.get(pick.jerseyId)?.name ?? pick.jerseyId)
-                        : "Chờ voting chốt mẫu"}
+                      {inVoting
+                        ? "Đang chờ vote áo"
+                        : pick.jerseyId
+                          ? (jerseyMap.get(pick.jerseyId)?.name ?? pick.jerseyId)
+                          : "Đang chờ vote áo"}
                       {pick.jerseyNumber ? ` · #${pick.jerseyNumber}` : ""}
                       {pick.nickname ? ` · ${pick.nickname}` : ""}
                     </p>
@@ -775,12 +793,14 @@ export default function TeammatePicker() {
                           {pick.memberName}
                         </td>
                         <td className="px-3 py-2 truncate max-w-[200px]">
-                          {jersey ? (
+                          {inVoting ? (
+                            <span className="text-yellow-400 italic">Đang chờ vote áo</span>
+                          ) : jersey ? (
                             <span className="text-text-secondary">{jersey.name}</span>
                           ) : pick.jerseyId ? (
                             <span className="text-text-muted">{pick.jerseyId}</span>
                           ) : (
-                            <span className="text-yellow-400 italic">Chờ voting chốt</span>
+                            <span className="text-yellow-400 italic">Đang chờ vote áo</span>
                           )}
                         </td>
                         <td className="px-3 py-2 text-text-secondary font-mono">
