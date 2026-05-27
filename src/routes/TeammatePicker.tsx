@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Loader2,
@@ -78,6 +78,23 @@ export default function TeammatePicker() {
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const formRef = useRef<HTMLFormElement | null>(null);
+
+  const FIELD_ORDER = ["memberName", "jerseyId", "size", "jerseyNumber"] as const;
+
+  const scrollToFirstError = (errs: Record<string, string>) => {
+    const firstKey = FIELD_ORDER.find((k) => errs[k]);
+    if (!firstKey || !formRef.current) return;
+    const target = formRef.current.querySelector<HTMLElement>(
+      `[data-field="${firstKey}"]`,
+    );
+    if (!target) return;
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    const focusable = target.querySelector<HTMLElement>(
+      "input, select, textarea, button",
+    );
+    focusable?.focus({ preventScroll: true });
+  };
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
 
   const validateForm = (f: FormState, requireJersey: boolean): Record<string, string> => {
@@ -134,11 +151,19 @@ export default function TeammatePicker() {
       const winnerId = byToken.poll?.winnerJerseyId ?? null;
       const lockedId = winnerId ?? byToken.team.defaultProductId ?? null;
       const defaultJersey = lockedId || jerseyList[0]?.id || "";
+      const inVotingNow = !!byToken.poll && !winnerId;
       setForm((prev) => {
-        if (lockedId && prev.jerseyId !== lockedId) {
-          return { ...prev, jerseyId: lockedId };
+        let next = prev.jerseyId
+          ? prev
+          : emptyForm(defaultJersey);
+        if (lockedId && next.jerseyId !== lockedId) {
+          next = { ...next, jerseyId: lockedId };
         }
-        return prev.jerseyId ? prev : emptyForm(defaultJersey);
+        // During voting the pick form's name field is hidden; sync from voter.
+        if (inVotingNow && voter.name && !next.memberName) {
+          next = { ...next, memberName: voter.name };
+        }
+        return next;
       });
       setError(null);
     } catch (err) {
@@ -167,7 +192,14 @@ export default function TeammatePicker() {
     setEditingPickId(null);
     const defaultJersey =
       poll?.winnerJerseyId ?? team.defaultProductId ?? jerseys[0]?.id ?? "";
-    setForm(emptyForm(defaultJersey));
+    const base = emptyForm(defaultJersey);
+    // Prefill memberName from voter when voting (Tên field is hidden).
+    const inVotingNow = !!poll && !poll.winnerJerseyId;
+    if (inVotingNow) {
+      const v = ensureVoter(team.id);
+      if (v.name) base.memberName = v.name;
+    }
+    setForm(base);
     setSubmitError(null);
     setFieldErrors({});
     setShowForm(true);
@@ -198,6 +230,7 @@ export default function TeammatePicker() {
     const localErrs = validateForm(form, !inVoting);
     if (Object.keys(localErrs).length > 0) {
       setFieldErrors(localErrs);
+      scrollToFirstError(localErrs);
       return;
     }
     setFieldErrors({});
@@ -234,6 +267,7 @@ export default function TeammatePicker() {
     } catch (err) {
       if (err instanceof ApiError && err.fieldErrors) {
         setFieldErrors(err.fieldErrors);
+        scrollToFirstError(err.fieldErrors);
       }
       setSubmitError(err instanceof Error ? err.message : "Không lưu được pick.");
     } finally {
@@ -335,6 +369,9 @@ export default function TeammatePicker() {
             poll={poll}
             jerseyMap={jerseyMap}
             onVoted={(updated) => setPoll(updated)}
+            onVoterNameChange={(name) =>
+              setForm((prev) => ({ ...prev, memberName: name }))
+            }
             onDeadlinePassed={() => {
               refresh();
             }}
@@ -449,6 +486,7 @@ export default function TeammatePicker() {
 
         {!locked && !noJerseyChosen && (showForm || myPicks.length === 0) ? (
           <form
+            ref={formRef}
             onSubmit={submit}
             className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-4"
           >
@@ -469,23 +507,43 @@ export default function TeammatePicker() {
               ) : null}
             </div>
 
-            <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
-                Tên <span className="text-red-400">*</span>
-              </span>
-              <input
-                value={form.memberName}
-                onChange={(e) => updateField("memberName", e.target.value)}
-                placeholder="Tên thật hoặc bí danh"
-                aria-invalid={!!fieldErrors.memberName}
-                className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
-                  fieldErrors.memberName ? "border-red-500/60" : "border-border-default"
-                }`}
-              />
-              {fieldErrors.memberName ? (
-                <span className="text-[11px] text-red-400">{fieldErrors.memberName}</span>
-              ) : null}
-            </label>
+            {!inVoting ? (
+              <label data-field="memberName" className="flex flex-col gap-1.5 scroll-mt-24">
+                <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+                  Tên <span className="text-red-400">*</span>
+                </span>
+                <input
+                  value={form.memberName}
+                  onChange={(e) => updateField("memberName", e.target.value)}
+                  placeholder="Tên thật hoặc bí danh"
+                  aria-invalid={!!fieldErrors.memberName}
+                  className={`bg-surface-3 border rounded-lg px-3 py-2.5 text-sm text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 ${
+                    fieldErrors.memberName ? "border-red-500/60" : "border-border-default"
+                  }`}
+                />
+                {fieldErrors.memberName ? (
+                  <span className="text-[11px] text-red-400">{fieldErrors.memberName}</span>
+                ) : null}
+              </label>
+            ) : form.memberName ? (
+              <p className="text-[11px] text-text-muted">
+                Pick áo cho:{" "}
+                <span className="text-text-primary font-black">{form.memberName}</span>
+                <span className="text-[10px]"> (lấy từ tên đã nhập ở phần Vote phía trên)</span>
+              </p>
+            ) : (
+              <p
+                data-field="memberName"
+                className={`text-[11px] scroll-mt-24 ${fieldErrors.memberName ? "text-red-400" : "text-yellow-300"}`}
+              >
+                {fieldErrors.memberName ?? (
+                  <>
+                    Hãy nhập tên ở phần{" "}
+                    <span className="font-black">Vote chọn mẫu áo</span> phía trên trước.
+                  </>
+                )}
+              </p>
+            )}
 
             {inVoting ? (
               <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-lg px-3 py-2.5 flex items-center gap-2">
@@ -515,7 +573,10 @@ export default function TeammatePicker() {
               </div>
             ) : null}
 
-            <div className={`flex flex-col gap-2 ${lockedJersey || inVoting ? "hidden" : ""}`}>
+            <div
+              data-field="jerseyId"
+              className={`flex flex-col gap-2 scroll-mt-24 ${lockedJersey || inVoting ? "hidden" : ""}`}
+            >
               <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                 Mẫu áo <span className="text-red-400">*</span>
               </span>
@@ -589,7 +650,7 @@ export default function TeammatePicker() {
               ) : null}
             </div>
 
-            {selectedJersey ? (
+            {!inVoting && selectedJersey ? (
               <JerseyPreview
                 jerseyId={selectedJersey.id}
                 imageUrl={selectedJersey.imageUrl}
@@ -601,7 +662,7 @@ export default function TeammatePicker() {
             ) : null}
 
             <div className="grid grid-cols-2 gap-3">
-              <label className="flex flex-col gap-1.5">
+              <label data-field="size" className="flex flex-col gap-1.5 scroll-mt-24">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                   Size <span className="text-red-400">*</span>
                 </span>
@@ -625,7 +686,7 @@ export default function TeammatePicker() {
                 ) : null}
               </label>
 
-              <label className="flex flex-col gap-1.5">
+              <label data-field="jerseyNumber" className="flex flex-col gap-1.5 scroll-mt-24">
                 <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
                   Số áo <span className="text-red-400">*</span>
                 </span>

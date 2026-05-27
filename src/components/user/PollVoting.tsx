@@ -11,10 +11,18 @@ interface Props {
   poll: TeamPoll;
   jerseyMap: Map<string, ShopJersey>;
   onVoted: (poll: TeamPoll) => void;
+  onVoterNameChange?: (name: string) => void;
   onDeadlinePassed?: () => void;
 }
 
-export default function PollVoting({ teamId, poll, jerseyMap, onVoted, onDeadlinePassed }: Props) {
+export default function PollVoting({
+  teamId,
+  poll,
+  jerseyMap,
+  onVoted,
+  onVoterNameChange,
+  onDeadlinePassed,
+}: Props) {
   const initialVoter = ensureVoter(teamId);
   const [name, setName] = useState<string>(initialVoter.name);
   const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
@@ -94,12 +102,12 @@ export default function PollVoting({ teamId, poll, jerseyMap, onVoted, onDeadlin
         <input
           value={name}
           onChange={(e) => {
-            setName(e.target.value);
+            const v = e.target.value;
+            setName(v);
             if (nameError) setNameError(null);
-          }}
-          onBlur={() => {
-            const v = name.trim();
-            if (v) setVoterName(teamId, v);
+            // Persist on every change so the pick form (same screen) picks it up.
+            setVoterName(teamId, v.trim());
+            onVoterNameChange?.(v.trim());
           }}
           placeholder="Tên thật hoặc bí danh"
           aria-invalid={!!nameError}
