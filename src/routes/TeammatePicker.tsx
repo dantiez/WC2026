@@ -12,6 +12,7 @@ import {
   Plus,
   CheckCircle2,
   X,
+  FileSpreadsheet,
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
 import {
@@ -76,6 +77,7 @@ export default function TeammatePicker() {
   const [editingPickId, setEditingPickId] = useState<string | null>(null);
   const [form, setForm] = useState<FormState>(emptyForm(""));
   const [submitting, setSubmitting] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const formRef = useRef<HTMLFormElement | null>(null);
@@ -313,6 +315,22 @@ export default function TeammatePicker() {
     await refresh();
   };
 
+  const exportExcel = async () => {
+    if (!team || picks.length === 0) return;
+    setExporting(true);
+    try {
+      const { exportPicksToExcel } = await import("../lib/excelExport");
+      await exportPicksToExcel({
+        team,
+        picks,
+        jerseyMap,
+        shopMap,
+      });
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (loading) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-surface-base text-text-muted">
@@ -404,9 +422,15 @@ export default function TeammatePicker() {
                 });
               }
             }}
-            onVoterNameChange={(name) =>
-              setForm((prev) => ({ ...prev, memberName: name }))
-            }
+            onVoterNameChange={(name) => {
+              setForm((prev) => ({ ...prev, memberName: name }));
+              setFieldErrors((prev) => {
+                if (!prev.memberName) return prev;
+                const next = { ...prev };
+                delete next.memberName;
+                return next;
+              });
+            }}
             onDeadlinePassed={() => {
               refresh();
             }}
@@ -767,10 +791,23 @@ export default function TeammatePicker() {
         ) : null}
 
         <section className="bg-surface-2 border border-border-default rounded-2xl overflow-hidden">
-          <header className="px-4 py-3 border-b border-border-default">
+          <header className="px-4 py-3 border-b border-border-default flex items-center justify-between gap-3 flex-wrap">
             <h2 className="text-xs uppercase font-black tracking-wider text-text-muted">
               Đã pick ({picks.length})
             </h2>
+            <button
+              type="button"
+              onClick={exportExcel}
+              disabled={exporting || picks.length === 0}
+              className="text-[11px] uppercase font-black px-2.5 py-1.5 rounded-md flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {exporting ? (
+                <Loader2 className="w-3 h-3 animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-3 h-3" />
+              )}
+              {exporting ? "Đang xuất…" : "Xuất Excel"}
+            </button>
           </header>
           {picks.length === 0 ? (
             <div className="px-4 py-8 text-center text-sm text-text-muted">
