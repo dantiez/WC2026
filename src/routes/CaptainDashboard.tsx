@@ -9,6 +9,11 @@ import {
   Unlock,
   Trash2,
   Store,
+  MoreVertical,
+  Clipboard,
+  Copy,
+  Pencil,
+  Check,
 } from "lucide-react";
 import { api } from "../lib/api";
 import type { TeamSession } from "../types";
@@ -27,6 +32,70 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const selectAllRef = useRef<HTMLInputElement | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!openMenuId) return;
+    const onDocClick = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t.closest("[data-row-menu]")) setOpenMenuId(null);
+    };
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenuId(null);
+    };
+    document.addEventListener("mousedown", onDocClick);
+    document.addEventListener("keydown", onEsc);
+    return () => {
+      document.removeEventListener("mousedown", onDocClick);
+      document.removeEventListener("keydown", onEsc);
+    };
+  }, [openMenuId]);
+
+  const copyShareLink = async (team: TeamSession) => {
+    const url = `${window.location.origin}/t/${team.shareToken}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedId(team.id);
+      window.setTimeout(() => setCopiedId(null), 1500);
+    } catch {
+      window.prompt("Copy link share:", url);
+    }
+  };
+
+  const duplicateTeam = async (team: TeamSession) => {
+    try {
+      const created = await api.teams.create({
+        name: `${team.name} (copy)`,
+        defaultProductId: team.defaultProductId,
+        deadlineAt: null,
+      });
+      setTeams((prev) => [created, ...prev]);
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Không clone được team.");
+    }
+  };
+
+  const renameTeam = async (team: TeamSession) => {
+    const next = window.prompt(`Đổi tên team "${team.name}":`, team.name)?.trim();
+    if (!next || next === team.name) return;
+    try {
+      const updated = await api.teams.update(team.id, { name: next });
+      setTeams((prev) => prev.map((x) => (x.id === team.id ? updated : x)));
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Không đổi tên được.");
+    }
+  };
+
+  const toggleLock = async (team: TeamSession) => {
+    const next = team.status === "open" ? "locked" : "open";
+    try {
+      const updated = await api.teams.update(team.id, { status: next });
+      setTeams((prev) => prev.map((x) => (x.id === team.id ? updated : x)));
+    } catch (err) {
+      window.alert(err instanceof Error ? err.message : "Không đổi trạng thái được.");
+    }
+  };
 
   const allSelected = teams.length > 0 && selectedIds.size === teams.length;
   const someSelected = selectedIds.size > 0 && !allSelected;
@@ -106,9 +175,7 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
       });
   }, []);
 
-  const handleDelete = async (e: React.MouseEvent, team: TeamSession) => {
-    e.preventDefault();
-    e.stopPropagation();
+  const deleteTeam = async (team: TeamSession) => {
     if (
       !window.confirm(
         `Xoá team "${team.name}"? Tất cả pick của thành viên trong team này cũng sẽ bị xoá. Không thể hoàn tác.`,
@@ -261,19 +328,83 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
                           </div>
                         </div>
                       </Link>
-                      <button
-                        type="button"
-                        onClick={(e) => handleDelete(e, t)}
-                        disabled={deletingId === t.id}
-                        aria-label={`Xoá team ${t.name}`}
-                        className="absolute right-3 top-1/2 -translate-y-1/2 p-2 min-w-9 min-h-9 text-red-400 hover:text-white hover:bg-red-500 rounded-lg transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400"
+                      <div
+                        data-row-menu
+                        className="absolute right-3 top-1/2 -translate-y-1/2"
                       >
-                        {deletingId === t.id ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="w-4 h-4" />
-                        )}
-                      </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setOpenMenuId(openMenuId === t.id ? null : t.id);
+                          }}
+                          disabled={deletingId === t.id}
+                          aria-label={`Thao tác với team ${t.name}`}
+                          aria-haspopup="menu"
+                          aria-expanded={openMenuId === t.id}
+                          className="p-2 min-w-9 min-h-9 text-text-muted hover:text-text-primary hover:bg-surface-3 rounded-lg transition-colors disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400"
+                        >
+                          {deletingId === t.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <MoreVertical className="w-4 h-4" />
+                          )}
+                        </button>
+                        {openMenuId === t.id ? (
+                          <div
+                            role="menu"
+                            className="absolute right-0 top-full mt-1 min-w-52 bg-surface-2 border border-border-default rounded-lg shadow-xl z-20 py-1"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                            }}
+                          >
+                            <MenuItem
+                              icon={copiedId === t.id ? Check : Clipboard}
+                              label={copiedId === t.id ? "Đã copy!" : "Copy link share"}
+                              onClick={() => {
+                                copyShareLink(t);
+                                setOpenMenuId(null);
+                              }}
+                            />
+                            <MenuItem
+                              icon={Copy}
+                              label="Duplicate team"
+                              onClick={() => {
+                                duplicateTeam(t);
+                                setOpenMenuId(null);
+                              }}
+                            />
+                            <MenuItem
+                              icon={Pencil}
+                              label="Đổi tên team"
+                              onClick={() => {
+                                renameTeam(t);
+                                setOpenMenuId(null);
+                              }}
+                            />
+                            <MenuItem
+                              icon={t.status === "open" ? Lock : Unlock}
+                              label={t.status === "open" ? "Chốt đơn" : "Mở lại"}
+                              onClick={() => {
+                                toggleLock(t);
+                                setOpenMenuId(null);
+                              }}
+                            />
+                            <div className="border-t border-border-default my-1" />
+                            <MenuItem
+                              icon={Trash2}
+                              label="Xoá team"
+                              danger
+                              onClick={() => {
+                                deleteTeam(t);
+                                setOpenMenuId(null);
+                              }}
+                            />
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </li>
                 );
@@ -284,5 +415,30 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
 
       </div>
     </main>
+  );
+}
+
+interface MenuItemProps {
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+}
+
+function MenuItem({ icon: Icon, label, onClick, danger }: MenuItemProps) {
+  return (
+    <button
+      type="button"
+      role="menuitem"
+      onClick={onClick}
+      className={`w-full flex items-center gap-2.5 px-3 py-2 text-xs font-bold uppercase tracking-wider text-left transition-colors ${
+        danger
+          ? "text-red-400 hover:bg-red-500/10"
+          : "text-text-secondary hover:bg-surface-3 hover:text-text-primary"
+      }`}
+    >
+      <Icon className="w-3.5 h-3.5 shrink-0" />
+      {label}
+    </button>
   );
 }
