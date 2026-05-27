@@ -179,6 +179,27 @@ export default function TeammatePicker() {
     refresh();
   }, [refresh]);
 
+  // Auto-refresh so vote counts + winner state + others' picks stay in sync
+  // without manual reload. Pauses when tab is hidden; refetches on focus.
+  useEffect(() => {
+    if (!shareToken) return;
+    const POLL_MS = 20_000;
+    const interval = window.setInterval(() => {
+      if (!document.hidden) refresh();
+    }, POLL_MS);
+    const onVisibility = () => {
+      if (!document.hidden) refresh();
+    };
+    const onFocus = () => refresh();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [shareToken, refresh]);
+
   const dismissSuccess = useCallback(() => {
     setSuccessMsg(null);
   }, []);
@@ -368,7 +389,7 @@ export default function TeammatePicker() {
           </div>
         ) : null}
 
-        {inVoting && poll ? (
+        {inVoting && poll && (myPicks.length === 0 || editingPickId !== null) ? (
           <PollVoting
             teamId={team.id}
             poll={poll}
@@ -549,19 +570,7 @@ export default function TeammatePicker() {
                 <span className="text-text-primary font-black">{form.memberName}</span>
                 <span className="text-[10px]"> (lấy từ tên đã nhập ở phần Vote phía trên)</span>
               </p>
-            ) : (
-              <p
-                data-field="memberName"
-                className={`text-[11px] scroll-mt-24 ${fieldErrors.memberName ? "text-red-400" : "text-yellow-300"}`}
-              >
-                {fieldErrors.memberName ?? (
-                  <>
-                    Hãy nhập tên ở phần{" "}
-                    <span className="font-black">Vote chọn mẫu áo</span> phía trên trước.
-                  </>
-                )}
-              </p>
-            )}
+            ) : null}
 
             {inVoting ? (
               <div className="bg-yellow-500/10 border border-yellow-500/40 rounded-lg px-3 py-2.5 flex items-center gap-2">

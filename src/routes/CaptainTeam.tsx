@@ -92,6 +92,27 @@ export default function CaptainTeam() {
     refresh();
   }, [refresh]);
 
+  // Auto-refresh when members make changes (poll every 20s while tab is visible,
+  // refetch immediately on tab focus).
+  useEffect(() => {
+    if (!id) return;
+    const POLL_MS = 20_000;
+    const interval = window.setInterval(() => {
+      if (!document.hidden) refresh();
+    }, POLL_MS);
+    const onVisibility = () => {
+      if (!document.hidden) refresh();
+    };
+    const onFocus = () => refresh();
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [id, refresh]);
+
   const jerseyMap = useMemo(
     () => new Map(jerseys.map((j) => [j.id, j])),
     [jerseys],

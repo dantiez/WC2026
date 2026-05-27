@@ -45,8 +45,24 @@ async function createTeam(req: VercelRequest, res: VercelResponse, captainEmail:
     return res.status(400).json({ error: "Tên team không được trống." });
   }
   const deadline = body.deadlineAt ? new Date(body.deadlineAt) : null;
-  if (deadline && Number.isNaN(deadline.getTime())) {
-    return res.status(400).json({ error: "Hạn chốt đơn không hợp lệ." });
+  if (deadline) {
+    if (Number.isNaN(deadline.getTime())) {
+      return res.status(400).json({ error: "Hạn chốt đơn không hợp lệ." });
+    }
+    const now = Date.now();
+    const maxMs = now + 365 * 24 * 60 * 60 * 1000;
+    if (deadline.getTime() <= now) {
+      return res.status(400).json({
+        error: "Hạn chốt đơn phải ở tương lai.",
+        fieldErrors: { deadlineAt: "Hạn chốt đơn phải ở tương lai." },
+      });
+    }
+    if (deadline.getTime() > maxMs) {
+      return res.status(400).json({
+        error: "Hạn chốt đơn tối đa 1 năm kể từ hôm nay.",
+        fieldErrors: { deadlineAt: "Hạn chốt đơn tối đa 1 năm kể từ hôm nay." },
+      });
+    }
   }
 
   const id = shortId("team");
