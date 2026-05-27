@@ -278,8 +278,14 @@ export default function CaptainDashboard({ captainEmail, onLogout }: Props) {
             <ul className="flex flex-col gap-3">
               {teams.map((t) => {
                 const isChecked = selectedIds.has(t.id);
+                const menuOpen = openMenuId === t.id;
                 return (
-                  <li key={t.id} className="relative flex items-stretch gap-2">
+                  <li
+                    key={t.id}
+                    className={`relative flex items-stretch gap-2 ${
+                      menuOpen ? "z-30" : ""
+                    }`}
+                  >
                     <label
                       className="flex items-center px-2 cursor-pointer select-none"
                       aria-label={`Chọn team ${t.name}`}
