@@ -17,6 +17,7 @@ import {
   Trophy,
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
+import { formatPickActivity } from "../lib/formatDate";
 import type {
   Shop,
   ShopJersey,
@@ -383,6 +384,7 @@ export default function CaptainTeam() {
                     <th className="px-3 py-2 text-left w-20">Size</th>
                     <th className="px-3 py-2 text-left w-20">Số</th>
                     <th className="px-3 py-2 text-left">Nickname</th>
+                    <th className="px-3 py-2 text-left w-44">Cập nhật</th>
                     <th className="px-3 py-2 text-right w-28">Thao tác</th>
                   </tr>
                 </thead>
@@ -458,6 +460,25 @@ export default function CaptainTeam() {
                             />
                           </td>
                           <td className="px-3 py-2">
+                            {(() => {
+                              const a = formatPickActivity(pick.createdAt, pick.updatedAt);
+                              return (
+                                <div className="text-[10px] font-mono text-text-muted">
+                                  <span
+                                    className={
+                                      a.edited
+                                        ? "text-yellow-400 font-black"
+                                        : "text-text-muted font-bold"
+                                    }
+                                  >
+                                    {a.label}
+                                  </span>{" "}
+                                  {a.timestamp}
+                                </div>
+                              );
+                            })()}
+                          </td>
+                          <td className="px-3 py-2">
                             <div className="flex items-center justify-end gap-1">
                               <button
                                 type="button"
@@ -503,6 +524,25 @@ export default function CaptainTeam() {
                         </td>
                         <td className="px-3 py-2 text-text-secondary truncate max-w-[160px]">
                           {pick.nickname ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {(() => {
+                            const a = formatPickActivity(pick.createdAt, pick.updatedAt);
+                            return (
+                              <div className="text-[10px] font-mono text-text-muted leading-tight">
+                                <span
+                                  className={
+                                    a.edited
+                                      ? "text-yellow-400 font-black"
+                                      : "text-text-muted font-bold"
+                                  }
+                                >
+                                  {a.label}
+                                </span>{" "}
+                                {a.timestamp}
+                              </div>
+                            );
+                          })()}
                         </td>
                         <td className="px-3 py-2">
                           <div className="flex items-center justify-end gap-1">

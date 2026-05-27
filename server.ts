@@ -1,11 +1,12 @@
-// Local development server: mounts Vite middleware + bridges the Vercel
-// serverless handlers in api/ as Express routes. NOT used in production —
-// Vercel runs each file under api/ as its own function.
+// Dev: Vite middleware + Express bridging Vercel-style handlers in api/.
+// Prod (Render/Node host): serves built dist/ + same API routes.
+// Vercel deploys still use file-based serverless functions and ignore this file.
 import dotenv from "dotenv";
 dotenv.config({ path: ".env.local" });
 dotenv.config();
 import express, { type Request, type RequestHandler } from "express";
-import { createServer as createViteServer } from "vite";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import products from "./api/products.js";
 import health from "./api/health.js";
@@ -71,16 +72,32 @@ app.post("/api/jerseys", wrap(jerseys));
 app.put("/api/jerseys/:id", wrap(jerseys));
 app.delete("/api/jerseys/:id", wrap(jerseys));
 
+const isProd = process.env.NODE_ENV === "production";
+
 async function startServer() {
-  const vite = await createViteServer({
-    server: { middlewareMode: true },
-    appType: "spa",
-  });
-  app.use(vite.middlewares);
+  if (isProd) {
+    const __dirname = path.dirname(fileURLToPath(import.meta.url));
+    const distPath = path.resolve(__dirname, "dist");
+    app.use(express.static(distPath, { index: false, maxAge: "1h" }));
+    app.get(/^(?!\/api\/).+/, (_req, res) => {
+      res.sendFile(path.join(distPath, "index.html"));
+    });
+  } else {
+    const { createServer: createViteServer } = await import("vite");
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: "spa",
+    });
+    app.use(vite.middlewares);
+  }
 
   app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Dev server running at http://0.0.0.0:${PORT}`);
-    console.log(`(production uses Vercel serverless functions — this file is dev-only)`);
+    console.log(
+      `Server running at http://0.0.0.0:${PORT} (${isProd ? "production" : "dev"})`,
+    );
+    if (!isProd) {
+      console.log(`(Vercel deploys ignore this file and use api/* as functions)`);
+    }
   });
 }
 

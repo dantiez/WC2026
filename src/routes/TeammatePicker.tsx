@@ -22,6 +22,7 @@ import {
   type StoredMember,
 } from "../lib/memberToken";
 import { ensureVoter } from "../lib/voterToken";
+import { formatPickActivity } from "../lib/formatDate";
 import type { Shop, ShopJersey, TeamPick, TeamPoll, TeamSession } from "../types";
 import JerseyPreview from "../components/common/JerseyPreview";
 import PollVoting from "../components/user/PollVoting";
@@ -397,6 +398,23 @@ export default function TeammatePicker() {
                       {pick.jerseyNumber ? ` · #${pick.jerseyNumber}` : ""}
                       {pick.nickname ? ` · ${pick.nickname}` : ""}
                     </p>
+                    {(() => {
+                      const a = formatPickActivity(pick.createdAt, pick.updatedAt);
+                      return (
+                        <p className="text-[10px] font-mono text-text-muted mt-0.5">
+                          <span
+                            className={
+                              a.edited
+                                ? "text-yellow-400 font-black"
+                                : "font-bold"
+                            }
+                          >
+                            {a.label}
+                          </span>{" "}
+                          {a.timestamp}
+                        </p>
+                      );
+                    })()}
                   </div>
                   {!locked ? (
                     <div className="flex items-center gap-2">
@@ -668,6 +686,7 @@ export default function TeammatePicker() {
                     <th className="px-3 py-2 text-left w-14">Size</th>
                     <th className="px-3 py-2 text-left w-14">Số</th>
                     <th className="px-3 py-2 text-left">Nickname</th>
+                    <th className="px-3 py-2 text-left w-40">Cập nhật</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border-default">
@@ -692,6 +711,25 @@ export default function TeammatePicker() {
                         </td>
                         <td className="px-3 py-2 text-text-secondary truncate max-w-[160px]">
                           {pick.nickname ?? "—"}
+                        </td>
+                        <td className="px-3 py-2">
+                          {(() => {
+                            const a = formatPickActivity(pick.createdAt, pick.updatedAt);
+                            return (
+                              <div className="text-[10px] font-mono text-text-muted leading-tight">
+                                <span
+                                  className={
+                                    a.edited
+                                      ? "text-yellow-400 font-black"
+                                      : "font-bold"
+                                  }
+                                >
+                                  {a.label}
+                                </span>{" "}
+                                {a.timestamp}
+                              </div>
+                            );
+                          })()}
                         </td>
                       </tr>
                     );
