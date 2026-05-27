@@ -1,8 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ensureSchema, query } from "../../lib/db.js";
 import {
+  mapShop,
+  mapShopJersey,
   mapTeamSession,
   mapTeamPick,
+  type ShopJerseyRow,
+  type ShopRow,
   type TeamPickRow,
   type TeamSessionRow,
 } from "../../lib/mappers.js";
@@ -28,19 +32,29 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const team = mapTeamSession(rows[0]);
 
-    const { rows: pickRows } = await query<TeamPickRow>(
-      `SELECT * FROM team_picks WHERE team_id = $1 ORDER BY created_at ASC`,
-      [team.id],
-    );
-
     const voterToken =
       (req.headers["x-voter-token"] as string | undefined) ?? null;
-    const poll = await loadPollForTeam(team.id, voterToken);
+
+    // Single round-trip from the member's browser: ship picks + poll +
+    // active jerseys + shops together. Saves 2 extra requests on init.
+    const [pickRowsRes, pollRes, jerseyRowsRes, shopRowsRes] = await Promise.all([
+      query<TeamPickRow>(
+        `SELECT * FROM team_picks WHERE team_id = $1 ORDER BY created_at ASC`,
+        [team.id],
+      ),
+      loadPollForTeam(team.id, voterToken),
+      query<ShopJerseyRow>(
+        `SELECT * FROM shop_jerseys WHERE is_active = TRUE ORDER BY created_at ASC`,
+      ),
+      query<ShopRow>(`SELECT * FROM shops ORDER BY created_at ASC`),
+    ]);
 
     return res.json({
       team,
-      picks: pickRows.map(mapTeamPick),
-      poll,
+      picks: pickRowsRes.rows.map(mapTeamPick),
+      poll: pollRes,
+      jerseys: jerseyRowsRes.rows.map(mapShopJersey),
+      shops: shopRowsRes.rows.map(mapShop),
     });
   } catch (err) {
     console.error("[/api/teams/by-token] error", err);

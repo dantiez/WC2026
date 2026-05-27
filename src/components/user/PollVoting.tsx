@@ -8,6 +8,8 @@ import PollCountdown from "../common/PollCountdown";
 
 interface Props {
   teamId: string;
+  /** Stable key used for localStorage voter token (typically shareToken). */
+  voterKey: string;
   poll: TeamPoll;
   jerseyMap: Map<string, ShopJersey>;
   onVoted: (poll: TeamPoll) => void;
@@ -19,6 +21,7 @@ interface Props {
 
 export default function PollVoting({
   teamId,
+  voterKey,
   poll,
   jerseyMap,
   onVoted,
@@ -27,7 +30,7 @@ export default function PollVoting({
   externalNameError,
   externalVoteError,
 }: Props) {
-  const initialVoter = ensureVoter(teamId);
+  const initialVoter = ensureVoter(voterKey);
   const [name, setName] = useState<string>(initialVoter.name);
   const [busyCandidateId, setBusyCandidateId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -37,7 +40,7 @@ export default function PollVoting({
   useEffect(() => {
     setName(initialVoter.name);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [teamId]);
+  }, [voterKey]);
 
   const sortedCandidates = useMemo(
     () =>
@@ -58,7 +61,7 @@ export default function PollVoting({
     setError(null);
     setBusyCandidateId(candidateId);
     try {
-      const stored = setVoterName(teamId, trimmed);
+      const stored = setVoterName(voterKey, trimmed);
       const { poll: updated } = await api.teams.poll.vote(
         teamId,
         candidateId,
@@ -111,7 +114,7 @@ export default function PollVoting({
             setName(v);
             if (nameError) setNameError(null);
             // Persist on every change so the pick form (same screen) picks it up.
-            setVoterName(teamId, v.trim());
+            setVoterName(voterKey, v.trim());
             onVoterNameChange?.(v.trim());
           }}
           placeholder="Tên thật hoặc bí danh"

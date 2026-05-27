@@ -135,6 +135,8 @@ export interface TeamAggregate {
   sizeBreakdown: Record<string, number>;
   jerseyBreakdown: Record<string, number>;
   poll: TeamPoll | null;
+  jerseys: ShopJersey[];
+  shops: Shop[];
 }
 
 export interface TeamPollCandidate {

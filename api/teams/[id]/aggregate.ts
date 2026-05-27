@@ -1,8 +1,12 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import { ensureSchema, query } from "../../../lib/db.js";
 import {
+  mapShop,
+  mapShopJersey,
   mapTeamPick,
   mapTeamSession,
+  type ShopJerseyRow,
+  type ShopRow,
   type TeamPickRow,
   type TeamSessionRow,
 } from "../../../lib/mappers.js";
@@ -32,28 +36,37 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
     const team = mapTeamSession(teamRows[0]);
 
-    const { rows: picks } = await query<TeamPickRow>(
-      `SELECT * FROM team_picks WHERE team_id = $1 ORDER BY created_at ASC`,
-      [teamId],
-    );
+    // Single round-trip: ship picks + poll + ALL jerseys (admin view incl.
+    // inactive) + shops together. Saves 2 extra requests on captain init.
+    const [pickRowsRes, pollRes, jerseyRowsRes, shopRowsRes] = await Promise.all([
+      query<TeamPickRow>(
+        `SELECT * FROM team_picks WHERE team_id = $1 ORDER BY created_at ASC`,
+        [teamId],
+      ),
+      loadPollForTeam(team.id, null),
+      query<ShopJerseyRow>(
+        `SELECT * FROM shop_jerseys ORDER BY created_at ASC`,
+      ),
+      query<ShopRow>(`SELECT * FROM shops ORDER BY created_at ASC`),
+    ]);
 
     const sizeBreakdown: Record<string, number> = {};
     const jerseyBreakdown: Record<string, number> = {};
-    for (const p of picks) {
+    for (const p of pickRowsRes.rows) {
       sizeBreakdown[p.size] = (sizeBreakdown[p.size] ?? 0) + 1;
       const jKey = p.jersey_id ?? "__pending__";
       jerseyBreakdown[jKey] = (jerseyBreakdown[jKey] ?? 0) + 1;
     }
 
-    const poll = await loadPollForTeam(team.id, null);
-
     return res.json({
       team,
-      picks: picks.map(mapTeamPick),
-      total: picks.length,
+      picks: pickRowsRes.rows.map(mapTeamPick),
+      total: pickRowsRes.rows.length,
       sizeBreakdown,
       jerseyBreakdown,
-      poll,
+      poll: pollRes,
+      jerseys: jerseyRowsRes.rows.map(mapShopJersey),
+      shops: shopRowsRes.rows.map(mapShop),
     });
   } catch (err) {
     console.error("[/api/teams/aggregate] error", err);

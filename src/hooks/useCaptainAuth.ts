@@ -13,6 +13,17 @@ export function useCaptainAuth(): CaptainAuthState {
   const [email, setEmail] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    // Member-only routes don't need a captain cookie — skip the round-trip
+    // entirely on /t/* (~600ms cold-start saved). The hook still runs on
+    // /captain* and the root redirect.
+    if (
+      typeof window !== "undefined" &&
+      window.location.pathname.startsWith("/t/")
+    ) {
+      setEmail(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const res = await api.auth.me();

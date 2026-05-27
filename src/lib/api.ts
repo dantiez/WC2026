@@ -91,7 +91,13 @@ export const api = {
     remove: (id: string) =>
       request<{ ok: boolean }>(`/api/teams/${id}`, { method: "DELETE" }),
     byToken: (token: string, voterToken?: string | null) =>
-      request<{ team: TeamSession; picks: TeamPick[]; poll: TeamPoll | null }>(
+      request<{
+        team: TeamSession;
+        picks: TeamPick[];
+        poll: TeamPoll | null;
+        jerseys: ShopJersey[];
+        shops: Shop[];
+      }>(
         `/api/teams/by-token?token=${encodeURIComponent(token)}`,
         voterToken ? { headers: { "X-Voter-Token": voterToken } } : undefined,
       ),

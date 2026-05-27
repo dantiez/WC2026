@@ -72,14 +72,11 @@ export default function CaptainTeam() {
   const refresh = useCallback(async () => {
     if (!id) return;
     try {
-      const [agg, jerseyList, shopList] = await Promise.all([
-        api.teams.aggregate(id),
-        api.jerseys.list({ isAdmin: true }),
-        api.shops.list(),
-      ]);
+      // Single round-trip: aggregate now bundles jerseys + shops too.
+      const agg = await api.teams.aggregate(id);
       setData(agg);
-      setJerseys(jerseyList);
-      setShops(shopList);
+      setJerseys(agg.jerseys);
+      setShops(agg.shops);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Lỗi tải dữ liệu.");

@@ -54,6 +54,13 @@ async function listJerseys(req: VercelRequest, res: VercelResponse) {
     where.length ? `WHERE ${where.join(" AND ")}` : ""
   } ORDER BY created_at ASC`;
   const { rows } = await query<ShopJerseyRow>(sql, params);
+  // Public list cached at the edge (admin view always bypasses for fresh data).
+  if (!isAdmin) {
+    res.setHeader(
+      "Cache-Control",
+      "public, max-age=30, s-maxage=60, stale-while-revalidate=300",
+    );
+  }
   return res.json(rows.map(mapShopJersey));
 }
 

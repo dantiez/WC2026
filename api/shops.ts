@@ -34,6 +34,11 @@ async function listShops(res: VercelResponse) {
   const { rows } = await query<ShopRow>(
     `SELECT * FROM shops ORDER BY created_at ASC`,
   );
+  // Edge cache for 60s; serve stale while revalidating for 5 min.
+  res.setHeader(
+    "Cache-Control",
+    "public, max-age=30, s-maxage=60, stale-while-revalidate=300",
+  );
   return res.json(rows.map(mapShop));
 }
 

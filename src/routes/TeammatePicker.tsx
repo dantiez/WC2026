@@ -139,22 +139,20 @@ export default function TeammatePicker() {
 
   const refresh = useCallback(async () => {
     try {
-      const earlyTeam = await api.teams.byToken(shareToken);
-      const voter = ensureVoter(earlyTeam.team.id);
-      const [byToken, jerseyList, shopList] = await Promise.all([
-        api.teams.byToken(shareToken, voter.token),
-        api.jerseys.list(),
-        api.shops.list(),
-      ]);
+      // shareToken is stable per team — use it as the voter localStorage key
+      // so we can derive the voter token without an extra round-trip.
+      const voter = ensureVoter(shareToken);
+      // Single round-trip: by-token now returns picks + poll + jerseys + shops.
+      const byToken = await api.teams.byToken(shareToken, voter.token);
       setTeam(byToken.team);
       setPicks(byToken.picks);
       setPoll(byToken.poll);
-      setJerseys(jerseyList);
-      setShops(shopList);
+      setJerseys(byToken.jerseys);
+      setShops(byToken.shops);
       setStoredMembers(getMembers(byToken.team.id));
       const winnerId = byToken.poll?.winnerJerseyId ?? null;
       const lockedId = winnerId ?? byToken.team.defaultProductId ?? null;
-      const defaultJersey = lockedId || jerseyList[0]?.id || "";
+      const defaultJersey = lockedId || byToken.jerseys[0]?.id || "";
       const inVotingNow = !!byToken.poll && !winnerId;
       setForm((prev) => {
         let next = prev.jerseyId
@@ -221,7 +219,7 @@ export default function TeammatePicker() {
     // Prefill memberName from voter when voting (Tên field is hidden).
     const inVotingNow = !!poll && !poll.winnerJerseyId;
     if (inVotingNow) {
-      const v = ensureVoter(team.id);
+      const v = ensureVoter(shareToken);
       if (v.name) base.memberName = v.name;
     }
     setForm(base);
@@ -410,6 +408,7 @@ export default function TeammatePicker() {
         {inVoting && poll && (myPicks.length === 0 || editingPickId !== null) ? (
           <PollVoting
             teamId={team.id}
+            voterKey={shareToken}
             poll={poll}
             jerseyMap={jerseyMap}
             onVoted={(updated) => {
