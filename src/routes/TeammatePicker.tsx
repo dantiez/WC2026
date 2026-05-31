@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { CSSProperties, FormEvent, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import {
   Loader2,
@@ -33,6 +33,13 @@ import { Trophy, Vote } from "lucide-react";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
 const ALL_SHOPS = "__all__";
+
+// Team photo backdrop for the member jersey-picking screen. A dark scrim keeps
+// the content cards readable over the bright stadium shot.
+const SCREEN_BG: CSSProperties = {
+  backgroundImage:
+    "linear-gradient(to bottom, rgba(7,7,11,0.86), rgba(7,7,11,0.94)), url('/images/team-bg.jpg')",
+};
 
 interface FormState {
   memberName: string;
@@ -337,14 +344,20 @@ export default function TeammatePicker() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-surface-base text-text-muted">
+      <main
+        className="min-h-screen flex items-center justify-center bg-surface-base bg-cover bg-center bg-scroll sm:bg-fixed text-text-muted"
+        style={SCREEN_BG}
+      >
         <Loader2 className="w-5 h-5 animate-spin" />
       </main>
     );
   }
   if (error || !team) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-surface-base px-4">
+      <main
+        className="min-h-screen flex items-center justify-center bg-surface-base bg-cover bg-center bg-scroll sm:bg-fixed px-4"
+        style={SCREEN_BG}
+      >
         <div className="bg-red-500/10 border border-red-500/30 text-red-400 rounded-2xl px-4 py-3 text-sm">
           {error ?? "Không có dữ liệu"}
         </div>
@@ -361,7 +374,10 @@ export default function TeammatePicker() {
   const selectedJersey = jerseyMap.get(form.jerseyId);
 
   return (
-    <main className="min-h-screen bg-surface-base px-4 py-8">
+    <main
+      className="min-h-screen bg-surface-base bg-cover bg-center bg-scroll sm:bg-fixed px-4 py-8"
+      style={SCREEN_BG}
+    >
       <div className="max-w-4xl mx-auto flex flex-col gap-6">
         <header className="bg-surface-2 border border-border-default rounded-2xl p-5">
           <p className="text-[11px] uppercase tracking-wider text-text-muted font-semibold mb-1">
