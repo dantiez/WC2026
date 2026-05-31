@@ -458,7 +458,17 @@ export default function TeammatePicker() {
           </div>
         </header>
 
-        {team.deadlineAt && !locked ? (
+        {inVoting && poll?.deadlineAt ? (
+          <PollCountdown
+            deadlineIso={poll.deadlineAt}
+            onExpired={refresh}
+            label="Chốt vote mẫu áo sau"
+            expiredLabel="Hết hạn vote"
+            expiredHint="Đang chốt mẫu thắng…"
+          />
+        ) : null}
+
+        {team.deadlineAt && !locked && !inVoting ? (
           <PollCountdown
             deadlineIso={team.deadlineAt}
             onExpired={refresh}
@@ -499,9 +509,6 @@ export default function TeammatePicker() {
                 delete next.memberName;
                 return next;
               });
-            }}
-            onDeadlinePassed={() => {
-              refresh();
             }}
             externalNameError={fieldErrors.memberName ?? null}
             externalVoteError={fieldErrors.vote ?? null}

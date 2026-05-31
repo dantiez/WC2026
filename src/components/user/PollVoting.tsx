@@ -4,7 +4,6 @@ import { api, ApiError } from "../../lib/api";
 import { ensureVoter, setVoterName } from "../../lib/voterToken";
 import type { ShopJersey, TeamPoll } from "../../types";
 import JerseyImage from "../common/JerseyImage";
-import PollCountdown from "../common/PollCountdown";
 
 interface Props {
   teamId: string;
@@ -14,7 +13,6 @@ interface Props {
   jerseyMap: Map<string, ShopJersey>;
   onVoted: (poll: TeamPoll) => void;
   onVoterNameChange?: (name: string) => void;
-  onDeadlinePassed?: () => void;
   externalNameError?: string | null;
   externalVoteError?: string | null;
 }
@@ -26,7 +24,6 @@ export default function PollVoting({
   jerseyMap,
   onVoted,
   onVoterNameChange,
-  onDeadlinePassed,
   externalNameError,
   externalVoteError,
 }: Props) {
@@ -95,13 +92,6 @@ export default function PollVoting({
           </p>
         </div>
       </header>
-
-      {poll.deadlineAt ? (
-        <PollCountdown
-          deadlineIso={poll.deadlineAt}
-          onExpired={onDeadlinePassed}
-        />
-      ) : null}
 
       <label data-field="memberName" className="flex flex-col gap-1.5 scroll-mt-24">
         <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
