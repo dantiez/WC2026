@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 import { Check, Loader2, Vote } from "lucide-react";
+import { toast } from "sonner";
 import { api, ApiError } from "../../lib/api";
 import { ensureVoter, setVoterName } from "../../lib/voterToken";
+import { haptic } from "../../lib/haptics";
 import type { ShopJersey, TeamPoll } from "../../types";
 import JerseyImage from "../common/JerseyImage";
 
@@ -57,6 +59,7 @@ export default function PollVoting({
     setNameError(null);
     setError(null);
     setBusyCandidateId(candidateId);
+    const wasVoted = poll.myVoteCandidateId != null;
     try {
       const stored = setVoterName(voterKey, trimmed);
       const { poll: updated } = await api.teams.poll.vote(
@@ -66,6 +69,15 @@ export default function PollVoting({
         stored.token,
       );
       onVoted(updated);
+      // Vote saves instantly (no separate "save" step) — confirm it clearly.
+      const jerseyName =
+        jerseyMap.get(
+          poll.candidates.find((c) => c.id === candidateId)?.jerseyId ?? "",
+        )?.name ?? "mẫu áo";
+      haptic();
+      toast.success(
+        wasVoted ? `Đã đổi vote sang ${jerseyName}.` : `Đã vote cho ${jerseyName}.`,
+      );
     } catch (err) {
       setError(
         err instanceof ApiError
@@ -88,7 +100,7 @@ export default function PollVoting({
             Vote chọn mẫu áo cho cả team
           </h2>
           <p className="text-[11px] text-text-muted mt-0.5">
-            Bạn có thể đổi vote bất cứ lúc nào trước khi captain chốt.
+            Chạm để vote — lưu ngay khi chọn, đổi lúc nào cũng được trước khi captain chốt.
           </p>
         </div>
       </header>
