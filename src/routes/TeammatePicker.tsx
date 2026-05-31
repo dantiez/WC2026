@@ -10,9 +10,9 @@ import {
   Shirt,
   AlertCircle,
   Plus,
-  CheckCircle2,
   X,
   FileSpreadsheet,
+  Ruler,
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
 import {
@@ -24,10 +24,14 @@ import {
 } from "../lib/memberToken";
 import { ensureVoter } from "../lib/voterToken";
 import { useTeamRealtime } from "../hooks/useTeamRealtime";
+import { toast } from "sonner";
+import confetti from "canvas-confetti";
+import { haptic } from "../lib/haptics";
 import { formatPickActivity } from "../lib/formatDate";
 import type { Shop, ShopJersey, TeamPick, TeamPoll, TeamSession } from "../types";
 import JerseyPreview from "../components/common/JerseyPreview";
 import JerseyImage from "../components/common/JerseyImage";
+import SizeGuideModal from "../components/common/SizeGuideModal";
 import PollVoting from "../components/user/PollVoting";
 import { Trophy, Vote } from "lucide-react";
 
@@ -88,6 +92,7 @@ export default function TeammatePicker() {
   const [exporting, setExporting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [showSizeGuide, setShowSizeGuide] = useState(false);
   const formRef = useRef<HTMLFormElement | null>(null);
 
   const FIELD_ORDER = ["memberName", "vote", "jerseyId", "size", "jerseyNumber"] as const;
@@ -107,7 +112,18 @@ export default function TeammatePicker() {
     );
     focusable?.focus({ preventScroll: true });
   };
-  const [successMsg, setSuccessMsg] = useState<string | null>(null);
+
+  // Celebratory burst when a pick lands — small, brand-coloured, quick.
+  const celebrate = () => {
+    haptic([10, 40, 10]);
+    confetti({
+      particleCount: 90,
+      spread: 70,
+      origin: { y: 0.7 },
+      colors: ["#facc15", "#22c55e", "#ffffff"],
+      disableForReducedMotion: true,
+    });
+  };
 
   const validateForm = (f: FormState, requireJersey: boolean): Record<string, string> => {
     const errs: Record<string, string> = {};
@@ -144,6 +160,33 @@ export default function TeammatePicker() {
     if (shopFilter === ALL_SHOPS) return jerseys;
     return jerseys.filter((j) => j.shopId === shopFilter);
   }, [jerseys, shopFilter]);
+
+  // Soft warning: surface the teammate who already took this number (jersey
+  // numbers should be unique per team). Non-blocking — captain may allow dups.
+  const numberConflict = useMemo(() => {
+    const n = form.jerseyNumber.trim();
+    if (!n) return null;
+    const other = picks.find(
+      (p) => p.id !== editingPickId && (p.jerseyNumber ?? "").trim() === n,
+    );
+    return other ? other.memberName : null;
+  }, [form.jerseyNumber, picks, editingPickId]);
+
+  // Client-side roll-up of the whole team's picks: total, per-size counts, and
+  // how many are still waiting for the jersey to be decided (jerseyId null).
+  const summary = useMemo(() => {
+    const sizeCounts = new Map<string, number>();
+    let waiting = 0;
+    for (const p of picks) {
+      if (p.size) sizeCounts.set(p.size, (sizeCounts.get(p.size) ?? 0) + 1);
+      if (!p.jerseyId) waiting += 1;
+    }
+    const sizes = SIZES.filter((s) => sizeCounts.has(s)).map((s) => ({
+      size: s,
+      count: sizeCounts.get(s) as number,
+    }));
+    return { total: picks.length, sizes, waiting };
+  }, [picks]);
 
   const refresh = useCallback(async () => {
     try {
@@ -213,16 +256,6 @@ export default function TeammatePicker() {
     };
   }, [shareToken, refresh]);
 
-  const dismissSuccess = useCallback(() => {
-    setSuccessMsg(null);
-  }, []);
-
-  useEffect(() => {
-    if (!successMsg) return;
-    const t = setTimeout(dismissSuccess, 5000);
-    return () => clearTimeout(t);
-  }, [successMsg, dismissSuccess]);
-
   const openNewForm = () => {
     if (!team) return;
     setEditingPickId(null);
@@ -239,7 +272,6 @@ export default function TeammatePicker() {
     setSubmitError(null);
     setFieldErrors({});
     setShowForm(true);
-    setSuccessMsg(null);
   };
 
   const startEdit = (pick: TeamPick) => {
@@ -248,7 +280,6 @@ export default function TeammatePicker() {
     setSubmitError(null);
     setFieldErrors({});
     setShowForm(true);
-    setSuccessMsg(null);
   };
 
   const closeForm = () => {
@@ -284,7 +315,8 @@ export default function TeammatePicker() {
           jerseyNumber: form.jerseyNumber.trim(),
           nickname: form.nickname || null,
         });
-        setSuccessMsg(`Đã cập nhật pick của ${form.memberName.trim()}.`);
+        haptic();
+        toast.success(`Đã cập nhật pick của ${form.memberName.trim()}.`);
       } else {
         const result = await api.teams.createPick(team.id, {
           memberName: form.memberName.trim(),
@@ -297,7 +329,8 @@ export default function TeammatePicker() {
           pickId: result.pick.id,
           memberToken: result.memberToken,
         });
-        setSuccessMsg(
+        celebrate();
+        toast.success(
           `Pick thành công! ${form.memberName.trim()} đã được thêm vào danh sách.`,
         );
       }
@@ -322,7 +355,8 @@ export default function TeammatePicker() {
     removeMember(team.id, pick.id);
     setStoredMembers(getMembers(team.id));
     if (editingPickId === pick.id) closeForm();
-    setSuccessMsg(`Đã rút lại pick của ${pick.memberName}.`);
+    haptic();
+    toast.success(`Đã rút lại pick của ${pick.memberName}.`);
     await refresh();
   };
 
@@ -345,10 +379,28 @@ export default function TeammatePicker() {
   if (loading) {
     return (
       <main
-        className="min-h-screen flex items-center justify-center bg-surface-base bg-cover bg-center bg-scroll sm:bg-fixed text-text-muted"
+        className="min-h-screen bg-surface-base bg-cover bg-center bg-scroll sm:bg-fixed px-4 py-8"
         style={SCREEN_BG}
       >
-        <Loader2 className="w-5 h-5 animate-spin" />
+        <div className="max-w-4xl mx-auto flex flex-col gap-6 animate-pulse">
+          <div className="bg-surface-2 border border-border-default rounded-2xl p-5">
+            <div className="h-3 w-20 bg-surface-3 rounded mb-3" />
+            <div className="h-7 w-2/3 bg-surface-3 rounded" />
+          </div>
+          <div className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-4">
+            <div className="h-4 w-32 bg-surface-3 rounded" />
+            <div className="h-10 bg-surface-3 rounded-lg" />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="aspect-[3/4] bg-surface-3 rounded-xl" />
+              ))}
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="h-10 bg-surface-3 rounded-lg" />
+              <div className="h-10 bg-surface-3 rounded-lg" />
+            </div>
+          </div>
+        </div>
       </main>
     );
   }
@@ -378,7 +430,7 @@ export default function TeammatePicker() {
       className="min-h-screen bg-surface-base bg-cover bg-center bg-scroll sm:bg-fixed px-4 py-8"
       style={SCREEN_BG}
     >
-      <div className="max-w-4xl mx-auto flex flex-col gap-6">
+      <div className="max-w-4xl mx-auto flex flex-col gap-6 animate-fade-up">
         <header className="bg-surface-2 border border-border-default rounded-2xl p-5">
           <p className="text-[11px] uppercase tracking-wider text-text-muted font-semibold mb-1">
             Đợt đặt áo
@@ -404,21 +456,6 @@ export default function TeammatePicker() {
             )}
           </div>
         </header>
-
-        {successMsg ? (
-          <div className="bg-green-500/10 border border-green-500/30 text-green-400 rounded-2xl px-4 py-3 text-sm flex items-start gap-2">
-            <CheckCircle2 className="w-4 h-4 mt-0.5 shrink-0" />
-            <p className="flex-1">{successMsg}</p>
-            <button
-              type="button"
-              onClick={dismissSuccess}
-              aria-label="Đóng thông báo"
-              className="text-green-400 hover:text-green-300"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          </div>
-        ) : null}
 
         {locked ? (
           <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-2xl px-4 py-3 text-sm flex items-start gap-2">
@@ -501,7 +538,7 @@ export default function TeammatePicker() {
                 <button
                   type="button"
                   onClick={openNewForm}
-                  className="text-xs uppercase font-bold px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black flex items-center gap-1.5"
+                  className="text-xs uppercase font-bold min-h-9 px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 active:scale-95 transition-transform text-black flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" /> Pick thêm áo
                 </button>
@@ -549,14 +586,14 @@ export default function TeammatePicker() {
                       <button
                         type="button"
                         onClick={() => startEdit(pick)}
-                        className="text-[11px] uppercase font-bold px-2.5 py-1.5 rounded-md bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/20 flex items-center gap-1"
+                        className="text-[11px] uppercase font-bold min-h-9 px-3 py-2 rounded-md bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/20 active:scale-95 transition-transform flex items-center gap-1"
                       >
                         <Pencil className="w-3 h-3" /> Sửa
                       </button>
                       <button
                         type="button"
                         onClick={() => withdraw(pick)}
-                        className="text-[11px] uppercase font-bold px-2.5 py-1.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 flex items-center gap-1"
+                        className="text-[11px] uppercase font-bold min-h-9 px-3 py-2 rounded-md bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 active:scale-95 transition-transform flex items-center gap-1"
                       >
                         <Trash2 className="w-3 h-3" /> Rút lại
                       </button>
@@ -675,7 +712,7 @@ export default function TeammatePicker() {
                         key={jersey.id}
                         onClick={() => updateField("jerseyId", jersey.id)}
                         aria-pressed={isSelected}
-                        className={`group bg-surface-3 rounded-xl overflow-hidden border-2 text-left transition-all hover:-translate-y-0.5 ${
+                        className={`group bg-surface-3 rounded-xl overflow-hidden border-2 text-left transition-all hover:-translate-y-0.5 active:scale-[0.98] ${
                           isSelected
                             ? "border-yellow-400 ring-2 ring-yellow-400/30"
                             : "border-border-default hover:border-yellow-500/40"
@@ -727,8 +764,17 @@ export default function TeammatePicker() {
 
             <div className="grid grid-cols-2 gap-3">
               <label data-field="size" className="flex flex-col gap-1.5 scroll-mt-24">
-                <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
-                  Size <span className="text-red-400">*</span>
+                <span className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
+                    Size <span className="text-red-400">*</span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowSizeGuide(true)}
+                    className="text-[10px] text-text-muted hover:text-yellow-400 flex items-center gap-1 underline decoration-dotted underline-offset-2"
+                  >
+                    <Ruler className="w-3 h-3" /> Bảng size
+                  </button>
                 </span>
                 <select
                   value={form.size}
@@ -766,6 +812,12 @@ export default function TeammatePicker() {
                 />
                 {fieldErrors.jerseyNumber ? (
                   <span className="text-[11px] text-red-400">{fieldErrors.jerseyNumber}</span>
+                ) : numberConflict ? (
+                  <span className="text-[11px] text-amber-400 flex items-start gap-1">
+                    <AlertCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                    Số {form.jerseyNumber.trim()} đã được {numberConflict} chọn. Bạn vẫn có
+                    thể tiếp tục nếu cố ý.
+                  </span>
                 ) : null}
               </label>
             </div>
@@ -788,12 +840,12 @@ export default function TeammatePicker() {
               </div>
             ) : null}
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 sticky bottom-0 z-10 -mx-5 -mb-5 px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-surface-2/95 backdrop-blur border-t border-border-default sm:static sm:mx-0 sm:mb-0 sm:p-0 sm:bg-transparent sm:border-0 sm:backdrop-blur-none">
               <button
                 type="button"
                 onClick={closeForm}
                 disabled={submitting}
-                className="flex-1 bg-red-500 hover:bg-red-400 disabled:opacity-60 text-white font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
+                className="flex-1 min-h-12 bg-red-500 hover:bg-red-400 active:scale-[0.98] transition-transform disabled:opacity-60 text-white font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
               >
                 <X className="w-4 h-4" />
                 Huỷ
@@ -801,7 +853,7 @@ export default function TeammatePicker() {
               <button
                 type="submit"
                 disabled={submitting}
-                className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-60 text-black font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
+                className="flex-1 min-h-12 bg-yellow-500 hover:bg-yellow-400 active:scale-[0.98] transition-transform disabled:opacity-60 text-black font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
               >
                 {submitting ? (
                   <Loader2 className="w-4 h-4 animate-spin" />
@@ -812,6 +864,32 @@ export default function TeammatePicker() {
               </button>
             </div>
           </form>
+        ) : null}
+
+        {summary.total > 0 ? (
+          <section className="bg-surface-2 border border-border-default rounded-2xl p-4">
+            <p className="text-[11px] uppercase font-semibold tracking-wider text-text-muted mb-2">
+              Tóm tắt
+            </p>
+            <div className="flex items-center gap-2 flex-wrap text-xs">
+              <span className="bg-surface-3 border border-border-default rounded-full px-3 py-1">
+                Tổng <span className="font-black text-text-primary">{summary.total}</span> pick
+              </span>
+              {summary.sizes.map((s) => (
+                <span
+                  key={s.size}
+                  className="bg-surface-3 border border-border-default rounded-full px-3 py-1 font-mono text-text-secondary"
+                >
+                  {s.size}×<span className="font-black text-text-primary">{s.count}</span>
+                </span>
+              ))}
+              {summary.waiting > 0 ? (
+                <span className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-300 rounded-full px-3 py-1 font-mono">
+                  <span className="font-black">{summary.waiting}</span> đang chờ vote
+                </span>
+              ) : null}
+            </div>
+          </section>
         ) : null}
 
         <section className="bg-surface-2 border border-border-default rounded-2xl overflow-hidden">
@@ -838,7 +916,56 @@ export default function TeammatePicker() {
               Chưa ai pick. Bạn là người đầu tiên.
             </div>
           ) : (
-            <div className="overflow-x-auto">
+            <>
+            {/* Mobile: card list (no awkward horizontal scroll) */}
+            <ul className="sm:hidden divide-y divide-border-default">
+              {picks.map((pick, idx) => {
+                const jersey = pick.jerseyId ? jerseyMap.get(pick.jerseyId) : undefined;
+                const a = formatPickActivity(pick.createdAt, pick.updatedAt);
+                const jerseyLabel =
+                  inVoting || !pick.jerseyId
+                    ? null
+                    : (jersey?.name ?? pick.jerseyId);
+                return (
+                  <li key={pick.id} className="px-4 py-3 flex items-start gap-3">
+                    <span className="font-mono text-[11px] text-text-muted mt-0.5 w-5 shrink-0">
+                      {idx + 1}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="font-black text-sm text-text-primary truncate">
+                        {pick.memberName}
+                      </p>
+                      <div className="mt-1 flex items-center gap-1.5 flex-wrap text-[11px]">
+                        <span className="font-mono bg-surface-3 border border-border-default rounded px-1.5 py-0.5 text-text-secondary">
+                          {pick.size}
+                        </span>
+                        <span className="font-mono bg-surface-3 border border-border-default rounded px-1.5 py-0.5 text-text-secondary">
+                          #{pick.jerseyNumber ?? "—"}
+                        </span>
+                        {pick.nickname ? (
+                          <span className="text-text-muted truncate">{pick.nickname}</span>
+                        ) : null}
+                      </div>
+                      <p className="mt-1 text-[11px] truncate">
+                        {jerseyLabel ? (
+                          <span className="text-text-secondary">{jerseyLabel}</span>
+                        ) : (
+                          <span className="text-yellow-400 italic">Đang chờ vote áo</span>
+                        )}
+                      </p>
+                      <p className="text-[10px] font-mono text-text-muted mt-0.5">
+                        <span className={a.edited ? "text-yellow-400 font-black" : "font-bold"}>
+                          {a.label}
+                        </span>{" "}
+                        {a.timestamp}
+                      </p>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+            {/* Desktop: full table */}
+            <div className="hidden sm:block overflow-x-auto">
               <table className="w-full text-xs">
                 <thead className="bg-surface-3 text-text-muted uppercase font-semibold tracking-wider text-[10px]">
                   <tr>
@@ -907,9 +1034,14 @@ export default function TeammatePicker() {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </section>
       </div>
+
+      {showSizeGuide ? (
+        <SizeGuideModal onClose={() => setShowSizeGuide(false)} />
+      ) : null}
     </main>
   );
 }
@@ -927,7 +1059,7 @@ function ShopChip({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 text-[11px] uppercase font-black tracking-wider px-3 py-1.5 rounded-full border whitespace-nowrap ${
+      className={`shrink-0 text-[11px] uppercase font-bold tracking-wider min-h-9 px-3 py-1.5 rounded-full border whitespace-nowrap active:scale-95 transition-transform ${
         active
           ? "bg-yellow-500 text-black border-yellow-500"
           : "bg-surface-3 text-text-secondary border-border-default hover:bg-surface-2"

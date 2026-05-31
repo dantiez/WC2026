@@ -1,5 +1,6 @@
 import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { Loader2 } from "lucide-react";
+import { Toaster } from "sonner";
 import { useCaptainAuth } from "./hooks/useCaptainAuth";
 import CaptainLogin from "./routes/CaptainLogin";
 import CaptainDashboard from "./routes/CaptainDashboard";
@@ -106,6 +107,12 @@ export default function App() {
         </div>
         <Footer />
       </div>
+      <Toaster
+        position="bottom-center"
+        theme="dark"
+        richColors
+        toastOptions={{ className: "font-sans" }}
+      />
     </BrowserRouter>
   );
 }
