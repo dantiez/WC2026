@@ -702,7 +702,9 @@ export default function TeammatePicker() {
                 imageUrl={selectedJersey.imageUrl}
                 name={selectedJersey.name}
                 subtitle={shopMap.get(selectedJersey.shopId)?.name}
+                playerName={form.memberName}
                 nickname={form.nickname}
+                teamName={team.name}
                 jerseyNumber={form.jerseyNumber}
               />
             ) : null}

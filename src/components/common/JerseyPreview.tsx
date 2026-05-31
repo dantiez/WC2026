@@ -5,7 +5,11 @@ interface Props {
   imageUrl: string;
   name: string;
   subtitle?: string;
+  /** Printed player name on the back (nickname, falls back to member name). */
+  playerName?: string;
   nickname?: string;
+  /** Printed team name below the number on the back. */
+  teamName?: string;
   jerseyNumber?: string;
 }
 
@@ -29,16 +33,21 @@ export default function JerseyPreview({
   imageUrl,
   name,
   subtitle,
+  playerName,
   nickname,
+  teamName,
   jerseyNumber,
 }: Props) {
   const palette = pickPalette(jerseyId);
-  const backName = (nickname || "TÊN").toUpperCase().slice(0, 14);
+  const backName = (nickname || playerName || "TÊN CẦU THỦ")
+    .toUpperCase()
+    .slice(0, 16);
+  const backTeam = (teamName || "TÊN ĐỘI BÓNG").toUpperCase().slice(0, 18);
   const backNumber = (jerseyNumber || "00").toString().slice(0, 3);
 
   return (
     <section className="bg-surface-3 border border-border-default rounded-xl p-3">
-      <p className="text-[10px] uppercase font-black tracking-wider text-text-muted mb-2">
+      <p className="text-[10px] uppercase font-semibold tracking-wider text-text-muted mb-2">
         Preview mẫu áo
       </p>
       <div className="grid grid-cols-2 gap-3">
@@ -56,6 +65,7 @@ export default function JerseyPreview({
             base={palette.base}
             text={palette.text}
             name={backName}
+            team={backTeam}
             number={backNumber}
           />
         </Pane>
@@ -77,7 +87,7 @@ function Pane({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <span className="text-[10px] uppercase font-bold tracking-wider text-text-muted">
+      <span className="text-[10px] uppercase font-semibold tracking-wider text-text-muted">
         {label}
       </span>
       <div className="aspect-[4/5] overflow-hidden rounded-md">{children}</div>
@@ -89,18 +99,24 @@ function JerseyBack({
   base,
   text,
   name,
+  team,
   number,
 }: {
   base: string;
   text: string;
   name: string;
+  team: string;
   number: string;
 }) {
+  // Scale text down a touch as it gets longer so it never spills past the body.
+  const nameSize = name.length > 11 ? 13 : 16;
+  const teamSize = team.length > 13 ? 11 : 13;
+
   return (
     <svg
       viewBox="0 0 200 250"
       role="img"
-      aria-label={`Mặt sau in: ${name} số ${number}`}
+      aria-label={`Mặt sau in: cầu thủ ${name}, số ${number}, đội ${team}`}
       className="w-full h-full bg-surface-base"
     >
       <defs>
@@ -115,28 +131,44 @@ function JerseyBack({
         stroke="rgba(0,0,0,0.25)"
         strokeWidth="1.5"
       />
+      {/* Player name — high on the upper back, just under the collar */}
       <text
         x="100"
-        y="115"
+        y="82"
         textAnchor="middle"
-        fontSize="18"
+        fontSize={nameSize}
         fontWeight="900"
         fill={text}
         fontFamily="system-ui, sans-serif"
-        letterSpacing="2"
+        letterSpacing="1.5"
       >
         {name}
       </text>
+      {/* Squad number — dominant, centred */}
       <text
         x="100"
-        y="195"
+        y="178"
         textAnchor="middle"
-        fontSize="88"
+        fontSize="82"
         fontWeight="900"
         fill={text}
         fontFamily="system-ui, sans-serif"
       >
         {number}
+      </text>
+      {/* Team name — below the number */}
+      <text
+        x="100"
+        y="216"
+        textAnchor="middle"
+        fontSize={teamSize}
+        fontWeight="800"
+        fill={text}
+        fontFamily="system-ui, sans-serif"
+        letterSpacing="1.5"
+        opacity="0.92"
+      >
+        {team}
       </text>
     </svg>
   );
