@@ -557,16 +557,6 @@ export default function TeammatePicker() {
                 <Shirt className="w-4 h-4 text-yellow-400" />
                 {editingPickId ? "Sửa pick" : "Pick áo của bạn"}
               </h2>
-              {myPicks.length > 0 && showForm ? (
-                <button
-                  type="button"
-                  onClick={closeForm}
-                  className="text-text-muted hover:text-text-primary"
-                  aria-label="Đóng form"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              ) : null}
             </div>
 
             {!inVoting ? (
@@ -774,18 +764,29 @@ export default function TeammatePicker() {
               </div>
             ) : null}
 
-            <button
-              type="submit"
-              disabled={submitting}
-              className="bg-yellow-500 hover:bg-yellow-400 disabled:opacity-60 text-black font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
-            >
-              {submitting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Check className="w-4 h-4" />
-              )}
-              {editingPickId ? "Lưu thay đổi" : "Gửi pick"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={closeForm}
+                disabled={submitting}
+                className="flex-1 bg-surface-3 hover:bg-surface-3/70 disabled:opacity-60 text-text-primary font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Huỷ
+              </button>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="flex-1 bg-yellow-500 hover:bg-yellow-400 disabled:opacity-60 text-black font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
+              >
+                {submitting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                {editingPickId ? "Lưu thay đổi" : "Gửi pick"}
+              </button>
+            </div>
           </form>
         ) : null}
 
