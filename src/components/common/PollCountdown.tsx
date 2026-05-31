@@ -6,9 +6,22 @@ interface Props {
   deadlineIso: string;
   onExpired?: () => void;
   variant?: "compact" | "banner";
+  /** Banner heading while counting down. */
+  label?: string;
+  /** Banner heading once expired. */
+  expiredLabel?: string;
+  /** Banner value text once expired. */
+  expiredHint?: string;
 }
 
-export default function PollCountdown({ deadlineIso, onExpired, variant = "banner" }: Props) {
+export default function PollCountdown({
+  deadlineIso,
+  onExpired,
+  variant = "banner",
+  label = "Voting kết thúc sau",
+  expiredLabel = "Hết hạn voting",
+  expiredHint = "Đang chốt mẫu thắng…",
+}: Props) {
   const [tick, setTick] = useState(0);
 
   useEffect(() => {
@@ -57,10 +70,10 @@ export default function PollCountdown({ deadlineIso, onExpired, variant = "banne
       <Clock className="w-3.5 h-3.5 shrink-0" />
       <div className="flex-1 flex items-center justify-between gap-2 flex-wrap">
         <span className="font-bold uppercase tracking-wider text-[11px]">
-          {expired ? "Hết hạn voting" : "Voting kết thúc sau"}
+          {expired ? expiredLabel : label}
         </span>
         <span className="font-mono font-black">
-          {expired ? "Đang chốt mẫu thắng…" : text}
+          {expired ? expiredHint : text}
         </span>
       </div>
     </div>

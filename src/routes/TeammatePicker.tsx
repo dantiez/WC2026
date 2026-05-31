@@ -33,6 +33,7 @@ import JerseyPreview from "../components/common/JerseyPreview";
 import JerseyImage from "../components/common/JerseyImage";
 import SizeGuideModal from "../components/common/SizeGuideModal";
 import PollVoting from "../components/user/PollVoting";
+import PollCountdown from "../components/common/PollCountdown";
 import { Trophy, Vote } from "lucide-react";
 
 const SIZES = ["S", "M", "L", "XL", "XXL", "XXXL"] as const;
@@ -456,6 +457,16 @@ export default function TeammatePicker() {
             )}
           </div>
         </header>
+
+        {team.deadlineAt && !locked ? (
+          <PollCountdown
+            deadlineIso={team.deadlineAt}
+            onExpired={refresh}
+            label="Chốt đơn sau"
+            expiredLabel="Đã hết hạn đặt áo"
+            expiredHint="Đơn đã đóng — liên hệ captain"
+          />
+        ) : null}
 
         {locked ? (
           <div className="bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 rounded-2xl px-4 py-3 text-sm flex items-start gap-2">
