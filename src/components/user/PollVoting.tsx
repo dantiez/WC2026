@@ -87,7 +87,7 @@ export default function PollVoting({
       <header className="flex items-center gap-2">
         <Vote className="w-4 h-4 text-yellow-400" />
         <div>
-          <h2 className="text-sm font-black uppercase tracking-wider text-text-primary">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-text-primary">
             Vote chọn mẫu áo cho cả team
           </h2>
           <p className="text-[11px] text-text-muted mt-0.5">
@@ -104,7 +104,7 @@ export default function PollVoting({
       ) : null}
 
       <label data-field="memberName" className="flex flex-col gap-1.5 scroll-mt-24">
-        <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+        <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
           Tên của bạn <span className="text-red-400">*</span>
         </span>
         <input
@@ -183,7 +183,7 @@ export default function PollVoting({
                     {c.jerseyId}
                   </div>
                 )}
-                <span className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] font-black uppercase tracking-wider px-2 py-1 rounded-full z-10">
+                <span className="absolute top-1.5 left-1.5 bg-black/70 text-white text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-full z-10">
                   {c.voteCount} vote{c.voteCount === 1 ? "" : "s"} · {pct}%
                 </span>
                 {isMyVote ? (

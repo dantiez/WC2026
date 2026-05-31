@@ -364,10 +364,10 @@ export default function TeammatePicker() {
     <main className="min-h-screen bg-surface-base px-4 py-8">
       <div className="max-w-4xl mx-auto flex flex-col gap-6">
         <header className="bg-surface-2 border border-border-default rounded-2xl p-5">
-          <p className="text-[11px] uppercase tracking-wider text-text-muted font-bold mb-1">
+          <p className="text-[11px] uppercase tracking-wider text-text-muted font-semibold mb-1">
             Đợt đặt áo
           </p>
-          <h1 className="text-xl font-black uppercase tracking-wide text-text-primary">
+          <h1 className="text-2xl font-display font-bold tracking-tight text-text-primary">
             {team.name}
           </h1>
           <div className="mt-2 flex items-center gap-3 flex-wrap text-[11px]">
@@ -485,7 +485,7 @@ export default function TeammatePicker() {
                 <button
                   type="button"
                   onClick={openNewForm}
-                  className="text-xs uppercase font-black px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black flex items-center gap-1.5"
+                  className="text-xs uppercase font-bold px-3 py-2 rounded-lg bg-yellow-500 hover:bg-yellow-400 text-black flex items-center gap-1.5"
                 >
                   <Plus className="w-3.5 h-3.5" /> Pick thêm áo
                 </button>
@@ -533,14 +533,14 @@ export default function TeammatePicker() {
                       <button
                         type="button"
                         onClick={() => startEdit(pick)}
-                        className="text-[11px] uppercase font-black px-2.5 py-1.5 rounded-md bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/20 flex items-center gap-1"
+                        className="text-[11px] uppercase font-bold px-2.5 py-1.5 rounded-md bg-yellow-500/10 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/20 flex items-center gap-1"
                       >
                         <Pencil className="w-3 h-3" /> Sửa
                       </button>
                       <button
                         type="button"
                         onClick={() => withdraw(pick)}
-                        className="text-[11px] uppercase font-black px-2.5 py-1.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 flex items-center gap-1"
+                        className="text-[11px] uppercase font-bold px-2.5 py-1.5 rounded-md bg-red-500/10 text-red-400 border border-red-500/30 hover:bg-red-500/20 flex items-center gap-1"
                       >
                         <Trash2 className="w-3 h-3" /> Rút lại
                       </button>
@@ -559,7 +559,7 @@ export default function TeammatePicker() {
             className="bg-surface-2 border border-border-default rounded-2xl p-5 flex flex-col gap-4"
           >
             <div className="flex items-center justify-between gap-2">
-              <h2 className="text-sm font-black uppercase tracking-wider text-text-primary flex items-center gap-2">
+              <h2 className="text-sm font-bold uppercase tracking-wider text-text-primary flex items-center gap-2">
                 <Shirt className="w-4 h-4 text-yellow-400" />
                 {editingPickId ? "Sửa pick" : "Pick áo của bạn"}
               </h2>
@@ -567,7 +567,7 @@ export default function TeammatePicker() {
 
             {!inVoting ? (
               <label data-field="memberName" className="flex flex-col gap-1.5 scroll-mt-24">
-                <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
                   Tên <span className="text-red-400">*</span>
                 </span>
                 <input
@@ -623,7 +623,7 @@ export default function TeammatePicker() {
               data-field="jerseyId"
               className={`flex flex-col gap-2 scroll-mt-24 ${lockedJersey || inVoting ? "hidden" : ""}`}
             >
-              <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+              <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
                 Mẫu áo <span className="text-red-400">*</span>
               </span>
 
@@ -709,7 +709,7 @@ export default function TeammatePicker() {
 
             <div className="grid grid-cols-2 gap-3">
               <label data-field="size" className="flex flex-col gap-1.5 scroll-mt-24">
-                <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
                   Size <span className="text-red-400">*</span>
                 </span>
                 <select
@@ -733,7 +733,7 @@ export default function TeammatePicker() {
               </label>
 
               <label data-field="jerseyNumber" className="flex flex-col gap-1.5 scroll-mt-24">
-                <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+                <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
                   Số áo <span className="text-red-400">*</span>
                 </span>
                 <input
@@ -753,7 +753,7 @@ export default function TeammatePicker() {
             </div>
 
             <label className="flex flex-col gap-1.5">
-              <span className="text-[11px] uppercase font-bold tracking-wider text-text-muted">
+              <span className="text-[11px] uppercase font-semibold tracking-wider text-text-muted">
                 Nickname in lưng (tuỳ chọn)
               </span>
               <input
@@ -798,14 +798,14 @@ export default function TeammatePicker() {
 
         <section className="bg-surface-2 border border-border-default rounded-2xl overflow-hidden">
           <header className="px-4 py-3 border-b border-border-default flex items-center justify-between gap-3 flex-wrap">
-            <h2 className="text-xs uppercase font-black tracking-wider text-text-muted">
+            <h2 className="text-xs uppercase font-semibold tracking-wider text-text-muted">
               Đã pick ({picks.length})
             </h2>
             <button
               type="button"
               onClick={exportExcel}
               disabled={exporting || picks.length === 0}
-              className="text-[11px] uppercase font-black px-2.5 py-1.5 rounded-md flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="text-[11px] uppercase font-bold px-2.5 py-1.5 rounded-md flex items-center gap-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {exporting ? (
                 <Loader2 className="w-3 h-3 animate-spin" />
@@ -822,7 +822,7 @@ export default function TeammatePicker() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-xs">
-                <thead className="bg-surface-3 text-text-muted uppercase font-black tracking-wider text-[10px]">
+                <thead className="bg-surface-3 text-text-muted uppercase font-semibold tracking-wider text-[10px]">
                   <tr>
                     <th className="px-3 py-2 text-left w-8">#</th>
                     <th className="px-3 py-2 text-left">Tên</th>
