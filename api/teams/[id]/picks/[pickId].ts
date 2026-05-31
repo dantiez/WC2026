@@ -7,6 +7,7 @@ import {
 } from "../../../../lib/mappers.js";
 import { readCaptainClaims } from "../../../_lib/auth.js";
 import { autoFinalizeIfExpired } from "../../../_lib/poll.js";
+import { notifyTeam } from "../../../_lib/realtime.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -69,6 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       return await updatePick(req, res, pick, lockedJerseyId, memberInVoting);
     if (req.method === "DELETE") {
       await query(`DELETE FROM team_picks WHERE id = $1`, [pickId]);
+      await notifyTeam(teamId, "pick:deleted");
       return res.json({ ok: true });
     }
 
@@ -154,5 +156,6 @@ async function updatePick(
     `UPDATE team_picks SET ${sets.join(", ")} WHERE id = $${params.length} RETURNING *`,
     params,
   );
+  await notifyTeam(pick.team_id, "pick:updated");
   return res.json(mapTeamPick(rows[0]));
 }

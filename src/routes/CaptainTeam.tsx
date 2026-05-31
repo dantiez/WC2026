@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { api, ApiError } from "../lib/api";
 import { formatPickActivity } from "../lib/formatDate";
+import { useTeamRealtime } from "../hooks/useTeamRealtime";
 import JerseyImage from "../components/common/JerseyImage";
 import type {
   Shop,
@@ -89,11 +90,16 @@ export default function CaptainTeam() {
     refresh();
   }, [refresh]);
 
-  // Auto-refresh when members make changes (poll every 20s while tab is visible,
-  // refetch immediately on tab focus).
+  // Realtime: refetch the instant a member chốt/sửa/xoá pick or votes.
+  // Falls back to polling below when Pusher isn't configured.
+  useTeamRealtime(id, refresh);
+
+  // Polling fallback for when the realtime socket drops. Pauses when the tab is
+  // hidden, refetches immediately on focus. Relaxed cadence since realtime
+  // carries the fast path.
   useEffect(() => {
     if (!id) return;
-    const POLL_MS = 20_000;
+    const POLL_MS = 60_000;
     const interval = window.setInterval(() => {
       if (!document.hidden) refresh();
     }, POLL_MS);

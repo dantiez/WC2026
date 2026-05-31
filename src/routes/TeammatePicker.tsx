@@ -23,6 +23,7 @@ import {
   type StoredMember,
 } from "../lib/memberToken";
 import { ensureVoter } from "../lib/voterToken";
+import { useTeamRealtime } from "../hooks/useTeamRealtime";
 import { formatPickActivity } from "../lib/formatDate";
 import type { Shop, ShopJersey, TeamPick, TeamPoll, TeamSession } from "../types";
 import JerseyPreview from "../components/common/JerseyPreview";
@@ -179,11 +180,16 @@ export default function TeammatePicker() {
     refresh();
   }, [refresh]);
 
-  // Auto-refresh so vote counts + winner state + others' picks stay in sync
-  // without manual reload. Pauses when tab is hidden; refetches on focus.
+  // Realtime: refetch the instant another member/captain changes a pick or
+  // poll. Falls back to polling below when Pusher isn't configured.
+  useTeamRealtime(team?.id, refresh);
+
+  // Polling fallback so vote counts + winner state + others' picks stay in sync
+  // even if the realtime socket drops. Pauses when tab is hidden; refetches on
+  // focus. Realtime carries the fast path, so this can run on a relaxed cadence.
   useEffect(() => {
     if (!shareToken) return;
-    const POLL_MS = 20_000;
+    const POLL_MS = 60_000;
     const interval = window.setInterval(() => {
       if (!document.hidden) refresh();
     }, POLL_MS);
@@ -769,7 +775,7 @@ export default function TeammatePicker() {
                 type="button"
                 onClick={closeForm}
                 disabled={submitting}
-                className="flex-1 bg-surface-3 hover:bg-surface-3/70 disabled:opacity-60 text-text-primary font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
+                className="flex-1 bg-red-500 hover:bg-red-400 disabled:opacity-60 text-white font-black uppercase text-sm rounded-lg py-3 flex items-center justify-center gap-2"
               >
                 <X className="w-4 h-4" />
                 Huỷ

@@ -9,6 +9,7 @@ import {
 } from "../../../../lib/mappers.js";
 import { readCaptainClaims } from "../../../_lib/auth.js";
 import { autoFinalizeIfExpired } from "../../../_lib/poll.js";
+import { notifyTeam } from "../../../_lib/realtime.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
@@ -121,5 +122,6 @@ async function createPick(
       body.nickname ?? null,
     ],
   );
+  await notifyTeam(team.id, "pick:created");
   return res.status(201).json({ pick: mapTeamPick(rows[0]), memberToken });
 }

@@ -7,6 +7,7 @@ import {
 } from "../../../../lib/mappers.js";
 import { readCaptainClaims, requireCaptain } from "../../../_lib/auth.js";
 import { loadPollForTeam } from "../../../_lib/poll.js";
+import { notifyTeam } from "../../../_lib/realtime.js";
 
 const MIN_CANDIDATES = 2;
 const MAX_CANDIDATES = 5;
@@ -121,6 +122,7 @@ async function castVote(req: VercelRequest, res: VercelResponse, teamId: string)
   );
 
   const pollDto = await loadPollForTeam(teamId, voterToken);
+  await notifyTeam(teamId, "poll:vote");
   return res.status(200).json({ poll: pollDto, voterToken });
 }
 
@@ -198,6 +200,7 @@ async function createPoll(req: VercelRequest, res: VercelResponse, teamId: strin
   }
 
   const poll = await loadPollForTeam(teamId, null);
+  await notifyTeam(teamId, "poll:created");
   return res.status(201).json({ poll });
 }
 
@@ -256,10 +259,12 @@ async function finalizePoll(req: VercelRequest, res: VercelResponse, teamId: str
   }
 
   const poll = await loadPollForTeam(teamId, null);
+  await notifyTeam(teamId, "poll:finalized");
   return res.json({ poll });
 }
 
 async function deletePoll(_req: VercelRequest, res: VercelResponse, teamId: string) {
   await query(`DELETE FROM team_polls WHERE team_id = $1`, [teamId]);
+  await notifyTeam(teamId, "poll:deleted");
   return res.json({ ok: true });
 }
